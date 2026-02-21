@@ -3,18 +3,18 @@
 #ifndef LOONG_SYSTEM_NOTIFICATION_NOTIFICATION_MANAGER_H_
 #define LOONG_SYSTEM_NOTIFICATION_NOTIFICATION_MANAGER_H_
 
+#include "system/alarm/alarm_manager.h"
+#include "system/notification/mqtt_channel.h"
+#include "system/notification/notification_channel.h"
+#include "system/notification/smtp_channel.h"
+#include "system/notification/webhook_channel.h"
+
 #include <atomic>
 #include <cstdint>
 #include <deque>
 #include <memory>
 #include <mutex>
 #include <string>
-
-#include "system/alarm/alarm_manager.h"
-#include "system/notification/notification_channel.h"
-#include "system/notification/smtp_channel.h"
-#include "system/notification/webhook_channel.h"
-#include "system/notification/mqtt_channel.h"
 
 namespace loong::system {
 
@@ -26,7 +26,7 @@ struct NotificationRecord {
   std::string severity;
   bool success = false;
   std::string error_message;
-  int64_t sent_at = 0;        // Unix timestamp (ms)
+  int64_t sent_at = 0;  // Unix timestamp (ms)
 };
 
 /// Manages notification channels and dispatches alarm notifications.

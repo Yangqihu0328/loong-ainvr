@@ -35,15 +35,15 @@ class FtTextRenderer {
   /// @param y      Top edge of the text bounding box.
   /// @param r,g,b  Text color (0–255).
   void RenderText(uint8_t* data, int width, int height, int stride,
-                  const std::string& text, int x, int y,
-                  uint8_t r = 255, uint8_t g = 255, uint8_t b = 255) const;
+                  const std::string& text, int x, int y, uint8_t r = 255,
+                  uint8_t g = 255, uint8_t b = 255) const;
 
   /// Measure the bounding box of a UTF-8 string without rendering.
   /// @param text UTF-8 encoded string.
   /// @param[out] out_width  Width in pixels.
   /// @param[out] out_height Height in pixels.
-  void MeasureText(const std::string& text,
-                   int& out_width, int& out_height) const;
+  void MeasureText(const std::string& text, int& out_width,
+                   int& out_height) const;
 
   /// Change pixel size (re-sets the current face size).
   void SetPixelSize(int pixel_size);

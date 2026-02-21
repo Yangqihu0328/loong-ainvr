@@ -7,8 +7,7 @@
 
 namespace loong::core {
 
-void InitLogger(const std::string& logger_name,
-                spdlog::level::level_enum level,
+void InitLogger(const std::string& logger_name, spdlog::level::level_enum level,
                 bool json_format) {
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(level);
@@ -18,8 +17,7 @@ void InitLogger(const std::string& logger_name,
   file_sink->set_level(spdlog::level::debug);
 
   auto logger = std::make_shared<spdlog::logger>(
-      logger_name,
-      spdlog::sinks_init_list{console_sink, file_sink});
+      logger_name, spdlog::sinks_init_list{console_sink, file_sink});
   logger->set_level(level);
 
   if (json_format) {

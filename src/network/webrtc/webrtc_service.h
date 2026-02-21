@@ -37,8 +37,8 @@ struct WebRtcSession {
   int channel_id = -1;
   WebRtcSessionState state = WebRtcSessionState::kNew;
 
-  void* peer_connection = nullptr;     // PRtcPeerConnection (loong-rtc)
-  void* video_transceiver = nullptr;   // PRtcRtpTransceiver (loong-rtc)
+  void* peer_connection = nullptr;    // PRtcPeerConnection (loong-rtc)
+  void* video_transceiver = nullptr;  // PRtcRtpTransceiver (loong-rtc)
 
   int64_t created_at = 0;
   int64_t last_activity = 0;

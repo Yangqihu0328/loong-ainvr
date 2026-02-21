@@ -3,14 +3,13 @@
 #include "codec/codec_factory/codec_factory.h"
 #include "codec/decoder/ffmpeg_decoder.h"
 #include "codec/encoder/ffmpeg_encoder.h"
+#include "core/common/types.h"
+#include "gtest/gtest.h"
 
 #include <atomic>
 #include <cstring>
 #include <memory>
 #include <vector>
-
-#include "core/common/types.h"
-#include "gtest/gtest.h"
 
 namespace loong::codec {
 namespace {
@@ -237,13 +236,13 @@ TEST(FFmpegEncoder, EncodeFrameProducesPacket) {
   ASSERT_TRUE(encoder.Initialize(config));
 
   std::atomic<int> packet_count{0};
-  encoder.SetPacketCallback(
-      [&packet_count](const uint8_t* data, size_t size,
-                      int64_t /*pts*/, int64_t /*dts*/, bool /*is_keyframe*/) {
-        EXPECT_NE(data, nullptr);
-        EXPECT_GT(size, 0U);
-        ++packet_count;
-      });
+  encoder.SetPacketCallback([&packet_count](const uint8_t* data, size_t size,
+                                            int64_t /*pts*/, int64_t /*dts*/,
+                                            bool /*is_keyframe*/) {
+    EXPECT_NE(data, nullptr);
+    EXPECT_GT(size, 0U);
+    ++packet_count;
+  });
 
   // Encode multiple frames to trigger packet output (encoder may buffer)
   for (int i = 0; i < 30; ++i) {
@@ -270,11 +269,11 @@ TEST(FFmpegEncoder, PacketCallbackReceivesKeyframe) {
   ASSERT_TRUE(encoder.Initialize(config));
 
   bool got_keyframe = false;
-  encoder.SetPacketCallback(
-      [&got_keyframe](const uint8_t* /*data*/, size_t /*size*/,
-                      int64_t /*pts*/, int64_t /*dts*/, bool is_keyframe) {
-        if (is_keyframe) got_keyframe = true;
-      });
+  encoder.SetPacketCallback([&got_keyframe](const uint8_t* /*data*/,
+                                            size_t /*size*/, int64_t /*pts*/,
+                                            int64_t /*dts*/, bool is_keyframe) {
+    if (is_keyframe) got_keyframe = true;
+  });
 
   for (int i = 0; i < 20; ++i) {
     auto frame = MakeTestFrame(kTestWidth, kTestHeight);
@@ -311,16 +310,16 @@ TEST(CodecRoundtrip, EncodeAndDecodeH264) {
   };
   std::vector<Packet> packets;
 
-  encoder.SetPacketCallback(
-      [&packets](const uint8_t* data, size_t size,
-                 int64_t pts, int64_t dts, bool is_keyframe) {
-        Packet pkt;
-        pkt.data.assign(data, data + size);
-        pkt.pts = pts;
-        pkt.dts = dts;
-        pkt.is_keyframe = is_keyframe;
-        packets.push_back(std::move(pkt));
-      });
+  encoder.SetPacketCallback([&packets](const uint8_t* data, size_t size,
+                                       int64_t pts, int64_t dts,
+                                       bool is_keyframe) {
+    Packet pkt;
+    pkt.data.assign(data, data + size);
+    pkt.pts = pts;
+    pkt.dts = dts;
+    pkt.is_keyframe = is_keyframe;
+    packets.push_back(std::move(pkt));
+  });
 
   for (int i = 0; i < 20; ++i) {
     auto frame = MakeTestFrame(kTestWidth, kTestHeight);
@@ -335,19 +334,18 @@ TEST(CodecRoundtrip, EncodeAndDecodeH264) {
   ASSERT_TRUE(decoder.Initialize(CodecType::kH264, kTestWidth, kTestHeight));
 
   std::atomic<int> decoded_frames{0};
-  decoder.SetFrameCallback(
-      [&decoded_frames](std::shared_ptr<Frame> frame) {
-        ASSERT_NE(frame, nullptr);
-        EXPECT_EQ(frame->type, FrameType::kRaw);
-        EXPECT_GT(frame->data_size, 0U);
-        EXPECT_EQ(frame->info.width, kTestWidth);
-        EXPECT_EQ(frame->info.height, kTestHeight);
-        ++decoded_frames;
-      });
+  decoder.SetFrameCallback([&decoded_frames](std::shared_ptr<Frame> frame) {
+    ASSERT_NE(frame, nullptr);
+    EXPECT_EQ(frame->type, FrameType::kRaw);
+    EXPECT_GT(frame->data_size, 0U);
+    EXPECT_EQ(frame->info.width, kTestWidth);
+    EXPECT_EQ(frame->info.height, kTestHeight);
+    ++decoded_frames;
+  });
 
   for (const auto& pkt : packets) {
-    decoder.Decode(pkt.data.data(), pkt.data.size(),
-                   pkt.pts, pkt.dts, pkt.is_keyframe);
+    decoder.Decode(pkt.data.data(), pkt.data.size(), pkt.pts, pkt.dts,
+                   pkt.is_keyframe);
   }
   decoder.Flush();
 

@@ -3,10 +3,10 @@
 #ifndef LOONG_AI_ENGINE_LPR_LPR_OCR_ADAPTER_H_
 #define LOONG_AI_ENGINE_LPR_LPR_OCR_ADAPTER_H_
 
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+
 #include <string>
 #include <vector>
-
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 
 namespace loong::ai_engine {
 
@@ -32,9 +32,9 @@ class LprOcrAdapter : public YoloModelAdapter {
                   TensorShape& input_shape) override;
 
   bool PostProcess(const std::vector<float>& output_data,
-                   const TensorShape& output_shape,
-                   int original_width, int original_height,
-                   float confidence_threshold, float nms_threshold,
+                   const TensorShape& output_shape, int original_width,
+                   int original_height, float confidence_threshold,
+                   float nms_threshold,
                    std::vector<Detection>& detections) override;
 
   std::string ModelFamily() const override { return "lpr_ocr"; }

@@ -2,9 +2,9 @@
 
 #include "rules/evaluators/counting_evaluator.h"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
 
 namespace loong::rules {
 
@@ -21,18 +21,16 @@ bool CountingEvaluator::Configure(const AnalysisRule& rule) {
   count_a_to_b_ = 0;
   count_b_to_a_ = 0;
 
-  spdlog::debug("CountingEvaluator: configured rule '{}' line ({:.2f},{:.2f})"
-                "→({:.2f},{:.2f}) on ch={}",
-                rule_.name,
-                rule_.line.start.x, rule_.line.start.y,
-                rule_.line.end.x, rule_.line.end.y,
-                rule_.channel_id);
+  spdlog::debug(
+      "CountingEvaluator: configured rule '{}' line ({:.2f},{:.2f})"
+      "→({:.2f},{:.2f}) on ch={}",
+      rule_.name, rule_.line.start.x, rule_.line.start.y, rule_.line.end.x,
+      rule_.line.end.y, rule_.channel_id);
   return true;
 }
 
 std::vector<RuleEvent> CountingEvaluator::Evaluate(
-    const std::vector<Detection>& detections,
-    const FrameContext& context) {
+    const std::vector<Detection>& detections, const FrameContext& context) {
   std::vector<RuleEvent> events;
 
   auto filtered = FilterDetections(detections);
@@ -81,10 +79,11 @@ std::vector<RuleEvent> CountingEvaluator::Evaluate(
 
       events.push_back(std::move(ev));
 
-      spdlog::debug("Counting: track {} crossed '{}' {} (A→B={}, B→A={}, "
-                    "net={})",
-                    track.track_id, rule_.name, direction,
-                    count_a_to_b_, count_b_to_a_, GetNetCount());
+      spdlog::debug(
+          "Counting: track {} crossed '{}' {} (A→B={}, B→A={}, "
+          "net={})",
+          track.track_id, rule_.name, direction, count_a_to_b_, count_b_to_a_,
+          GetNetCount());
     }
 
     it->second = current_side;

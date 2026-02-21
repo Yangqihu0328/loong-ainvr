@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstring>
 #include <numeric>
-
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -14,21 +13,19 @@ namespace loong::ai_engine {
 
 YoloV5Adapter::YoloV5Adapter(int input_size) : input_size_(input_size) {}
 
-bool YoloV5Adapter::PreProcess(const uint8_t* image_data,
-                                int width, int height,
-                                std::vector<float>& input_data,
-                                TensorShape& input_shape) {
+bool YoloV5Adapter::PreProcess(const uint8_t* image_data, int width, int height,
+                               std::vector<float>& input_data,
+                               TensorShape& input_shape) {
   LetterboxResize(image_data, width, height, input_data);
   input_shape = {1, 3, input_size_, input_size_};
   return true;
 }
 
 bool YoloV5Adapter::PostProcess(const std::vector<float>& output_data,
-                                 const TensorShape& output_shape,
-                                 int original_width, int original_height,
-                                 float confidence_threshold,
-                                 float nms_threshold,
-                                 std::vector<Detection>& detections) {
+                                const TensorShape& output_shape,
+                                int original_width, int original_height,
+                                float confidence_threshold, float nms_threshold,
+                                std::vector<Detection>& detections) {
   // YOLOv5 output: [1, num_detections, 85]
   // 85 = 4 (cx, cy, w, h) + 1 (obj_conf) + 80 (class_scores)
   if (output_shape.size() < 3) return false;
@@ -91,11 +88,11 @@ bool YoloV5Adapter::PostProcess(const std::vector<float>& output_data,
   return true;
 }
 
-void YoloV5Adapter::LetterboxResize(const uint8_t* src,
-                                     int src_w, int src_h,
-                                     std::vector<float>& dst) {
-  float scale = std::min(static_cast<float>(input_size_) / static_cast<float>(src_w),
-                         static_cast<float>(input_size_) / static_cast<float>(src_h));
+void YoloV5Adapter::LetterboxResize(const uint8_t* src, int src_w, int src_h,
+                                    std::vector<float>& dst) {
+  float scale =
+      std::min(static_cast<float>(input_size_) / static_cast<float>(src_w),
+               static_cast<float>(input_size_) / static_cast<float>(src_h));
   int new_w = static_cast<int>(static_cast<float>(src_w) * scale);
   int new_h = static_cast<int>(static_cast<float>(src_h) * scale);
   pad_x_ = (input_size_ - new_w) / 2;
@@ -119,7 +116,8 @@ void YoloV5Adapter::LetterboxResize(const uint8_t* src,
   std::vector<cv::Mat> channels;
   cv::split(float_img, channels);
 
-  size_t plane = static_cast<size_t>(input_size_) * static_cast<size_t>(input_size_);
+  size_t plane =
+      static_cast<size_t>(input_size_) * static_cast<size_t>(input_size_);
   dst.resize(3 * plane);
   std::memcpy(dst.data(), channels[0].data, plane * sizeof(float));
   std::memcpy(dst.data() + plane, channels[1].data, plane * sizeof(float));
@@ -127,7 +125,7 @@ void YoloV5Adapter::LetterboxResize(const uint8_t* src,
 }
 
 void YoloV5Adapter::ApplyNMS(std::vector<Detection>& detections,
-                              float nms_threshold) {
+                             float nms_threshold) {
   if (detections.empty()) return;
 
   // Sort by confidence descending

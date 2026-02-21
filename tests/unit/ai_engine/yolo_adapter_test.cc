@@ -1,9 +1,8 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 #include "ai_engine/yolo_adapter/yolov5_adapter.h"
 #include "ai_engine/yolo_adapter/yolov8_adapter.h"
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
-
 #include "gtest/gtest.h"
 
 namespace loong {
@@ -19,8 +18,8 @@ TEST(YoloV5Adapter, PreProcessOutputShape) {
   std::vector<float> input_data;
   TensorShape input_shape;
 
-  EXPECT_TRUE(adapter.PreProcess(image.data(), 100, 100,
-                                  input_data, input_shape));
+  EXPECT_TRUE(
+      adapter.PreProcess(image.data(), 100, 100, input_data, input_shape));
 
   // Should produce NCHW: [1, 3, 640, 640]
   ASSERT_EQ(input_shape.size(), 4u);
@@ -39,8 +38,8 @@ TEST(YoloV8Adapter, PreProcessOutputShape) {
   std::vector<float> input_data;
   TensorShape input_shape;
 
-  EXPECT_TRUE(adapter.PreProcess(image.data(), 200, 150,
-                                  input_data, input_shape));
+  EXPECT_TRUE(
+      adapter.PreProcess(image.data(), 200, 150, input_data, input_shape));
 
   ASSERT_EQ(input_shape.size(), 4u);
   EXPECT_EQ(input_shape[0], 1);
@@ -57,9 +56,8 @@ TEST(YoloV5Adapter, PostProcessEmpty) {
   TensorShape output_shape = {1, 25200, 85};
 
   std::vector<Detection> detections;
-  EXPECT_TRUE(adapter.PostProcess(output_data, output_shape,
-                                   1920, 1080, 0.5f, 0.45f,
-                                   detections));
+  EXPECT_TRUE(adapter.PostProcess(output_data, output_shape, 1920, 1080, 0.5f,
+                                  0.45f, detections));
   EXPECT_TRUE(detections.empty());
 }
 
@@ -70,9 +68,8 @@ TEST(YoloV8Adapter, PostProcessEmpty) {
   TensorShape output_shape = {1, 84, 8400};
 
   std::vector<Detection> detections;
-  EXPECT_TRUE(adapter.PostProcess(output_data, output_shape,
-                                   1920, 1080, 0.5f, 0.45f,
-                                   detections));
+  EXPECT_TRUE(adapter.PostProcess(output_data, output_shape, 1920, 1080, 0.5f,
+                                  0.45f, detections));
   EXPECT_TRUE(detections.empty());
 }
 

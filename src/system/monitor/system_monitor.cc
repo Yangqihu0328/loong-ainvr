@@ -2,26 +2,22 @@
 
 #include "system/monitor/system_monitor.h"
 
+#include "core/event_bus/event_bus.h"
+#include "spdlog/spdlog.h"
+
+#include <sys/statvfs.h>
+#include <unistd.h>
+
+#include <dirent.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 
-#include <dirent.h>
-#include <sys/statvfs.h>
-#include <unistd.h>
-
-#include "core/event_bus/event_bus.h"
-#include "spdlog/spdlog.h"
-
 namespace loong::system {
 
-SystemMonitor::SystemMonitor() {
-  disk_paths_.emplace_back("/");
-}
+SystemMonitor::SystemMonitor() { disk_paths_.emplace_back("/"); }
 
-SystemMonitor::~SystemMonitor() {
-  Stop();
-}
+SystemMonitor::~SystemMonitor() { Stop(); }
 
 void SystemMonitor::Start(int interval_seconds) {
   if (running_) return;
@@ -116,9 +112,8 @@ void SystemMonitor::CollectCpu(SystemMetrics& m) {
   prev_cpu_idle_ = idle_all;
 
   if (d_total > 0) {
-    m.cpu_usage_percent =
-        100.0 * static_cast<double>(d_total - d_idle) /
-        static_cast<double>(d_total);
+    m.cpu_usage_percent = 100.0 * static_cast<double>(d_total - d_idle) /
+                          static_cast<double>(d_total);
   }
 }
 
@@ -179,9 +174,8 @@ void SystemMonitor::CollectDisk(SystemMetrics& m) {
     d.free_gb = (block_size * static_cast<int64_t>(stat.f_bavail)) /
                 (1024LL * 1024LL * 1024LL);
     if (d.total_gb > 0) {
-      d.usage_percent =
-          100.0 * static_cast<double>(d.total_gb - d.free_gb) /
-          static_cast<double>(d.total_gb);
+      d.usage_percent = 100.0 * static_cast<double>(d.total_gb - d.free_gb) /
+                        static_cast<double>(d.total_gb);
     }
     m.disks.push_back(d);
   }

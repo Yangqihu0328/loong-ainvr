@@ -3,15 +3,15 @@
 #ifndef LOONG_CHANNEL_CHANNEL_MANAGER_CHANNEL_MANAGER_H_
 #define LOONG_CHANNEL_CHANNEL_MANAGER_CHANNEL_MANAGER_H_
 
+#include "channel/channel_store/channel_store.h"
+#include "core/common/types.h"
+#include "core/pipeline/channel_pipeline.h"
+
 #include <memory>
 #include <shared_mutex>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "channel/channel_store/channel_store.h"
-#include "core/common/types.h"
-#include "core/pipeline/channel_pipeline.h"
 
 namespace loong::network {
 class HttpFlvService;

@@ -3,14 +3,14 @@
 #ifndef LOONG_STORAGE_INDEXER_INDEXER_H_
 #define LOONG_STORAGE_INDEXER_INDEXER_H_
 
+#include "storage/record_index/record_index.h"
+
 #include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
-
-#include "storage/record_index/record_index.h"
 
 namespace loong::storage {
 

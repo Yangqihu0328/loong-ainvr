@@ -2,16 +2,15 @@
 
 #include "overlay/compositor/channel_compositor.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <set>
-#include <string>
-
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-
-#include "spdlog/spdlog.h"
+#include <set>
+#include <string>
 
 namespace loong::overlay {
 
@@ -29,9 +28,7 @@ void ChannelCompositor::SetOutputSize(int width, int height) {
   output_height_ = height;
 }
 
-int ChannelCompositor::CellCount() const {
-  return static_cast<int>(layout_);
-}
+int ChannelCompositor::CellCount() const { return static_cast<int>(layout_); }
 
 int ChannelCompositor::GridCols() const {
   return static_cast<int>(
@@ -43,9 +40,7 @@ int ChannelCompositor::GridRows() const {
   return (CellCount() + cols - 1) / cols;
 }
 
-int ChannelCompositor::CellWidth() const {
-  return output_width_ / GridCols();
-}
+int ChannelCompositor::CellWidth() const { return output_width_ / GridCols(); }
 
 int ChannelCompositor::CellHeight() const {
   return output_height_ / GridRows();
@@ -155,8 +150,7 @@ bool ChannelCompositor::Composite(uint8_t* output, int out_stride) {
     if (ch_id >= 0) {
       auto it = channel_frames_.find(ch_id);
       if (it != channel_frames_.end() && it->second.valid) {
-        DrawChannelCell(output, out_stride, cx, cy, cell_w, cell_h,
-                        it->second);
+        DrawChannelCell(output, out_stride, cx, cy, cell_w, cell_h, it->second);
         DrawCellLabel(output, out_stride, cx, cy, cell_w, cell_h, ch_id);
         continue;
       }
@@ -181,8 +175,8 @@ bool ChannelCompositor::Composite(uint8_t* output, int out_stride) {
 }
 
 void ChannelCompositor::DrawNoSignal(uint8_t* output, int out_stride,
-                                     int cell_x, int cell_y,
-                                     int cell_w, int cell_h) const {
+                                     int cell_x, int cell_y, int cell_w,
+                                     int cell_h) const {
   cv::Mat canvas(output_height_, output_width_, CV_8UC3, output,
                  static_cast<size_t>(out_stride));
 
@@ -195,24 +189,23 @@ void ChannelCompositor::DrawNoSignal(uint8_t* output, int out_stride,
   cell.setTo(cv::Scalar(20, 20, 20));
 
   std::string text = "No Signal";
-  double font_scale = std::max(0.3,
-      std::min(1.0, static_cast<double>(cell_w) / 300.0));
+  double font_scale =
+      std::max(0.3, std::min(1.0, static_cast<double>(cell_w) / 300.0));
   int baseline = 0;
-  cv::Size text_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX,
-                                       font_scale, 1, &baseline);
+  cv::Size text_size =
+      cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, font_scale, 1, &baseline);
 
   int tx = std::max(0, (cell_rect.width - text_size.width) / 2);
-  int ty = std::max(text_size.height,
-                    (cell_rect.height + text_size.height) / 2);
+  int ty =
+      std::max(text_size.height, (cell_rect.height + text_size.height) / 2);
 
   cv::putText(cell, text, cv::Point(tx, ty), cv::FONT_HERSHEY_SIMPLEX,
               font_scale, cv::Scalar(100, 100, 100), 1, cv::LINE_AA);
 }
 
 void ChannelCompositor::DrawChannelCell(uint8_t* output, int out_stride,
-                                        int cell_x, int cell_y,
-                                        int cell_w, int cell_h,
-                                        const ChannelFrame& frame) {
+                                        int cell_x, int cell_y, int cell_w,
+                                        int cell_h, const ChannelFrame& frame) {
   cv::Mat canvas(output_height_, output_width_, CV_8UC3, output,
                  static_cast<size_t>(out_stride));
 
@@ -256,22 +249,21 @@ void ChannelCompositor::DrawChannelCell(uint8_t* output, int out_stride,
   dst_rect &= cv::Rect(0, 0, cell_rect.width, cell_rect.height);
   if (dst_rect.width > 0 && dst_rect.height > 0) {
     cv::Mat dst_roi = cell(dst_rect);
-    cv::Mat src_cropped = resized(
-        cv::Rect(0, 0, dst_rect.width, dst_rect.height));
+    cv::Mat src_cropped =
+        resized(cv::Rect(0, 0, dst_rect.width, dst_rect.height));
     src_cropped.copyTo(dst_roi);
   }
 }
 
 void ChannelCompositor::DrawCellLabel(uint8_t* output, int out_stride,
-                                      int cell_x, int cell_y,
-                                      int cell_w, int /*cell_h*/,
-                                      int channel_id) const {
+                                      int cell_x, int cell_y, int cell_w,
+                                      int /*cell_h*/, int channel_id) const {
   cv::Mat canvas(output_height_, output_width_, CV_8UC3, output,
                  static_cast<size_t>(out_stride));
 
   std::string label = "CH" + std::to_string(channel_id);
-  double font_scale = std::max(0.3,
-      std::min(0.6, static_cast<double>(cell_w) / 500.0));
+  double font_scale =
+      std::max(0.3, std::min(0.6, static_cast<double>(cell_w) / 500.0));
   int baseline = 0;
   cv::Size text_size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX,
                                        font_scale, 1, &baseline);
@@ -292,10 +284,9 @@ void ChannelCompositor::DrawCellLabel(uint8_t* output, int out_stride,
     cv::addWeighted(overlay_mat, 0.5, roi, 0.5, 0, roi);
   }
 
-  cv::putText(canvas, label,
-              cv::Point(lx + pad, ly + text_size.height + pad),
-              cv::FONT_HERSHEY_SIMPLEX, font_scale,
-              cv::Scalar(200, 200, 200), 1, cv::LINE_AA);
+  cv::putText(canvas, label, cv::Point(lx + pad, ly + text_size.height + pad),
+              cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(200, 200, 200),
+              1, cv::LINE_AA);
 }
 
 }  // namespace loong::overlay

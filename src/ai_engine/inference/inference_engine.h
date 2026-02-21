@@ -3,14 +3,14 @@
 #ifndef LOONG_AI_ENGINE_INFERENCE_INFERENCE_ENGINE_H_
 #define LOONG_AI_ENGINE_INFERENCE_INFERENCE_ENGINE_H_
 
+#include "ai_engine/inference/inference_backend.h"
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+#include "core/common/types.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-
-#include "ai_engine/inference/inference_backend.h"
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
-#include "core/common/types.h"
 
 namespace loong::ai_engine {
 
@@ -24,14 +24,12 @@ class InferenceEngine {
 
   /// Run inference on a single raw image frame.
   bool Infer(const uint8_t* image_data, int width, int height,
-             float confidence_threshold,
-             std::vector<Detection>& detections);
+             float confidence_threshold, std::vector<Detection>& detections);
 
   /// Run batch inference on multiple frames.
   bool InferBatch(const std::vector<const uint8_t*>& images,
                   const std::vector<int>& widths,
-                  const std::vector<int>& heights,
-                  float confidence_threshold,
+                  const std::vector<int>& heights, float confidence_threshold,
                   std::vector<std::vector<Detection>>& batch_detections);
 
   /// Hot-swap the model (thread-safe).

@@ -31,9 +31,8 @@ std::string HttpPost(const std::string& url, const std::string& body,
   size_t start = (scheme_end != std::string::npos) ? scheme_end + 3 : 0;
   auto path_start = url.find('/', start);
   std::string authority =
-      url.substr(start, (path_start != std::string::npos)
-                            ? path_start - start
-                            : std::string::npos);
+      url.substr(start, (path_start != std::string::npos) ? path_start - start
+                                                          : std::string::npos);
   path = (path_start != std::string::npos) ? url.substr(path_start) : "/";
 
   auto colon = authority.find(':');
@@ -66,8 +65,8 @@ std::string HttpPost(const std::string& url, const std::string& body,
   std::memcpy(&addr.sin_addr, he->h_addr_list[0],
               static_cast<size_t>(he->h_length));
 
-  if (connect(fd, reinterpret_cast<struct sockaddr*>(&addr),
-              sizeof(addr)) < 0) {
+  if (connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) <
+      0) {
     close(fd);
     return "";
   }
@@ -104,7 +103,7 @@ std::string HttpPost(const std::string& url, const std::string& body,
 
 }  // namespace
 
-OnvifDevice::OnvifDevice(std::string  xaddr) : xaddr_(std::move(xaddr)) {}
+OnvifDevice::OnvifDevice(std::string xaddr) : xaddr_(std::move(xaddr)) {}
 
 void OnvifDevice::SetCredentials(const std::string& username,
                                  const std::string& password) {
@@ -122,8 +121,7 @@ bool OnvifDevice::GetDeviceInformation(std::string& manufacturer,
       " xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\"/>";
 
   std::string response = SendSoapRequest(
-      xaddr_,
-      "http://www.onvif.org/ver10/device/wsdl/GetDeviceInformation",
+      xaddr_, "http://www.onvif.org/ver10/device/wsdl/GetDeviceInformation",
       body);
 
   if (response.empty()) return false;
@@ -163,9 +161,7 @@ bool OnvifDevice::GetMediaServiceUrl(std::string& media_url) {
       "</tds:GetServices>";
 
   std::string response = SendSoapRequest(
-      xaddr_,
-      "http://www.onvif.org/ver10/device/wsdl/GetServices",
-      body);
+      xaddr_, "http://www.onvif.org/ver10/device/wsdl/GetServices", body);
 
   if (response.empty()) return false;
 
@@ -222,9 +218,7 @@ std::vector<OnvifProfile> OnvifDevice::GetProfiles() {
       " xmlns:trt=\"http://www.onvif.org/ver10/media/wsdl\"/>";
 
   std::string response = SendSoapRequest(
-      media_url_,
-      "http://www.onvif.org/ver10/media/wsdl/GetProfiles",
-      body);
+      media_url_, "http://www.onvif.org/ver10/media/wsdl/GetProfiles", body);
 
   if (response.empty()) return profiles;
 
@@ -239,8 +233,7 @@ std::vector<OnvifProfile> OnvifDevice::GetProfiles() {
         p.token = child.attribute("token").as_string();
         p.name = child.child_value("Name");
         if (p.name.empty()) {
-          for (auto sub = child.first_child(); sub;
-               sub = sub.next_sibling()) {
+          for (auto sub = child.first_child(); sub; sub = sub.next_sibling()) {
             std::string sname = sub.name();
             if (sname.find("Name") != std::string::npos) {
               p.name = sub.text().get();
@@ -275,8 +268,7 @@ std::string OnvifDevice::GetStreamUri(const std::string& profile_token) {
           << "</trt:GetStreamUri>";
 
   std::string response = SendSoapRequest(
-      media_url_,
-      "http://www.onvif.org/ver10/media/wsdl/GetStreamUri",
+      media_url_, "http://www.onvif.org/ver10/media/wsdl/GetStreamUri",
       body_ss.str());
 
   if (response.empty()) return "";

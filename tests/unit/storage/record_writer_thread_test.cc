@@ -3,7 +3,6 @@
 #include "storage/record_writer/record_writer.h"
 
 #include <gtest/gtest.h>
-
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -28,9 +27,7 @@ TEST(RecordWriterThreadTest, ConcurrentCloseDoesNotCrash) {
 
   std::vector<std::thread> threads;
   for (int i = 0; i < 4; ++i) {
-    threads.emplace_back([&writer]() {
-      writer.Close();
-    });
+    threads.emplace_back([&writer]() { writer.Close(); });
   }
   for (auto& t : threads) {
     t.join();

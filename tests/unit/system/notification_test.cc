@@ -1,14 +1,13 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include <gtest/gtest.h>
-
-#include <string>
-#include <vector>
-
 #include "system/notification/notification_channel.h"
 #include "system/notification/notification_manager.h"
 #include "system/notification/smtp_channel.h"
 #include "system/notification/webhook_channel.h"
+
+#include <gtest/gtest.h>
+#include <string>
+#include <vector>
 
 namespace loong::system {
 

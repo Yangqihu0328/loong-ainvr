@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -88,8 +87,8 @@ static uint32_t DecodeUtf8(const std::string& s, size_t& pos) {
   return cp;
 }
 
-void FtTextRenderer::MeasureText(const std::string& text,
-                                  int& out_width, int& out_height) const {
+void FtTextRenderer::MeasureText(const std::string& text, int& out_width,
+                                 int& out_height) const {
   out_width = 0;
   out_height = impl_->pixel_size;
   if (!impl_->ready) return;
@@ -109,9 +108,8 @@ void FtTextRenderer::MeasureText(const std::string& text,
 }
 
 void FtTextRenderer::RenderText(uint8_t* data, int width, int height,
-                                 int stride, const std::string& text,
-                                 int x, int y,
-                                 uint8_t r, uint8_t g, uint8_t b) const {
+                                int stride, const std::string& text, int x,
+                                int y, uint8_t r, uint8_t g, uint8_t b) const {
   if (!impl_->ready || !data) return;
 
   FT_Face face = impl_->face;
@@ -138,7 +136,8 @@ void FtTextRenderer::RenderText(uint8_t* data, int width, int height,
         int dx = glyph_x + static_cast<int>(col);
         if (dx < 0 || dx >= width) continue;
 
-        uint8_t alpha = bmp.buffer[row * static_cast<unsigned int>(bmp.pitch) + col];
+        uint8_t alpha =
+            bmp.buffer[row * static_cast<unsigned int>(bmp.pitch) + col];
         if (alpha == 0) continue;
 
         uint8_t* pixel = data + dy * stride + dx * 3;

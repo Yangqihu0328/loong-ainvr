@@ -3,37 +3,41 @@
 #ifndef LOONG_RULES_RULE_TYPES_H_
 #define LOONG_RULES_RULE_TYPES_H_
 
+#include "core/common/types.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-#include "core/common/types.h"
 
 namespace loong::rules {
 
 /// Supported analysis rule types.
 enum class RuleType {
-  kCrossLine = 0,         // Cross-line detection
-  kRegionIntrusion = 1,   // Region intrusion detection
-  kObjectCounting = 2,    // Object counting
-  kLoitering = 3,         // Loitering / dwell-time detection
+  kCrossLine = 0,        // Cross-line detection
+  kRegionIntrusion = 1,  // Region intrusion detection
+  kObjectCounting = 2,   // Object counting
+  kLoitering = 3,        // Loitering / dwell-time detection
 };
 
 inline const char* RuleTypeToString(RuleType type) {
   switch (type) {
-    case RuleType::kCrossLine:        return "cross_line";
-    case RuleType::kRegionIntrusion:  return "region_intrusion";
-    case RuleType::kObjectCounting:   return "object_counting";
-    case RuleType::kLoitering:        return "loitering";
+    case RuleType::kCrossLine:
+      return "cross_line";
+    case RuleType::kRegionIntrusion:
+      return "region_intrusion";
+    case RuleType::kObjectCounting:
+      return "object_counting";
+    case RuleType::kLoitering:
+      return "loitering";
   }
   return "unknown";
 }
 
 inline RuleType ParseRuleType(const std::string& s) {
-  if (s == "cross_line")       return RuleType::kCrossLine;
+  if (s == "cross_line") return RuleType::kCrossLine;
   if (s == "region_intrusion") return RuleType::kRegionIntrusion;
-  if (s == "object_counting")  return RuleType::kObjectCounting;
-  if (s == "loitering")        return RuleType::kLoitering;
+  if (s == "object_counting") return RuleType::kObjectCounting;
+  if (s == "loitering") return RuleType::kLoitering;
   return RuleType::kCrossLine;
 }
 
@@ -58,8 +62,8 @@ struct Region {
 /// Schedule for when a rule is active.
 struct RuleSchedule {
   bool always_active = true;
-  std::string start_time;  // "HH:MM" (24h format)
-  std::string end_time;    // "HH:MM"
+  std::string start_time;     // "HH:MM" (24h format)
+  std::string end_time;       // "HH:MM"
   std::vector<int> weekdays;  // 0=Sun, 1=Mon, ..., 6=Sat; empty = every day
 };
 
@@ -72,16 +76,16 @@ struct AnalysisRule {
   bool enabled = true;
 
   // Geometric parameters (used depending on rule type)
-  VirtualLine line;               // For cross_line / object_counting
-  Region region;                  // For region_intrusion / loitering
+  VirtualLine line;  // For cross_line / object_counting
+  Region region;     // For region_intrusion / loitering
 
   // Filtering parameters
   std::vector<std::string> target_classes;  // Empty = all classes
   float min_confidence = 0.5F;
 
   // Rule-specific thresholds
-  int loiter_time_sec = 30;       // For loitering: minimum dwell time
-  int cooldown_sec = 60;          // Minimum interval between repeated alerts
+  int loiter_time_sec = 30;  // For loitering: minimum dwell time
+  int cooldown_sec = 60;     // Minimum interval between repeated alerts
 
   RuleSchedule schedule;
 
@@ -98,9 +102,12 @@ enum class RuleEventSeverity {
 
 inline const char* SeverityToString(RuleEventSeverity s) {
   switch (s) {
-    case RuleEventSeverity::kInfo:    return "info";
-    case RuleEventSeverity::kWarning: return "warning";
-    case RuleEventSeverity::kAlarm:   return "alarm";
+    case RuleEventSeverity::kInfo:
+      return "info";
+    case RuleEventSeverity::kWarning:
+      return "warning";
+    case RuleEventSeverity::kAlarm:
+      return "alarm";
   }
   return "info";
 }
@@ -118,11 +125,11 @@ struct RuleEvent {
   Detection trigger_detection;
 
   // Event-specific data
-  int count_value = 0;            // For counting rules
-  int dwell_time_sec = 0;         // For loitering rules
-  std::string direction;          // For cross-line: "A_to_B" / "B_to_A"
+  int count_value = 0;     // For counting rules
+  int dwell_time_sec = 0;  // For loitering rules
+  std::string direction;   // For cross-line: "A_to_B" / "B_to_A"
 
-  std::string metadata_json;      // Additional JSON metadata
+  std::string metadata_json;  // Additional JSON metadata
 };
 
 /// Lightweight track for IOU-based frame-to-frame object association.
@@ -130,8 +137,8 @@ struct TrackedObject {
   int track_id = 0;
   Detection last_detection;
   std::vector<Point2D> trajectory;  // Center-point history
-  int age = 0;            // Frames since track was created
-  int frames_missing = 0; // Consecutive frames without a match
+  int age = 0;                      // Frames since track was created
+  int frames_missing = 0;           // Consecutive frames without a match
   bool active = true;
 };
 

@@ -2,10 +2,10 @@
 
 #include "pipeline_stages/output_stage/output_stage.h"
 
-#include <nlohmann/json.hpp>
-
 #include "codec/codec_factory/codec_factory.h"
 #include "spdlog/spdlog.h"
+
+#include <nlohmann/json.hpp>
 
 namespace loong::pipeline_stages {
 
@@ -43,13 +43,13 @@ bool OutputStage::InitEncoder(int width, int height) {
     return false;
   }
 
-  encoder_->SetPacketCallback(
-      [this](const uint8_t* data, size_t size,
-             int64_t pts, int64_t /*dts*/, bool is_key) {
-        if (output_callback_) {
-          output_callback_(channel_id_, data, size, pts, is_key);
-        }
-      });
+  encoder_->SetPacketCallback([this](const uint8_t* data, size_t size,
+                                     int64_t pts, int64_t /*dts*/,
+                                     bool is_key) {
+    if (output_callback_) {
+      output_callback_(channel_id_, data, size, pts, is_key);
+    }
+  });
 
   encoder_ready_ = true;
   return true;
@@ -61,8 +61,7 @@ bool OutputStage::ProcessFrame(std::shared_ptr<Frame> frame) {
   if (frame->type != FrameType::kRaw) {
     if (output_callback_ && frame->packet_data) {
       output_callback_(frame->channel_id, frame->packet_data.get(),
-                       frame->packet_size, frame->pts,
-                       frame->info.is_keyframe);
+                       frame->packet_size, frame->pts, frame->info.is_keyframe);
     }
     return true;
   }

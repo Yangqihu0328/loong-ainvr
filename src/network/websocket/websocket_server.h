@@ -6,12 +6,11 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
 #include <set>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <nlohmann/json.hpp>
 
 namespace loong::network {
 
@@ -24,7 +23,7 @@ namespace loong::network {
 /// Runs on a separate port from the HTTP server.
 class WebSocketServer {
  public:
-  WebSocketServer(std::string  host, int port);
+  WebSocketServer(std::string host, int port);
   ~WebSocketServer();
 
   /// Start accepting connections.

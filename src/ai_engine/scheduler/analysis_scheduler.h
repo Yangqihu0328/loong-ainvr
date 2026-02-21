@@ -3,6 +3,9 @@
 #ifndef LOONG_AI_ENGINE_SCHEDULER_ANALYSIS_SCHEDULER_H_
 #define LOONG_AI_ENGINE_SCHEDULER_ANALYSIS_SCHEDULER_H_
 
+#include "ai_engine/inference/inference_engine.h"
+#include "core/common/types.h"
+
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -13,16 +16,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ai_engine/inference/inference_engine.h"
-#include "core/common/types.h"
-
 namespace loong::ai_engine {
 
 /// Scheduling strategy for analysis tasks.
 enum class SchedulingStrategy {
-  kRealtime,   // Analyze every frame (highest resource usage)
-  kPolling,    // Round-robin across channels at configured FPS
-  kOnDemand,   // Only analyze when explicitly requested
+  kRealtime,  // Analyze every frame (highest resource usage)
+  kPolling,   // Round-robin across channels at configured FPS
+  kOnDemand,  // Only analyze when explicitly requested
 };
 
 /// Configuration for a single channel's analysis task.
@@ -30,7 +30,7 @@ struct AnalysisTask {
   int channel_id = -1;
   std::string model_name;
   float confidence_threshold = 0.5F;
-  int target_fps = 5;                  // Target analysis FPS
+  int target_fps = 5;  // Target analysis FPS
   SchedulingStrategy strategy = SchedulingStrategy::kPolling;
   bool enabled = true;
 };
@@ -43,8 +43,8 @@ struct AnalysisTaskStats {
   int64_t total_frames_analyzed = 0;
   int64_t total_inferences = 0;
   int64_t avg_inference_time_us = 0;
-  double gpu_time_share = 0.0;     // Fraction of GPU budget consumed
-  bool is_throttled = false;       // Whether the task is being throttled
+  double gpu_time_share = 0.0;  // Fraction of GPU budget consumed
+  bool is_throttled = false;    // Whether the task is being throttled
 };
 
 /// Manages the scheduling and resource allocation of AI analysis tasks

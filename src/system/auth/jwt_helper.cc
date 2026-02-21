@@ -23,7 +23,7 @@ int64_t Now() {
 
 }  // namespace
 
-JwtHelper::JwtHelper(std::string  secret, int64_t expiry_seconds)
+JwtHelper::JwtHelper(std::string secret, int64_t expiry_seconds)
     : secret_(std::move(secret)), expiry_seconds_(expiry_seconds) {}
 
 std::string JwtHelper::GenerateToken(const UserInfo& user) {
@@ -97,10 +97,9 @@ std::string JwtHelper::Sign(const std::string& data) {
   unsigned char result[EVP_MAX_MD_SIZE];
   unsigned int result_len = 0;
 
-  HMAC(EVP_sha256(),
-       secret_.data(), static_cast<int>(secret_.size()),
-       reinterpret_cast<const unsigned char*>(data.data()), data.size(),
-       result, &result_len);
+  HMAC(EVP_sha256(), secret_.data(), static_cast<int>(secret_.size()),
+       reinterpret_cast<const unsigned char*>(data.data()), data.size(), result,
+       &result_len);
 
   return std::string(reinterpret_cast<char*>(result), result_len);
 }
@@ -115,12 +114,14 @@ std::string JwtHelper::Base64UrlEncode(const std::string& input) {
 
   for (size_t i = 0; i < len; i += 3) {
     auto a = static_cast<uint32_t>(static_cast<unsigned char>(input[i]));
-    auto b = (i + 1 < len)
-                 ? static_cast<uint32_t>(static_cast<unsigned char>(input[i + 1]))
-                 : 0U;
-    auto c = (i + 2 < len)
-                 ? static_cast<uint32_t>(static_cast<unsigned char>(input[i + 2]))
-                 : 0U;
+    auto b =
+        (i + 1 < len)
+            ? static_cast<uint32_t>(static_cast<unsigned char>(input[i + 1]))
+            : 0U;
+    auto c =
+        (i + 2 < len)
+            ? static_cast<uint32_t>(static_cast<unsigned char>(input[i + 2]))
+            : 0U;
 
     uint32_t triple = (a << 16) | (b << 8) | c;
 
@@ -142,9 +143,11 @@ std::string JwtHelper::Base64UrlDecode(const std::string& input) {
   // Convert base64url to base64
   std::string b64 = input;
   for (auto& ch : b64) {
-    if (ch == '-') { ch = '+';
-    } else if (ch == '_') { ch = '/';
-}
+    if (ch == '-') {
+      ch = '+';
+    } else if (ch == '_') {
+      ch = '/';
+    }
   }
   // Add padding
   while (b64.size() % 4 != 0) {
@@ -182,10 +185,9 @@ std::string JwtHelper::Base64UrlDecode(const std::string& input) {
     auto c = kDecodeTable[static_cast<unsigned char>(b64[i + 2])];
     auto d = kDecodeTable[static_cast<unsigned char>(b64[i + 3])];
 
-    uint32_t triple = (static_cast<uint32_t>(a) << 18) |
-                      (static_cast<uint32_t>(b) << 12) |
-                      (static_cast<uint32_t>(c) << 6) |
-                      static_cast<uint32_t>(d);
+    uint32_t triple =
+        (static_cast<uint32_t>(a) << 18) | (static_cast<uint32_t>(b) << 12) |
+        (static_cast<uint32_t>(c) << 6) | static_cast<uint32_t>(d);
 
     output.push_back(static_cast<char>((triple >> 16) & 0xFF));
     if (b64[i + 2] != '=') {

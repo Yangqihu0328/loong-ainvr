@@ -5,10 +5,9 @@
 
 #include <cstdint>
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
 
 namespace loong::system {
 
@@ -46,7 +45,7 @@ struct UserInfo {
   std::string display_name;
   UserRole role = UserRole::kViewer;
   bool enabled = true;
-  int64_t created_at = 0;   // Unix timestamp (seconds)
+  int64_t created_at = 0;  // Unix timestamp (seconds)
   int64_t updated_at = 0;
   int64_t last_login = 0;
 };

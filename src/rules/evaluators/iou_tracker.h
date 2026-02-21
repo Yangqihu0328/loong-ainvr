@@ -3,10 +3,10 @@
 #ifndef LOONG_RULES_EVALUATORS_IOU_TRACKER_H_
 #define LOONG_RULES_EVALUATORS_IOU_TRACKER_H_
 
-#include <vector>
-
 #include "core/common/types.h"
 #include "rules/rule_types.h"
+
+#include <vector>
 
 namespace loong::rules {
 

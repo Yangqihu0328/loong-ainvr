@@ -2,9 +2,8 @@
 
 #include "system/monitor/system_monitor.h"
 
-#include <gtest/gtest.h>
-
 #include <chrono>
+#include <gtest/gtest.h>
 #include <thread>
 
 namespace loong {

@@ -14,23 +14,23 @@
 #include <httplib.h>
 #pragma GCC diagnostic pop
 
+#include "ai_engine/face/face_store.h"
+#include "ai_engine/lpr/plate_store.h"
+#include "ai_engine/plugin/plugin_manager.h"
+#include "analytics/analytics_store.h"
 #include "channel/channel_manager/channel_manager.h"
+#include "core/config/hot_reload_manager.h"
+#include "network/webrtc/webrtc_service.h"
+#include "rules/rule_engine/rule_engine.h"
+#include "storage/cloud_backup/cloud_backup_service.h"
 #include "storage/record_index/record_index.h"
+#include "system/alarm/alarm_manager.h"
 #include "system/auth/jwt_helper.h"
 #include "system/auth/user_store.h"
 #include "system/monitor/system_monitor.h"
-#include "core/config/hot_reload_manager.h"
 #include "system/notification/notification_manager.h"
-#include "ai_engine/lpr/plate_store.h"
-#include "ai_engine/face/face_store.h"
-#include "analytics/analytics_store.h"
-#include "ai_engine/plugin/plugin_manager.h"
-#include "storage/cloud_backup/cloud_backup_service.h"
-#include "network/webrtc/webrtc_service.h"
-#include "rules/rule_engine/rule_engine.h"
-#include "system/alarm/alarm_manager.h"
-#include "video_input/onvif/onvif_discovery.h"
 #include "video_input/onvif/onvif_device.h"
+#include "video_input/onvif/onvif_discovery.h"
 #include "video_input/onvif/onvif_ptz.h"
 
 namespace loong::network {
@@ -111,8 +111,7 @@ class ApiRoutes {
       std::shared_ptr<system::NotificationManager> notif) {
     notification_mgr_ = std::move(notif);
   }
-  void SetHotReloadManager(
-      std::shared_ptr<core::HotReloadManager> hot_reload) {
+  void SetHotReloadManager(std::shared_ptr<core::HotReloadManager> hot_reload) {
     hot_reload_mgr_ = std::move(hot_reload);
   }
   void SetRuleEngine(std::shared_ptr<rules::RuleEngine> engine) {
@@ -231,8 +230,7 @@ class ApiRoutes {
                       httplib::Response& res);
 
   // ---- Notification handlers ----
-  void HandleGetNotificationConfig(HttpServer& srv,
-                                   const httplib::Request& req,
+  void HandleGetNotificationConfig(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res);
   void HandleUpdateNotificationConfig(HttpServer& srv,
                                       const httplib::Request& req,

@@ -3,15 +3,15 @@
 #ifndef LOONG_ANALYTICS_ANALYTICS_AGGREGATOR_H_
 #define LOONG_ANALYTICS_ANALYTICS_AGGREGATOR_H_
 
+#include "analytics/analytics_store.h"
+#include "rules/rule_types.h"
+
 #include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
-
-#include "analytics/analytics_store.h"
-#include "rules/rule_types.h"
 
 namespace loong::rules {
 class RuleStore;
@@ -21,16 +21,19 @@ namespace loong::analytics {
 
 /// Configuration for the aggregator.
 struct AggregatorConfig {
-  int aggregation_interval_sec = 3600;  // How often to run aggregation (default: 1 hour)
-  int retention_days = 90;              // How long to keep analytics data
-  bool log_detection_positions = true;  // Store detection positions for heatmaps
+  int aggregation_interval_sec =
+      3600;                 // How often to run aggregation (default: 1 hour)
+  int retention_days = 90;  // How long to keep analytics data
+  bool log_detection_positions =
+      true;  // Store detection positions for heatmaps
 };
 
 /// Consumes rule events from RuleStore and produces aggregated analytics data.
 ///
 /// The aggregator can operate in two modes:
 /// 1. Realtime: call IngestEvent() for each new RuleEvent as it happens.
-/// 2. Batch: call RunAggregation() periodically to pull new events from RuleStore.
+/// 2. Batch: call RunAggregation() periodically to pull new events from
+/// RuleStore.
 ///
 /// Both modes write to AnalyticsStore's hourly aggregation tables.
 /// A background thread can run periodic aggregation when Start() is called.
@@ -49,12 +52,13 @@ class AnalyticsAggregator {
   void SetConfig(const AggregatorConfig& config);
 
   /// Ingest a single event in realtime mode.
-  /// Immediately updates the hourly aggregate bucket and optionally logs position.
+  /// Immediately updates the hourly aggregate bucket and optionally logs
+  /// position.
   bool IngestEvent(const rules::RuleEvent& event);
 
-  /// Run batch aggregation: pull events from RuleStore since last_aggregated_ms_
-  /// and aggregate them into hourly buckets.
-  /// Returns number of events processed.
+  /// Run batch aggregation: pull events from RuleStore since
+  /// last_aggregated_ms_ and aggregate them into hourly buckets. Returns number
+  /// of events processed.
   int RunAggregation(int64_t up_to_ms = 0);
 
   /// Start background periodic aggregation thread.

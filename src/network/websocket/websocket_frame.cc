@@ -3,10 +3,9 @@
 #include "network/websocket/websocket_frame.h"
 
 #include <cstring>
-#include <sstream>
-
 #include <openssl/evp.h>
 #include <openssl/sha.h>
+#include <sstream>
 
 namespace loong::network {
 
@@ -38,8 +37,8 @@ std::string WebSocketFrame::ComputeAcceptKey(const std::string& client_key) {
   std::string combined = client_key + kMagicGuid;
 
   unsigned char hash[SHA_DIGEST_LENGTH];
-  SHA1(reinterpret_cast<const unsigned char*>(combined.data()),
-       combined.size(), hash);
+  SHA1(reinterpret_cast<const unsigned char*>(combined.data()), combined.size(),
+       hash);
 
   return Base64Encode(hash, SHA_DIGEST_LENGTH);
 }
@@ -120,8 +119,8 @@ size_t WebSocketFrame::ParseFrame(const uint8_t* data, size_t len,
 
   if (payload_len == 126) {
     if (len < 4) return 0;
-    payload_len = (static_cast<uint64_t>(data[2]) << 8) |
-                  static_cast<uint64_t>(data[3]);
+    payload_len =
+        (static_cast<uint64_t>(data[2]) << 8) | static_cast<uint64_t>(data[3]);
     pos = 4;
   } else if (payload_len == 127) {
     if (len < 10) return 0;

@@ -2,10 +2,10 @@
 
 #include "video_input/rtsp_client/rtsp_client.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cstring>
-
-#include "spdlog/spdlog.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -18,9 +18,7 @@ namespace video_input {
 
 RtspClient::RtspClient() = default;
 
-RtspClient::~RtspClient() {
-  Close();
-}
+RtspClient::~RtspClient() { Close(); }
 
 bool RtspClient::Open(const RtspClientConfig& config, int channel_id) {
   // Close any previous session first.
@@ -44,8 +42,7 @@ bool RtspClient::Open(const RtspClientConfig& config, int channel_id) {
     return false;
   }
 
-  SetState(RtspConnectionState::kConnected,
-           "Connected to " + config_.url);
+  SetState(RtspConnectionState::kConnected, "Connected to " + config_.url);
 
   // Start the pull loop thread.
   running_ = true;
@@ -68,29 +65,17 @@ bool RtspClient::IsConnected() const {
   return state_.load() == RtspConnectionState::kConnected;
 }
 
-RtspConnectionState RtspClient::GetState() const {
-  return state_.load();
-}
+RtspConnectionState RtspClient::GetState() const { return state_.load(); }
 
-RtspStreamInfo RtspClient::GetStreamInfo() const {
-  return stream_info_;
-}
+RtspStreamInfo RtspClient::GetStreamInfo() const { return stream_info_; }
 
-std::string RtspClient::GetUrl() const {
-  return config_.url;
-}
+std::string RtspClient::GetUrl() const { return config_.url; }
 
-int RtspClient::GetChannelId() const {
-  return channel_id_;
-}
+int RtspClient::GetChannelId() const { return channel_id_; }
 
-int64_t RtspClient::PacketsReceived() const {
-  return packets_received_.load();
-}
+int64_t RtspClient::PacketsReceived() const { return packets_received_.load(); }
 
-int RtspClient::ReconnectAttempts() const {
-  return reconnect_attempts_.load();
-}
+int RtspClient::ReconnectAttempts() const { return reconnect_attempts_.load(); }
 
 void RtspClient::SetPacketCallback(PacketCallback callback) {
   std::lock_guard<std::mutex> lock(callback_mutex_);
@@ -133,8 +118,7 @@ bool RtspClient::Connect() {
 
   // Retrieve stream information.
   if (avformat_find_stream_info(fmt_ctx_, nullptr) < 0) {
-    spdlog::error("RtspClient ch{}: failed to find stream info",
-                  channel_id_);
+    spdlog::error("RtspClient ch{}: failed to find stream info", channel_id_);
     avformat_close_input(&fmt_ctx_);
     return false;
   }
@@ -174,13 +158,11 @@ bool RtspClient::Connect() {
     stream_info_.framerate = static_cast<int>(r.num / r.den);
   }
 
-  spdlog::info(
-      "RtspClient ch{}: connected — {} {}x{} @{}fps",
-      channel_id_,
-      (stream_info_.codec == CodecType::kH264) ? "H.264" :
-      (stream_info_.codec == CodecType::kH265) ? "H.265" : "Unknown",
-      stream_info_.width, stream_info_.height,
-      stream_info_.framerate);
+  spdlog::info("RtspClient ch{}: connected — {} {}x{} @{}fps", channel_id_,
+               (stream_info_.codec == CodecType::kH264)   ? "H.264"
+               : (stream_info_.codec == CodecType::kH265) ? "H.265"
+                                                          : "Unknown",
+               stream_info_.width, stream_info_.height, stream_info_.framerate);
 
   // For container formats (MP4/MKV/etc.) the packets are in AVCC/HVCC format
   // (length-prefixed NAL units). The decoder expects Annex B (start-code
@@ -202,7 +184,7 @@ bool RtspClient::Connect() {
   }
 
   if (needs_bsf && (codecpar->codec_id == AV_CODEC_ID_H264 ||
-                     codecpar->codec_id == AV_CODEC_ID_HEVC)) {
+                    codecpar->codec_id == AV_CODEC_ID_HEVC)) {
     const char* bsf_name = (codecpar->codec_id == AV_CODEC_ID_H264)
                                ? "h264_mp4toannexb"
                                : "hevc_mp4toannexb";
@@ -216,13 +198,13 @@ bool RtspClient::Connect() {
         bsf_ret = av_bsf_init(bsf_ctx_);
       }
       if (bsf_ret < 0) {
-        spdlog::warn("RtspClient ch{}: failed to init {} filter",
-                      channel_id_, bsf_name);
+        spdlog::warn("RtspClient ch{}: failed to init {} filter", channel_id_,
+                     bsf_name);
         av_bsf_free(&bsf_ctx_);
         bsf_ctx_ = nullptr;
       } else {
         spdlog::info("RtspClient ch{}: {} filter enabled for container input",
-                      channel_id_, bsf_name);
+                     channel_id_, bsf_name);
       }
     }
   }
@@ -245,8 +227,7 @@ void RtspClient::Disconnect() {
 void RtspClient::PullLoop() {
   AVPacket* pkt = av_packet_alloc();
   if (!pkt) {
-    spdlog::error("RtspClient ch{}: failed to allocate AVPacket",
-                  channel_id_);
+    spdlog::error("RtspClient ch{}: failed to allocate AVPacket", channel_id_);
     SetState(RtspConnectionState::kError, "AVPacket allocation failed");
     return;
   }
@@ -287,8 +268,7 @@ void RtspClient::PullLoop() {
       } else {
         char err_buf[AV_ERROR_MAX_STRING_SIZE]{};
         av_strerror(ret, err_buf, sizeof(err_buf));
-        spdlog::warn("RtspClient ch{}: read error — {}", channel_id_,
-                      err_buf);
+        spdlog::warn("RtspClient ch{}: read error — {}", channel_id_, err_buf);
       }
 
       if (running_ && config_.auto_reconnect) {
@@ -317,11 +297,9 @@ void RtspClient::PullLoop() {
         std::lock_guard<std::mutex> lock(callback_mutex_);
         if (packet_callback_) {
           bool is_key = (pkt->flags & AV_PKT_FLAG_KEY) != 0;
-          packet_callback_(
-              channel_id_,
-              pkt->data, static_cast<size_t>(pkt->size),
-              pkt->pts, pkt->dts,
-              is_key, stream_info_.codec);
+          packet_callback_(channel_id_, pkt->data,
+                           static_cast<size_t>(pkt->size), pkt->pts, pkt->dts,
+                           is_key, stream_info_.codec);
         }
         ++packets_received_;
         av_packet_unref(pkt);
@@ -330,11 +308,8 @@ void RtspClient::PullLoop() {
       std::lock_guard<std::mutex> lock(callback_mutex_);
       if (packet_callback_) {
         bool is_key = (pkt->flags & AV_PKT_FLAG_KEY) != 0;
-        packet_callback_(
-            channel_id_,
-            pkt->data, static_cast<size_t>(pkt->size),
-            pkt->pts, pkt->dts,
-            is_key, stream_info_.codec);
+        packet_callback_(channel_id_, pkt->data, static_cast<size_t>(pkt->size),
+                         pkt->pts, pkt->dts, is_key, stream_info_.codec);
       }
       ++packets_received_;
       av_packet_unref(pkt);
@@ -346,13 +321,12 @@ void RtspClient::PullLoop() {
         file_pts_origin = orig_pts;
         file_wall_origin = std::chrono::steady_clock::now();
       } else {
-        double elapsed_sec =
-            static_cast<double>(orig_pts - file_pts_origin) *
-            av_q2d(file_time_base);
+        double elapsed_sec = static_cast<double>(orig_pts - file_pts_origin) *
+                             av_q2d(file_time_base);
         if (elapsed_sec > 0) {
           auto target = file_wall_origin +
-              std::chrono::microseconds(
-                  static_cast<int64_t>(elapsed_sec * 1'000'000));
+                        std::chrono::microseconds(
+                            static_cast<int64_t>(elapsed_sec * 1'000'000));
           auto now = std::chrono::steady_clock::now();
           if (target > now) {
             std::this_thread::sleep_until(target);
@@ -376,9 +350,8 @@ bool RtspClient::TryReconnect() {
     // Check max attempts (0 = unlimited).
     if (config_.max_reconnect_attempts > 0 &&
         reconnect_attempts_.load() > config_.max_reconnect_attempts) {
-      spdlog::error(
-          "RtspClient ch{}: max reconnection attempts ({}) exceeded",
-          channel_id_, config_.max_reconnect_attempts);
+      spdlog::error("RtspClient ch{}: max reconnection attempts ({}) exceeded",
+                    channel_id_, config_.max_reconnect_attempts);
       return false;
     }
 
@@ -409,12 +382,11 @@ bool RtspClient::TryReconnect() {
 }
 
 void RtspClient::SetState(RtspConnectionState new_state,
-                           const std::string& message) {
+                          const std::string& message) {
   RtspConnectionState old_state = state_.exchange(new_state);
   if (old_state == new_state) return;
 
-  spdlog::debug("RtspClient ch{}: {} -> {} {}",
-                channel_id_,
+  spdlog::debug("RtspClient ch{}: {} -> {} {}", channel_id_,
                 RtspConnectionStateToString(old_state),
                 RtspConnectionStateToString(new_state),
                 message.empty() ? "" : ("— " + message));

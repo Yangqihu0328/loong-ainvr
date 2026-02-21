@@ -43,7 +43,7 @@ void Fmp4Muxer::WriteU64Be(std::vector<uint8_t>& buf, uint64_t val) {
 // ============================================================
 
 std::vector<uint8_t> Fmp4Muxer::MakeBox(const char type[4],
-                                         const std::vector<uint8_t>& payload) {
+                                        const std::vector<uint8_t>& payload) {
   std::vector<uint8_t> box;
   auto total_size = static_cast<uint32_t>(8 + payload.size());
   box.reserve(total_size);
@@ -65,7 +65,7 @@ std::vector<uint8_t> Fmp4Muxer::MakeFullBox(
 }
 
 void Fmp4Muxer::AppendBox(std::vector<uint8_t>& out, const char type[4],
-                           const std::vector<uint8_t>& payload) {
+                          const std::vector<uint8_t>& payload) {
   auto box = MakeBox(type, payload);
   out.insert(out.end(), box.begin(), box.end());
 }
@@ -74,16 +74,12 @@ void Fmp4Muxer::AppendBox(std::vector<uint8_t>& out, const char type[4],
 // NAL Unit Parsing
 // ============================================================
 
-uint8_t Fmp4Muxer::H264NalType(uint8_t header) {
-  return header & 0x1F;
-}
+uint8_t Fmp4Muxer::H264NalType(uint8_t header) { return header & 0x1F; }
 
-uint8_t Fmp4Muxer::H265NalType(uint8_t header) {
-  return (header >> 1) & 0x3F;
-}
+uint8_t Fmp4Muxer::H265NalType(uint8_t header) { return (header >> 1) & 0x3F; }
 
 std::vector<Fmp4Muxer::NalUnit> Fmp4Muxer::ParseAnnexB(const uint8_t* data,
-                                                         size_t size) {
+                                                       size_t size) {
   std::vector<NalUnit> units;
   if (size < 4) return units;
 
@@ -95,8 +91,7 @@ std::vector<Fmp4Muxer::NalUnit> Fmp4Muxer::ParseAnnexB(const uint8_t* data,
     bool is_start_code = false;
     size_t start_code_len = 0;
 
-    if (i + 2 < size && data[i] == 0 && data[i + 1] == 0 &&
-        data[i + 2] == 1) {
+    if (i + 2 < size && data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
       is_start_code = true;
       start_code_len = 3;
     } else if (i + 3 < size && data[i] == 0 && data[i + 1] == 0 &&
@@ -133,8 +128,8 @@ std::vector<Fmp4Muxer::NalUnit> Fmp4Muxer::ParseAnnexB(const uint8_t* data,
 }
 
 bool Fmp4Muxer::ExtractH264Params(const uint8_t* data, size_t size,
-                                   std::vector<uint8_t>& sps,
-                                   std::vector<uint8_t>& pps) {
+                                  std::vector<uint8_t>& sps,
+                                  std::vector<uint8_t>& pps) {
   auto units = ParseAnnexB(data, size);
   bool found_sps = false;
   bool found_pps = false;
@@ -155,9 +150,9 @@ bool Fmp4Muxer::ExtractH264Params(const uint8_t* data, size_t size,
 }
 
 bool Fmp4Muxer::ExtractH265Params(const uint8_t* data, size_t size,
-                                   std::vector<uint8_t>& vps,
-                                   std::vector<uint8_t>& sps,
-                                   std::vector<uint8_t>& pps) {
+                                  std::vector<uint8_t>& vps,
+                                  std::vector<uint8_t>& sps,
+                                  std::vector<uint8_t>& pps) {
   auto units = ParseAnnexB(data, size);
   bool found_vps = false;
   bool found_sps = false;
@@ -182,7 +177,7 @@ bool Fmp4Muxer::ExtractH265Params(const uint8_t* data, size_t size,
 }
 
 std::vector<uint8_t> Fmp4Muxer::AnnexBToMp4(const uint8_t* data, size_t size,
-                                              CodecType codec) {
+                                            CodecType codec) {
   auto units = ParseAnnexB(data, size);
   std::vector<uint8_t> mp4_data;
   mp4_data.reserve(size);
@@ -228,22 +223,26 @@ std::vector<uint8_t> Fmp4Muxer::MakeFtyp() {
 std::vector<uint8_t> Fmp4Muxer::MakeMvhd() {
   std::vector<uint8_t> payload;
   payload.reserve(96);
-  WriteU32Be(payload, 0);          // creation_time
-  WriteU32Be(payload, 0);          // modification_time
-  WriteU32Be(payload, kTimescale); // timescale
-  WriteU32Be(payload, 0);          // duration (unknown for live)
+  WriteU32Be(payload, 0);           // creation_time
+  WriteU32Be(payload, 0);           // modification_time
+  WriteU32Be(payload, kTimescale);  // timescale
+  WriteU32Be(payload, 0);           // duration (unknown for live)
 
-  WriteU32Be(payload, 0x00010000); // rate = 1.0 (fixed-point 16.16)
-  WriteU16Be(payload, 0x0100);     // volume = 1.0 (fixed-point 8.8)
+  WriteU32Be(payload, 0x00010000);  // rate = 1.0 (fixed-point 16.16)
+  WriteU16Be(payload, 0x0100);      // volume = 1.0 (fixed-point 8.8)
   // reserved (10 bytes)
   for (int i = 0; i < 10; ++i) WriteU8(payload, 0);
 
   // Identity matrix (9 × int32, 36 bytes)
   // [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
-  WriteU32Be(payload, 0x00010000); WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0);          WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0x00010000); WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0);          WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0x00010000);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0x00010000);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
   WriteU32Be(payload, 0x40000000);
 
   // pre_defined (6 × uint32)
@@ -264,7 +263,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeTkhd(uint16_t width, uint16_t height) {
   WriteU32Be(payload, 0);  // duration (unknown for live)
 
   // reserved (8 bytes)
-  WriteU32Be(payload, 0); WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
 
   WriteU16Be(payload, 0);  // layer
   WriteU16Be(payload, 0);  // alternate_group
@@ -272,10 +272,14 @@ std::vector<uint8_t> Fmp4Muxer::MakeTkhd(uint16_t width, uint16_t height) {
   WriteU16Be(payload, 0);  // reserved
 
   // Identity matrix
-  WriteU32Be(payload, 0x00010000); WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0);          WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0x00010000); WriteU32Be(payload, 0);
-  WriteU32Be(payload, 0);          WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0x00010000);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0x00010000);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
   WriteU32Be(payload, 0x40000000);
 
   // width and height in fixed-point 16.16
@@ -289,13 +293,13 @@ std::vector<uint8_t> Fmp4Muxer::MakeTkhd(uint16_t width, uint16_t height) {
 std::vector<uint8_t> Fmp4Muxer::MakeMdhd() {
   std::vector<uint8_t> payload;
   payload.reserve(20);
-  WriteU32Be(payload, 0);          // creation_time
-  WriteU32Be(payload, 0);          // modification_time
-  WriteU32Be(payload, kTimescale); // timescale
-  WriteU32Be(payload, 0);          // duration
+  WriteU32Be(payload, 0);           // creation_time
+  WriteU32Be(payload, 0);           // modification_time
+  WriteU32Be(payload, kTimescale);  // timescale
+  WriteU32Be(payload, 0);           // duration
 
-  WriteU16Be(payload, 0x55C4);     // language: 'und' (undetermined)
-  WriteU16Be(payload, 0);          // pre_defined
+  WriteU16Be(payload, 0x55C4);  // language: 'und' (undetermined)
+  WriteU16Be(payload, 0);       // pre_defined
 
   return MakeFullBox("mdhd", 0, 0, payload);
 }
@@ -307,7 +311,9 @@ std::vector<uint8_t> Fmp4Muxer::MakeHdlr() {
   // handler_type: 'vide'
   payload.insert(payload.end(), {'v', 'i', 'd', 'e'});
   // reserved (3 × uint32)
-  WriteU32Be(payload, 0); WriteU32Be(payload, 0); WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
+  WriteU32Be(payload, 0);
   // name (null-terminated string)
   const char* name = "VideoHandler";
   payload.insert(payload.end(), name, name + strlen(name) + 1);
@@ -401,7 +407,7 @@ std::vector<uint8_t> Fmp4Muxer::MakeMdia(const std::vector<uint8_t>& stsd) {
 }
 
 std::vector<uint8_t> Fmp4Muxer::MakeTrak(uint16_t width, uint16_t height,
-                                          const std::vector<uint8_t>& stsd) {
+                                         const std::vector<uint8_t>& stsd) {
   std::vector<uint8_t> payload;
 
   auto tkhd = MakeTkhd(width, height);
@@ -427,7 +433,7 @@ std::vector<uint8_t> Fmp4Muxer::MakeMvex() {
 }
 
 std::vector<uint8_t> Fmp4Muxer::MakeMoov(uint16_t width, uint16_t height,
-                                          const std::vector<uint8_t>& stsd) {
+                                         const std::vector<uint8_t>& stsd) {
   std::vector<uint8_t> payload;
 
   auto mvhd = MakeMvhd();
@@ -447,14 +453,14 @@ std::vector<uint8_t> Fmp4Muxer::MakeMoov(uint16_t width, uint16_t height,
 // ============================================================
 
 std::vector<uint8_t> Fmp4Muxer::MakeAvcC(const std::vector<uint8_t>& sps,
-                                          const std::vector<uint8_t>& pps) {
+                                         const std::vector<uint8_t>& pps) {
   std::vector<uint8_t> payload;
   // AVCDecoderConfigurationRecord
-  WriteU8(payload, 1);          // configurationVersion
-  WriteU8(payload, sps[1]);     // AVCProfileIndication
-  WriteU8(payload, sps[2]);     // profile_compatibility
-  WriteU8(payload, sps[3]);     // AVCLevelIndication
-  WriteU8(payload, 0xFF);       // lengthSizeMinusOne = 3 (4 bytes NALU length)
+  WriteU8(payload, 1);       // configurationVersion
+  WriteU8(payload, sps[1]);  // AVCProfileIndication
+  WriteU8(payload, sps[2]);  // profile_compatibility
+  WriteU8(payload, sps[3]);  // AVCLevelIndication
+  WriteU8(payload, 0xFF);    // lengthSizeMinusOne = 3 (4 bytes NALU length)
 
   // numOfSequenceParameterSets
   WriteU8(payload, 0xE1);  // 0xE0 | 1
@@ -469,9 +475,9 @@ std::vector<uint8_t> Fmp4Muxer::MakeAvcC(const std::vector<uint8_t>& sps,
   return MakeBox("avcC", payload);
 }
 
-std::vector<uint8_t> Fmp4Muxer::MakeAvc1Stsd(
-    const std::vector<uint8_t>& sps, const std::vector<uint8_t>& pps,
-    uint16_t width, uint16_t height) {
+std::vector<uint8_t> Fmp4Muxer::MakeAvc1Stsd(const std::vector<uint8_t>& sps,
+                                             const std::vector<uint8_t>& pps,
+                                             uint16_t width, uint16_t height) {
   // avc1 sample entry
   std::vector<uint8_t> avc1_payload;
   avc1_payload.reserve(128 + sps.size() + pps.size());
@@ -519,8 +525,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeAvc1Stsd(
 // ============================================================
 
 std::vector<uint8_t> Fmp4Muxer::MakeHvcC(const std::vector<uint8_t>& vps,
-                                          const std::vector<uint8_t>& sps,
-                                          const std::vector<uint8_t>& pps) {
+                                         const std::vector<uint8_t>& sps,
+                                         const std::vector<uint8_t>& pps) {
   std::vector<uint8_t> payload;
   // HEVCDecoderConfigurationRecord (ISO 14496-15 Section 8.3.3.1)
 
@@ -537,8 +543,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeHvcC(const std::vector<uint8_t>& vps,
 
   // Parse profile_tier_level from SPS if enough data
   // SPS NAL: [nal_header(2)] [sps_video_parameter_set_id(4bits)]
-  //          [sps_max_sub_layers_minus1(3bits)] [sps_temporal_id_nesting_flag(1bit)]
-  //          [profile_tier_level(...)]
+  //          [sps_max_sub_layers_minus1(3bits)]
+  //          [sps_temporal_id_nesting_flag(1bit)] [profile_tier_level(...)]
   if (sps.size() > 15) {
     // Byte 2 of SPS contains vps_id, max_sub_layers, temporal_id_nesting
     // Profile tier level starts at bit offset 16 (byte index 2)
@@ -552,8 +558,7 @@ std::vector<uint8_t> Fmp4Muxer::MakeHvcC(const std::vector<uint8_t>& vps,
     general_profile_compatibility_flags =
         (static_cast<uint32_t>(sps[3]) << 24) |
         (static_cast<uint32_t>(sps[4]) << 16) |
-        (static_cast<uint32_t>(sps[5]) << 8) |
-        static_cast<uint32_t>(sps[6]);
+        (static_cast<uint32_t>(sps[5]) << 8) | static_cast<uint32_t>(sps[6]);
 
     // general_constraint_indicator_flags (48 bits)
     general_constraint_indicator_flags =
@@ -561,24 +566,23 @@ std::vector<uint8_t> Fmp4Muxer::MakeHvcC(const std::vector<uint8_t>& vps,
         (static_cast<uint64_t>(sps[8]) << 32) |
         (static_cast<uint64_t>(sps[9]) << 24) |
         (static_cast<uint64_t>(sps[10]) << 16) |
-        (static_cast<uint64_t>(sps[11]) << 8) |
-        static_cast<uint64_t>(sps[12]);
+        (static_cast<uint64_t>(sps[11]) << 8) | static_cast<uint64_t>(sps[12]);
 
     // general_level_idc
     general_level_idc = sps[13];
   }
 
   // general_profile_space(2) | general_tier_flag(1) | general_profile_idc(5)
-  WriteU8(payload, static_cast<uint8_t>((general_profile_space << 6) |
-                                        (general_tier_flag << 5) |
-                                        general_profile_idc));
+  WriteU8(payload,
+          static_cast<uint8_t>((general_profile_space << 6) |
+                               (general_tier_flag << 5) | general_profile_idc));
   WriteU32Be(payload, general_profile_compatibility_flags);
 
   // general_constraint_indicator_flags (6 bytes)
   for (int i = 5; i >= 0; --i) {
     WriteU8(payload,
-            static_cast<uint8_t>((general_constraint_indicator_flags >>
-                                  (i * 8)) & 0xFF));
+            static_cast<uint8_t>(
+                (general_constraint_indicator_flags >> (i * 8)) & 0xFF));
   }
 
   WriteU8(payload, general_level_idc);
@@ -622,9 +626,10 @@ std::vector<uint8_t> Fmp4Muxer::MakeHvcC(const std::vector<uint8_t>& vps,
   return MakeBox("hvcC", payload);
 }
 
-std::vector<uint8_t> Fmp4Muxer::MakeHev1Stsd(
-    const std::vector<uint8_t>& vps, const std::vector<uint8_t>& sps,
-    const std::vector<uint8_t>& pps, uint16_t width, uint16_t height) {
+std::vector<uint8_t> Fmp4Muxer::MakeHev1Stsd(const std::vector<uint8_t>& vps,
+                                             const std::vector<uint8_t>& sps,
+                                             const std::vector<uint8_t>& pps,
+                                             uint16_t width, uint16_t height) {
   // hev1 sample entry (same structure as avc1 but different codec box)
   std::vector<uint8_t> hev1_payload;
   hev1_payload.reserve(128 + vps.size() + sps.size() + pps.size());
@@ -708,10 +713,10 @@ std::vector<uint8_t> Fmp4Muxer::MakeH265InitSegment(
 // ============================================================
 
 std::vector<uint8_t> Fmp4Muxer::MakeMoof(uint32_t sequence_number,
-                                          uint64_t decode_time,
-                                          uint32_t duration,
-                                          uint32_t sample_size,
-                                          bool is_keyframe) {
+                                         uint64_t decode_time,
+                                         uint32_t duration,
+                                         uint32_t sample_size,
+                                         bool is_keyframe) {
   // mfhd (movie fragment header)
   std::vector<uint8_t> mfhd_payload;
   WriteU32Be(mfhd_payload, sequence_number);
@@ -723,7 +728,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeMoof(uint32_t sequence_number,
   WriteU32Be(tfhd_payload, 1);  // track_ID
   auto tfhd = MakeFullBox("tfhd", 0, 0x020000, tfhd_payload);
 
-  // tfdt (track fragment decode time) — version 1 for 64-bit baseMediaDecodeTime
+  // tfdt (track fragment decode time) — version 1 for 64-bit
+  // baseMediaDecodeTime
   std::vector<uint8_t> tfdt_payload;
   WriteU64Be(tfdt_payload, decode_time);
   auto tfdt = MakeFullBox("tfdt", 1, 0, tfdt_payload);
@@ -748,8 +754,7 @@ std::vector<uint8_t> Fmp4Muxer::MakeMoof(uint32_t sequence_number,
   // sample_flags
   // For keyframes: 0x02000000 (sample_depends_on=2 means "does not depend")
   // For non-keyframes: 0x01010000 (sample_is_non_sync | sample_depends_on=1)
-  uint32_t sample_flags =
-      is_keyframe ? 0x02000000U : 0x01010000U;
+  uint32_t sample_flags = is_keyframe ? 0x02000000U : 0x01010000U;
   WriteU32Be(trun_payload, sample_flags);
 
   auto trun = MakeFullBox("trun", 0, trun_flags, trun_payload);
@@ -783,14 +788,13 @@ std::vector<uint8_t> Fmp4Muxer::MakeMoof(uint32_t sequence_number,
   // More robust: compute absolute offset.
   // moof_header(8) + mfhd_size + traf_header(8) + tfhd_size + tfdt_size
   //   + trun_header(8) + version_flags(4) + sample_count(4) = data_offset field
-  size_t offset_in_moof = 8 + mfhd.size() + 8 + tfhd.size() + tfdt.size() +
-                          8 + 4 + 4;  // 8=trun box header, 4=ver+flags, 4=sample_count
+  size_t offset_in_moof = 8 + mfhd.size() + 8 + tfhd.size() + tfdt.size() + 8 +
+                          4 +
+                          4;  // 8=trun box header, 4=ver+flags, 4=sample_count
   if (offset_in_moof + 4 <= moof.size()) {
     moof[offset_in_moof] = static_cast<uint8_t>((data_offset >> 24) & 0xFF);
-    moof[offset_in_moof + 1] =
-        static_cast<uint8_t>((data_offset >> 16) & 0xFF);
-    moof[offset_in_moof + 2] =
-        static_cast<uint8_t>((data_offset >> 8) & 0xFF);
+    moof[offset_in_moof + 1] = static_cast<uint8_t>((data_offset >> 16) & 0xFF);
+    moof[offset_in_moof + 2] = static_cast<uint8_t>((data_offset >> 8) & 0xFF);
     moof[offset_in_moof + 3] = static_cast<uint8_t>(data_offset & 0xFF);
   }
 
@@ -798,9 +802,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeMoof(uint32_t sequence_number,
 }
 
 std::vector<uint8_t> Fmp4Muxer::MakeMediaSegment(
-    const uint8_t* data, size_t size, uint64_t decode_time,
-    uint32_t duration, uint32_t sequence_number, bool is_keyframe,
-    CodecType codec) {
+    const uint8_t* data, size_t size, uint64_t decode_time, uint32_t duration,
+    uint32_t sequence_number, bool is_keyframe, CodecType codec) {
   // Convert Annex B to length-prefixed MP4 format
   auto mp4_data = AnnexBToMp4(data, size, codec);
   if (mp4_data.empty()) return {};
@@ -808,8 +811,8 @@ std::vector<uint8_t> Fmp4Muxer::MakeMediaSegment(
   auto sample_size = static_cast<uint32_t>(mp4_data.size());
 
   // Build moof
-  auto moof = MakeMoof(sequence_number, decode_time, duration,
-                       sample_size, is_keyframe);
+  auto moof = MakeMoof(sequence_number, decode_time, duration, sample_size,
+                       is_keyframe);
 
   // Build mdat
   auto mdat_size = static_cast<uint32_t>(8 + mp4_data.size());

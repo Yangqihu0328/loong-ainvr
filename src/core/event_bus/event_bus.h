@@ -21,8 +21,7 @@ class EventBus {
   static EventBus& Instance();
 
   /// Subscribe to an event type. Returns a subscription ID for unsubscribing.
-  SubscriptionId Subscribe(const std::string& event_type,
-                           EventHandler handler);
+  SubscriptionId Subscribe(const std::string& event_type, EventHandler handler);
 
   /// Unsubscribe from an event.
   void Unsubscribe(SubscriptionId id);

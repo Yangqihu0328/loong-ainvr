@@ -2,9 +2,9 @@
 
 #include "storage/record_index/record_index.h"
 
-#include <filesystem>
-
 #include "gtest/gtest.h"
+
+#include <filesystem>
 
 namespace loong {
 namespace storage {

@@ -2,9 +2,9 @@
 
 #include "storage/indexer/indexer.h"
 
-#include <chrono>
-
 #include "spdlog/spdlog.h"
+
+#include <chrono>
 
 namespace loong::storage {
 
@@ -12,9 +12,7 @@ Indexer::Indexer(std::shared_ptr<RecordIndex> index,
                  const IndexerConfig& config)
     : index_(std::move(index)), config_(config) {}
 
-Indexer::~Indexer() {
-  Stop();
-}
+Indexer::~Indexer() { Stop(); }
 
 void Indexer::Start() {
   if (running_) return;
@@ -49,7 +47,7 @@ void Indexer::QueueSegmentInsert(const SegmentInfo& info) {
 }
 
 void Indexer::QueueSegmentUpdate(int64_t segment_id, int64_t end_time,
-                                  int64_t file_size) {
+                                 int64_t file_size) {
   std::lock_guard<std::mutex> lock(mutex_);
   PendingOp op;
   op.type = OpType::kUpdateSegment;
@@ -75,9 +73,7 @@ void Indexer::QueueEventInsert(const EventInfo& event) {
   }
 }
 
-void Indexer::Flush() {
-  FlushPending();
-}
+void Indexer::Flush() { FlushPending(); }
 
 size_t Indexer::PendingCount() const {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -88,13 +84,11 @@ void Indexer::FlushLoop() {
   while (running_) {
     {
       std::unique_lock<std::mutex> lock(mutex_);
-      cv_.wait_for(lock,
-                   std::chrono::milliseconds(config_.flush_interval_ms),
-                   [this] {
-                     return !running_ ||
-                            static_cast<int>(pending_ops_.size()) >=
-                                config_.batch_size;
-                   });
+      cv_.wait_for(
+          lock, std::chrono::milliseconds(config_.flush_interval_ms), [this] {
+            return !running_ ||
+                   static_cast<int>(pending_ops_.size()) >= config_.batch_size;
+          });
     }
 
     if (!pending_ops_.empty()) {
@@ -131,7 +125,7 @@ void Indexer::FlushPending() {
       }
       case OpType::kUpdateSegment: {
         if (!index_->UpdateSegmentEnd(op.segment_id, op.end_time,
-                                       op.file_size)) {
+                                      op.file_size)) {
           spdlog::warn("Indexer: failed to update segment {}", op.segment_id);
         }
         ++update_count;

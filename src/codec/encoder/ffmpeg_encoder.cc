@@ -8,21 +8,18 @@ namespace loong::codec {
 
 FFmpegEncoder::FFmpegEncoder() = default;
 
-FFmpegEncoder::~FFmpegEncoder() {
-  Shutdown();
-}
+FFmpegEncoder::~FFmpegEncoder() { Shutdown(); }
 
 bool FFmpegEncoder::Initialize(const EncoderConfig& config) {
   config_ = config;
 
   AVCodecID codec_id =
-      (config.codec == CodecType::kH264) ? AV_CODEC_ID_H264
-                                          : AV_CODEC_ID_HEVC;
+      (config.codec == CodecType::kH264) ? AV_CODEC_ID_H264 : AV_CODEC_ID_HEVC;
 
   const AVCodec* av_codec = avcodec_find_encoder(codec_id);
   if (!av_codec) {
     spdlog::error("FFmpegEncoder: encoder {} not found",
-                   (config.codec == CodecType::kH264) ? "H.264" : "H.265");
+                  (config.codec == CodecType::kH264) ? "H.264" : "H.265");
     return false;
   }
 
@@ -34,7 +31,7 @@ bool FFmpegEncoder::Initialize(const EncoderConfig& config) {
 
   codec_ctx_->width = config.width;
   codec_ctx_->height = config.height;
-  codec_ctx_->time_base = {1, 1000000};   // Microsecond timebase for FLV/HLS
+  codec_ctx_->time_base = {1, 1000000};  // Microsecond timebase for FLV/HLS
   codec_ctx_->framerate = {config.framerate, 1};
   codec_ctx_->bit_rate = static_cast<int64_t>(config.bitrate_kbps) * 1000;
   codec_ctx_->gop_size = config.gop_size;
@@ -88,11 +85,10 @@ bool FFmpegEncoder::Encode(const std::shared_ptr<Frame>& input_frame) {
 
   // Convert BGR24 input to YUV420P
   if (!sws_ctx_) {
-    sws_ctx_ = sws_getContext(
-        input_frame->info.width, input_frame->info.height,
-        AV_PIX_FMT_BGR24,
-        config_.width, config_.height, AV_PIX_FMT_YUV420P,
-        SWS_BILINEAR, nullptr, nullptr, nullptr);
+    sws_ctx_ = sws_getContext(input_frame->info.width, input_frame->info.height,
+                              AV_PIX_FMT_BGR24, config_.width, config_.height,
+                              AV_PIX_FMT_YUV420P, SWS_BILINEAR, nullptr,
+                              nullptr, nullptr);
     if (!sws_ctx_) {
       spdlog::error("FFmpegEncoder: failed to create sws context");
       return false;
@@ -102,8 +98,7 @@ bool FFmpegEncoder::Encode(const std::shared_ptr<Frame>& input_frame) {
   const uint8_t* src_data[1] = {input_frame->data.get()};
   int src_linesize[1] = {input_frame->info.stride};
 
-  sws_scale(sws_ctx_, src_data, src_linesize, 0,
-            input_frame->info.height,
+  sws_scale(sws_ctx_, src_data, src_linesize, 0, input_frame->info.height,
             frame_->data, frame_->linesize);
 
   int fps = config_.framerate > 0 ? config_.framerate : 30;
@@ -138,9 +133,7 @@ void FFmpegEncoder::Shutdown() {
   frame_count_ = 0;
 }
 
-std::string FFmpegEncoder::Name() const {
-  return "FFmpegEncoder";
-}
+std::string FFmpegEncoder::Name() const { return "FFmpegEncoder"; }
 
 bool FFmpegEncoder::SendAndReceive(AVFrame* av_frame) {
   int ret = avcodec_send_frame(codec_ctx_, av_frame);
@@ -159,8 +152,7 @@ bool FFmpegEncoder::SendAndReceive(AVFrame* av_frame) {
 
     if (packet_callback_) {
       bool is_key = (packet_->flags & AV_PKT_FLAG_KEY) != 0;
-      packet_callback_(packet_->data,
-                       static_cast<size_t>(packet_->size),
+      packet_callback_(packet_->data, static_cast<size_t>(packet_->size),
                        packet_->pts, packet_->dts, is_key);
     }
 

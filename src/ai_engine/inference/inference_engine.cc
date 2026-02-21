@@ -6,15 +6,13 @@
 
 namespace loong::ai_engine {
 
-InferenceEngine::InferenceEngine(
-    std::unique_ptr<InferenceBackend> backend,
-    std::unique_ptr<YoloModelAdapter> adapter)
+InferenceEngine::InferenceEngine(std::unique_ptr<InferenceBackend> backend,
+                                 std::unique_ptr<YoloModelAdapter> adapter)
     : backend_(std::move(backend)), adapter_(std::move(adapter)) {}
 
-bool InferenceEngine::Infer(const uint8_t* image_data,
-                             int width, int height,
-                             float confidence_threshold,
-                             std::vector<Detection>& detections) {
+bool InferenceEngine::Infer(const uint8_t* image_data, int width, int height,
+                            float confidence_threshold,
+                            std::vector<Detection>& detections) {
   std::lock_guard<std::mutex> lock(switch_mutex_);
 
   if (!backend_ || !backend_->IsLoaded()) return false;
@@ -22,8 +20,8 @@ bool InferenceEngine::Infer(const uint8_t* image_data,
   // Step 1: Preprocess
   std::vector<float> input_data;
   TensorShape input_shape;
-  if (!adapter_->PreProcess(image_data, width, height,
-                            input_data, input_shape)) {
+  if (!adapter_->PreProcess(image_data, width, height, input_data,
+                            input_shape)) {
     spdlog::warn("InferenceEngine: preprocess failed");
     return false;
   }
@@ -31,18 +29,16 @@ bool InferenceEngine::Infer(const uint8_t* image_data,
   // Step 2: Run inference
   std::vector<float> output_data;
   TensorShape output_shape;
-  if (!backend_->RunInference(input_data, input_shape,
-                              output_data, output_shape)) {
+  if (!backend_->RunInference(input_data, input_shape, output_data,
+                              output_shape)) {
     spdlog::warn("InferenceEngine: inference failed");
     return false;
   }
 
   // Step 3: Postprocess
   float nms_threshold = 0.45F;
-  if (!adapter_->PostProcess(output_data, output_shape,
-                             width, height,
-                             confidence_threshold, nms_threshold,
-                             detections)) {
+  if (!adapter_->PostProcess(output_data, output_shape, width, height,
+                             confidence_threshold, nms_threshold, detections)) {
     spdlog::warn("InferenceEngine: postprocess failed");
     return false;
   }
@@ -51,10 +47,8 @@ bool InferenceEngine::Infer(const uint8_t* image_data,
 }
 
 bool InferenceEngine::InferBatch(
-    const std::vector<const uint8_t*>& images,
-    const std::vector<int>& widths,
-    const std::vector<int>& heights,
-    float confidence_threshold,
+    const std::vector<const uint8_t*>& images, const std::vector<int>& widths,
+    const std::vector<int>& heights, float confidence_threshold,
     std::vector<std::vector<Detection>>& batch_detections) {
   if (images.empty()) return true;
 
@@ -68,8 +62,8 @@ bool InferenceEngine::InferBatch(
     // Step 1: Batch preprocess — build a single batched input tensor.
     std::vector<float> batch_input;
     TensorShape batch_shape;
-    if (!adapter_->PreProcessBatch(images, widths, heights,
-                                   batch_input, batch_shape)) {
+    if (!adapter_->PreProcessBatch(images, widths, heights, batch_input,
+                                   batch_shape)) {
       spdlog::warn("InferenceEngine: batch preprocess failed");
       return false;
     }
@@ -77,16 +71,15 @@ bool InferenceEngine::InferBatch(
     // Step 2: Run batched inference in one forward pass.
     std::vector<float> batch_output;
     TensorShape output_shape;
-    if (!backend_->RunInference(batch_input, batch_shape,
-                                batch_output, output_shape)) {
+    if (!backend_->RunInference(batch_input, batch_shape, batch_output,
+                                output_shape)) {
       spdlog::warn("InferenceEngine: batch inference failed");
       return false;
     }
 
     // Step 3: Batch postprocess — split output per image.
     float nms_threshold = 0.45F;
-    if (!adapter_->PostProcessBatch(batch_output, output_shape,
-                                    widths, heights,
+    if (!adapter_->PostProcessBatch(batch_output, output_shape, widths, heights,
                                     confidence_threshold, nms_threshold,
                                     batch_detections)) {
       spdlog::warn("InferenceEngine: batch postprocess failed");
@@ -102,23 +95,22 @@ bool InferenceEngine::InferBatch(
     // Call single-frame pipeline (preprocess → infer → postprocess).
     std::vector<float> input_data;
     TensorShape input_shape;
-    if (!adapter_->PreProcess(images[i], widths[i], heights[i],
-                              input_data, input_shape)) {
+    if (!adapter_->PreProcess(images[i], widths[i], heights[i], input_data,
+                              input_shape)) {
       spdlog::warn("InferenceEngine: batch item {} preprocess failed", i);
       continue;
     }
 
     std::vector<float> output_data;
     TensorShape output_shape;
-    if (!backend_->RunInference(input_data, input_shape,
-                                output_data, output_shape)) {
+    if (!backend_->RunInference(input_data, input_shape, output_data,
+                                output_shape)) {
       spdlog::warn("InferenceEngine: batch item {} inference failed", i);
       continue;
     }
 
     float nms_threshold = 0.45F;
-    if (!adapter_->PostProcess(output_data, output_shape,
-                               widths[i], heights[i],
+    if (!adapter_->PostProcess(output_data, output_shape, widths[i], heights[i],
                                confidence_threshold, nms_threshold,
                                batch_detections[i])) {
       spdlog::warn("InferenceEngine: batch item {} postprocess failed", i);
@@ -128,10 +120,9 @@ bool InferenceEngine::InferBatch(
   return true;
 }
 
-bool InferenceEngine::SwitchModel(
-    const std::string& model_path,
-    std::unique_ptr<YoloModelAdapter> new_adapter,
-    const BackendConfig& config) {
+bool InferenceEngine::SwitchModel(const std::string& model_path,
+                                  std::unique_ptr<YoloModelAdapter> new_adapter,
+                                  const BackendConfig& config) {
   std::lock_guard<std::mutex> lock(switch_mutex_);
 
   spdlog::info("InferenceEngine: switching model to '{}'", model_path);

@@ -1,14 +1,13 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "core/common/types.h"
+#include "gtest/gtest.h"
 #include "overlay/compositor/channel_compositor.h"
 #include "overlay/osd_renderer/osd_renderer.h"
 #include "pipeline_stages/overlay_stage/overlay_stage.h"
 
 #include <cstring>
 #include <memory>
-
-#include "core/common/types.h"
-#include "gtest/gtest.h"
 
 namespace loong {
 namespace {
@@ -37,8 +36,7 @@ std::shared_ptr<Frame> MakeTestFrame(int channel_id, int width, int height,
 }
 
 /// Add mock detections to a frame.
-void AddDetections(std::shared_ptr<Frame>& frame,
-                   int count, float confidence) {
+void AddDetections(std::shared_ptr<Frame>& frame, int count, float confidence) {
   frame->analysis.has_result = true;
   for (int i = 0; i < count; ++i) {
     Detection det;
@@ -76,7 +74,10 @@ TEST(OsdRenderer, ConfigureAndRender) {
   // Frame should be modified
   bool all_same = true;
   for (size_t i = 0; i < data.size(); ++i) {
-    if (data[i] != 128) { all_same = false; break; }
+    if (data[i] != 128) {
+      all_same = false;
+      break;
+    }
   }
   EXPECT_FALSE(all_same);
 }
@@ -179,7 +180,8 @@ TEST(OverlayStage, InitializeWithCustomConfig) {
 TEST(OverlayStage, ProcessFrameWithDetections) {
   pipeline_stages::OverlayStage stage;
   StageConfig config;
-  config.params = R"({"show_timestamp":true,"channel_id":1,"channel_name":"Front"})";
+  config.params =
+      R"({"show_timestamp":true,"channel_id":1,"channel_name":"Front"})";
   stage.Initialize(config);
 
   auto frame = MakeTestFrame(1, 640, 480, 64, 64, 64);
@@ -189,7 +191,10 @@ TEST(OverlayStage, ProcessFrameWithDetections) {
   bool all_same = true;
   for (size_t i = 0; i < frame->data_size; ++i) {
     auto idx = static_cast<std::ptrdiff_t>(i);
-    if (frame->data[idx] != 64) { all_same = false; break; }
+    if (frame->data[idx] != 64) {
+      all_same = false;
+      break;
+    }
   }
   EXPECT_FALSE(all_same);
 }
@@ -207,8 +212,8 @@ TEST(OverlayStage, DisabledOverlayPassesThrough) {
                                 frame->data.get() + frame->data_size);
   EXPECT_TRUE(stage.ProcessFrame(frame));
 
-  bool identical = std::memcmp(original.data(), frame->data.get(),
-                               frame->data_size) == 0;
+  bool identical =
+      std::memcmp(original.data(), frame->data.get(), frame->data_size) == 0;
   EXPECT_TRUE(identical);
 }
 
@@ -259,7 +264,10 @@ TEST(ChannelCompositor, CompositeEmptyGrid) {
 
   bool all_zero = true;
   for (size_t i = 0; i < output.size(); ++i) {
-    if (output[i] != 0) { all_zero = false; break; }
+    if (output[i] != 0) {
+      all_zero = false;
+      break;
+    }
   }
   EXPECT_FALSE(all_zero);
 }

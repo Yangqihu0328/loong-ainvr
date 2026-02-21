@@ -1,14 +1,14 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "ai_engine/cascade/model_cascade.h"
+
+#include "ai_engine/inference/inference_engine.h"
+#include "core/common/types.h"
+#include "gtest/gtest.h"
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gtest/gtest.h"
-
-#include "ai_engine/cascade/model_cascade.h"
-#include "ai_engine/inference/inference_engine.h"
-#include "core/common/types.h"
 
 namespace loong::ai_engine {
 namespace {
@@ -21,10 +21,11 @@ namespace {
 class FakeBackend : public InferenceBackend {
  public:
   bool LoadModel(const std::string& /*path*/,
-                 const BackendConfig& /*config*/) override { return true; }
+                 const BackendConfig& /*config*/) override {
+    return true;
+  }
   bool RunInference(const std::vector<float>& /*input*/,
-                    const TensorShape& /*shape*/,
-                    std::vector<float>& output,
+                    const TensorShape& /*shape*/, std::vector<float>& output,
                     TensorShape& out_shape) override {
     output.clear();
     out_shape = {0};
@@ -45,16 +46,14 @@ class FakeAdapter : public YoloModelAdapter {
   }
 
   bool PreProcess(const uint8_t* /*image*/, int /*w*/, int /*h*/,
-                  std::vector<float>& input_data,
-                  TensorShape& shape) override {
+                  std::vector<float>& input_data, TensorShape& shape) override {
     input_data = {0};
     shape = {1, 3, 640, 640};
     return true;
   }
 
   bool PostProcess(const std::vector<float>& /*output*/,
-                   const TensorShape& /*shape*/,
-                   int /*w*/, int /*h*/,
+                   const TensorShape& /*shape*/, int /*w*/, int /*h*/,
                    float /*conf*/, float /*nms*/,
                    std::vector<Detection>& detections) override {
     detections = fake_detections_;
@@ -101,8 +100,8 @@ TEST(ModelCascade, SinglePrimaryStep) {
   step.confidence_threshold = 0.5F;
 
   auto engine = MakeFakeEngine({
-    {100, 200, 300, 400, 0.9F, 0, "person"},
-    {500, 100, 700, 300, 0.8F, 1, "car"},
+      {100, 200, 300, 400, 0.9F, 0, "person"},
+      {500, 100, 700, 300, 0.8F, 1, "car"},
   });
 
   cascade.AddStep(step, engine);
@@ -131,7 +130,7 @@ TEST(ModelCascade, ParallelStepMergesDetections) {
   primary_step.mode = CascadeMode::kPrimary;
 
   auto primary_engine = MakeFakeEngine({
-    {100, 200, 300, 400, 0.9F, 0, "person"},
+      {100, 200, 300, 400, 0.9F, 0, "person"},
   });
 
   CascadeStep parallel_step;
@@ -140,8 +139,8 @@ TEST(ModelCascade, ParallelStepMergesDetections) {
   parallel_step.mode = CascadeMode::kParallel;
 
   auto parallel_engine = MakeFakeEngine({
-    {50, 50, 150, 150, 0.7F, 0, "fire"},
-    {200, 200, 400, 400, 0.6F, 1, "smoke"},
+      {50, 50, 150, 150, 0.7F, 0, "fire"},
+      {200, 200, 400, 400, 0.6F, 1, "smoke"},
   });
 
   cascade.AddStep(primary_step, primary_engine);
@@ -169,8 +168,8 @@ TEST(ModelCascade, CropStepTriggeredByClass) {
   primary_step.mode = CascadeMode::kPrimary;
 
   auto primary_engine = MakeFakeEngine({
-    {100, 100, 300, 300, 0.9F, 0, "vehicle"},
-    {400, 400, 500, 500, 0.8F, 1, "person"},
+      {100, 100, 300, 300, 0.9F, 0, "vehicle"},
+      {400, 400, 500, 500, 0.8F, 1, "person"},
   });
 
   CascadeStep crop_step;
@@ -180,7 +179,7 @@ TEST(ModelCascade, CropStepTriggeredByClass) {
   crop_step.trigger_classes = {"vehicle"};
 
   auto crop_engine = MakeFakeEngine({
-    {10, 20, 80, 40, 0.95F, 0, "plate"},
+      {10, 20, 80, 40, 0.95F, 0, "plate"},
   });
 
   cascade.AddStep(primary_step, primary_engine);
@@ -209,8 +208,8 @@ TEST(ModelCascade, CropStepAllClassesTrigger) {
   primary_step.mode = CascadeMode::kPrimary;
 
   auto primary_engine = MakeFakeEngine({
-    {100, 100, 200, 200, 0.9F, 0, "cat"},
-    {300, 300, 400, 400, 0.8F, 1, "dog"},
+      {100, 100, 200, 200, 0.9F, 0, "cat"},
+      {300, 300, 400, 400, 0.8F, 1, "dog"},
   });
 
   CascadeStep crop_step;
@@ -220,7 +219,7 @@ TEST(ModelCascade, CropStepAllClassesTrigger) {
   // Empty trigger_classes = all primary detections
 
   auto crop_engine = MakeFakeEngine({
-    {0, 0, 50, 50, 0.7F, 0, "siamese"},
+      {0, 0, 50, 50, 0.7F, 0, "siamese"},
   });
 
   cascade.AddStep(primary_step, primary_engine);
@@ -245,7 +244,7 @@ TEST(ModelCascade, CropStepNoTriggerNoSecondary) {
   primary_step.mode = CascadeMode::kPrimary;
 
   auto primary_engine = MakeFakeEngine({
-    {100, 100, 200, 200, 0.9F, 0, "person"},
+      {100, 100, 200, 200, 0.9F, 0, "person"},
   });
 
   CascadeStep crop_step;
@@ -255,7 +254,7 @@ TEST(ModelCascade, CropStepNoTriggerNoSecondary) {
   crop_step.trigger_classes = {"vehicle"};
 
   auto crop_engine = MakeFakeEngine({
-    {10, 20, 80, 40, 0.95F, 0, "plate"},
+      {10, 20, 80, 40, 0.95F, 0, "plate"},
   });
 
   cascade.AddStep(primary_step, primary_engine);
@@ -306,14 +305,14 @@ TEST(ModelCascade, FullCascadePrimaryParallelCrop) {
   primary.name = "det";
   primary.mode = CascadeMode::kPrimary;
   auto primary_engine = MakeFakeEngine({
-    {100, 100, 200, 200, 0.9F, 0, "car"},
+      {100, 100, 200, 200, 0.9F, 0, "car"},
   });
 
   CascadeStep parallel;
   parallel.name = "fire";
   parallel.mode = CascadeMode::kParallel;
   auto parallel_engine = MakeFakeEngine({
-    {50, 50, 100, 100, 0.8F, 0, "flame"},
+      {50, 50, 100, 100, 0.8F, 0, "flame"},
   });
 
   CascadeStep crop;
@@ -321,7 +320,7 @@ TEST(ModelCascade, FullCascadePrimaryParallelCrop) {
   crop.mode = CascadeMode::kCrop;
   crop.trigger_classes = {"car"};
   auto crop_engine = MakeFakeEngine({
-    {5, 5, 30, 15, 0.95F, 0, "plate"},
+      {5, 5, 30, 15, 0.95F, 0, "plate"},
   });
 
   cascade.AddStep(primary, primary_engine);
@@ -333,7 +332,7 @@ TEST(ModelCascade, FullCascadePrimaryParallelCrop) {
   bool ok = cascade.Run(img.data(), 640, 480, result);
 
   EXPECT_TRUE(ok);
-  EXPECT_EQ(result.detections.size(), 2U);  // car + flame
+  EXPECT_EQ(result.detections.size(), 2U);         // car + flame
   EXPECT_EQ(result.secondary_results.size(), 1U);  // plate from car
   EXPECT_EQ(result.secondary_results[0].parent_index, 0);
 }
@@ -348,11 +347,10 @@ TEST(ModelCascade, CropRoiProducesCorrectDimensions) {
   std::vector<uint8_t> img(kW * kH * kC, 42);
 
   int crop_w = 0, crop_h = 0;
-  auto cropped = ModelCascade::CropRoi(
-      img.data(), kW, kH, kC,
-      2.0F, 3.0F, 7.0F, 8.0F,
-      0.0F,  // no expand
-      crop_w, crop_h);
+  auto cropped =
+      ModelCascade::CropRoi(img.data(), kW, kH, kC, 2.0F, 3.0F, 7.0F, 8.0F,
+                            0.0F,  // no expand
+                            crop_w, crop_h);
 
   EXPECT_EQ(crop_w, 5);
   EXPECT_EQ(crop_h, 5);
@@ -364,11 +362,8 @@ TEST(ModelCascade, CropRoiClampsToImageBounds) {
   std::vector<uint8_t> img(kW * kH * kC, 0);
 
   int crop_w = 0, crop_h = 0;
-  auto cropped = ModelCascade::CropRoi(
-      img.data(), kW, kH, kC,
-      -20.0F, -10.0F, 120.0F, 110.0F,
-      0.1F,
-      crop_w, crop_h);
+  auto cropped = ModelCascade::CropRoi(img.data(), kW, kH, kC, -20.0F, -10.0F,
+                                       120.0F, 110.0F, 0.1F, crop_w, crop_h);
 
   EXPECT_EQ(crop_w, kW);
   EXPECT_EQ(crop_h, kH);

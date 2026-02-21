@@ -3,15 +3,15 @@
 #ifndef LOONG_CORE_PIPELINE_CHANNEL_PIPELINE_H_
 #define LOONG_CORE_PIPELINE_CHANNEL_PIPELINE_H_
 
+#include "core/common/types.h"
+#include "core/pipeline/pipeline_stage.h"
+#include "core/pipeline/stage_queue.h"
+
 #include <atomic>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include "core/common/types.h"
-#include "core/pipeline/pipeline_stage.h"
-#include "core/pipeline/stage_queue.h"
 
 namespace loong::core {
 

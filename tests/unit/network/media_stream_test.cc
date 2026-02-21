@@ -3,15 +3,14 @@
 #include "network/media_stream/fmp4_muxer.h"
 #include "network/media_stream/ws_media_service.h"
 
-#include <gtest/gtest.h>
-
-#include <cstring>
-#include <thread>
-#include <vector>
-
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <arpa/inet.h>
+#include <cstring>
+#include <gtest/gtest.h>
+#include <thread>
+#include <vector>
 
 namespace loong {
 namespace network {
@@ -61,9 +60,9 @@ std::vector<uint8_t> MakeH265Keyframe() {
                            0x03, 0x00, 0x00, 0x03, 0x00, 0x5D, 0xAC, 0x09});
   // SPS: start code + nal_type=33 (0x42 0x01)
   data.insert(data.end(), {0x00, 0x00, 0x00, 0x01});
-  data.insert(data.end(), {0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03,
-                           0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00,
-                           0x03, 0x00, 0x5D, 0xA0});
+  data.insert(data.end(),
+              {0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x00,
+               0x03, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x5D, 0xA0});
   // PPS: start code + nal_type=34 (0x44 0x01)
   data.insert(data.end(), {0x00, 0x00, 0x00, 0x01});
   data.insert(data.end(), {0x44, 0x01, 0xC0, 0xF7, 0xC0, 0xCC, 0x90});
@@ -146,8 +145,7 @@ TEST(Fmp4MuxerTest, MakeH264MediaSegment) {
   auto keyframe = MakeH264Keyframe();
 
   auto segment = Fmp4Muxer::MakeMediaSegment(
-      keyframe.data(), keyframe.size(),
-      0, 3600, 1, true, CodecType::kH264);
+      keyframe.data(), keyframe.size(), 0, 3600, 1, true, CodecType::kH264);
   EXPECT_FALSE(segment.empty());
 
   // Verify moof box
@@ -165,9 +163,8 @@ TEST(Fmp4MuxerTest, MakeH264MediaSegment) {
 TEST(Fmp4MuxerTest, MakeH264MediaSegmentPFrame) {
   auto pframe = MakeH264PFrame();
 
-  auto segment = Fmp4Muxer::MakeMediaSegment(
-      pframe.data(), pframe.size(),
-      3600, 3600, 2, false, CodecType::kH264);
+  auto segment = Fmp4Muxer::MakeMediaSegment(pframe.data(), pframe.size(), 3600,
+                                             3600, 2, false, CodecType::kH264);
   EXPECT_FALSE(segment.empty());
 
   uint32_t moof_size = CheckBox(segment, 0, "moof");
@@ -182,7 +179,7 @@ TEST(Fmp4MuxerTest, ExtractH265Params) {
   auto keyframe = MakeH265Keyframe();
   std::vector<uint8_t> vps, sps, pps;
   EXPECT_TRUE(Fmp4Muxer::ExtractH265Params(keyframe.data(), keyframe.size(),
-                                             vps, sps, pps));
+                                           vps, sps, pps));
   EXPECT_FALSE(vps.empty());
   EXPECT_FALSE(sps.empty());
   EXPECT_FALSE(pps.empty());
@@ -199,7 +196,7 @@ TEST(Fmp4MuxerTest, MakeH265InitSegment) {
   auto keyframe = MakeH265Keyframe();
   std::vector<uint8_t> vps, sps, pps;
   ASSERT_TRUE(Fmp4Muxer::ExtractH265Params(keyframe.data(), keyframe.size(),
-                                             vps, sps, pps));
+                                           vps, sps, pps));
 
   auto init = Fmp4Muxer::MakeH265InitSegment(vps, sps, pps, 1920, 1080);
   EXPECT_FALSE(init.empty());
@@ -217,8 +214,7 @@ TEST(Fmp4MuxerTest, MakeH265MediaSegment) {
   auto keyframe = MakeH265Keyframe();
 
   auto segment = Fmp4Muxer::MakeMediaSegment(
-      keyframe.data(), keyframe.size(),
-      0, 3600, 1, true, CodecType::kH265);
+      keyframe.data(), keyframe.size(), 0, 3600, 1, true, CodecType::kH265);
   EXPECT_FALSE(segment.empty());
 
   uint32_t moof_size = CheckBox(segment, 0, "moof");
@@ -233,8 +229,8 @@ TEST(Fmp4MuxerTest, SequentialMediaSegments) {
   auto pframe = MakeH264PFrame();
 
   std::vector<uint8_t> sps, pps;
-  ASSERT_TRUE(Fmp4Muxer::ExtractH264Params(keyframe.data(), keyframe.size(),
-                                             sps, pps));
+  ASSERT_TRUE(
+      Fmp4Muxer::ExtractH264Params(keyframe.data(), keyframe.size(), sps, pps));
 
   auto init = Fmp4Muxer::MakeH264InitSegment(sps, pps, 1920, 1080);
   EXPECT_FALSE(init.empty());
@@ -245,9 +241,9 @@ TEST(Fmp4MuxerTest, SequentialMediaSegments) {
     const auto& frame = is_key ? keyframe : pframe;
     uint64_t decode_time = static_cast<uint64_t>((seq - 1) * 3600);
 
-    auto segment = Fmp4Muxer::MakeMediaSegment(
-        frame.data(), frame.size(), decode_time, 3600, seq,
-        is_key, CodecType::kH264);
+    auto segment =
+        Fmp4Muxer::MakeMediaSegment(frame.data(), frame.size(), decode_time,
+                                    3600, seq, is_key, CodecType::kH264);
     EXPECT_FALSE(segment.empty());
   }
 }

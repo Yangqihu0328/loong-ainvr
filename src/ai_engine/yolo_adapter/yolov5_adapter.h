@@ -20,9 +20,9 @@ class YoloV5Adapter : public YoloModelAdapter {
                   TensorShape& input_shape) override;
 
   bool PostProcess(const std::vector<float>& output_data,
-                   const TensorShape& output_shape,
-                   int original_width, int original_height,
-                   float confidence_threshold, float nms_threshold,
+                   const TensorShape& output_shape, int original_width,
+                   int original_height, float confidence_threshold,
+                   float nms_threshold,
                    std::vector<Detection>& detections) override;
 
   std::string ModelFamily() const override { return "yolov5"; }

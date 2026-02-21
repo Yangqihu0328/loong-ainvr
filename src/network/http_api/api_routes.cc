@@ -2,16 +2,15 @@
 
 #include "network/http_api/api_routes.h"
 
-#include <fstream>
-#include <limits>
-
-#include <nlohmann/json.hpp>
-
 #include "core/config/config_manager.h"
 #include "network/flv_stream/http_flv_service.h"
 #include "network/hls_stream/hls_service.h"
 #include "network/http_server/http_server.h"
 #include "spdlog/spdlog.h"
+
+#include <fstream>
+#include <limits>
+#include <nlohmann/json.hpp>
 
 namespace loong::network {
 
@@ -19,457 +18,395 @@ void ApiRoutes::Register(HttpServer& server) {
   auto& svr = server.GetServer();
 
   // ========== Auth endpoints ==========
-  svr.Post("/api/auth/login",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleLogin(server, req, res);
-           });
+  svr.Post("/api/auth/login", [this, &server](const httplib::Request& req,
+                                              httplib::Response& res) {
+    HandleLogin(server, req, res);
+  });
 
   svr.Get("/api/auth/profile",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetProfile(server, req, res);
           });
 
   svr.Put("/api/auth/password",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleChangePassword(server, req, res);
           });
 
   // ========== User management (admin only) ==========
   svr.Get("/api/users",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleListUsers(server, req, res);
           });
 
-  svr.Post("/api/users",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleCreateUser(server, req, res);
-           });
+  svr.Post("/api/users", [this, &server](const httplib::Request& req,
+                                         httplib::Response& res) {
+    HandleCreateUser(server, req, res);
+  });
 
   svr.Put(R"(/api/users/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateUser(server, req, res);
           });
 
-  svr.Delete(R"(/api/users/(\d+))",
-             [this, &server](const httplib::Request& req,
-                             httplib::Response& res) {
-               HandleDeleteUser(server, req, res);
-             });
+  svr.Delete(R"(/api/users/(\d+))", [this, &server](const httplib::Request& req,
+                                                    httplib::Response& res) {
+    HandleDeleteUser(server, req, res);
+  });
 
   // ========== Channel endpoints ==========
   svr.Get("/api/channels",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleListChannels(server, req, res);
           });
 
-  svr.Post("/api/channels",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleCreateChannel(server, req, res);
-           });
+  svr.Post("/api/channels", [this, &server](const httplib::Request& req,
+                                            httplib::Response& res) {
+    HandleCreateChannel(server, req, res);
+  });
 
   // Actions must be before generic /:id route
-  svr.Post(R"(/api/channels/(\d+)/start)",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleStartChannel(server, req, res);
-           });
+  svr.Post(
+      R"(/api/channels/(\d+)/start)",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleStartChannel(server, req, res);
+      });
 
-  svr.Post(R"(/api/channels/(\d+)/stop)",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleStopChannel(server, req, res);
-           });
+  svr.Post(
+      R"(/api/channels/(\d+)/stop)",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleStopChannel(server, req, res);
+      });
 
   svr.Get(R"(/api/channels/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetChannel(server, req, res);
           });
 
   svr.Put(R"(/api/channels/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateChannel(server, req, res);
           });
 
-  svr.Delete(R"(/api/channels/(\d+))",
-             [this, &server](const httplib::Request& req,
-                             httplib::Response& res) {
-               HandleDeleteChannel(server, req, res);
-             });
+  svr.Delete(
+      R"(/api/channels/(\d+))",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleDeleteChannel(server, req, res);
+      });
 
   // ========== Overlay config endpoints ==========
   svr.Get(R"(/api/channels/(\d+)/overlay)",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetOverlayConfig(server, req, res);
           });
 
   svr.Put(R"(/api/channels/(\d+)/overlay)",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateOverlayConfig(server, req, res);
           });
 
   // ========== Other endpoints ==========
   svr.Get("/api/recordings",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetRecordings(server, req, res);
           });
 
   svr.Get("/api/events",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetEvents(server, req, res);
           });
 
   svr.Get("/api/recordings/timeline",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetTimeline(server, req, res);
           });
 
   svr.Get("/api/events/search",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleSearchEvents(server, req, res);
           });
 
   svr.Get("/api/system/status",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetSystemStatus(server, req, res);
           });
 
   svr.Put("/api/system/storage",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateStorageConfig(server, req, res);
           });
 
   svr.Get("/api/system/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetConfig(server, req, res);
           });
 
   svr.Put("/api/system/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateConfig(server, req, res);
           });
 
   // ========== Recording file access ==========
   svr.Get("/api/recordings/playback",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleRecordingPlayback(server, req, res);
           });
 
   svr.Get("/api/recordings/download",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleRecordingDownload(server, req, res);
           });
 
   // ========== FLV streaming ==========
   svr.Get(R"(/live/ch(\d+)\.flv)",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleFlvStream(server, req, res);
           });
 
   // ========== HLS streaming ==========
   svr.Get(R"(/live/ch(\d+)/index\.m3u8)",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleHlsPlaylist(server, req, res);
           });
 
   svr.Get(R"(/live/ch(\d+)/(\d+)\.ts)",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleHlsSegment(server, req, res);
           });
 
   // ========== ONVIF endpoints ==========
   svr.Get("/api/onvif/discover",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleOnvifDiscover(server, req, res);
           });
 
   svr.Get(R"(/api/onvif/device/(.+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleOnvifDeviceInfo(server, req, res);
           });
 
-  svr.Post(R"(/api/onvif/device/(.+)/ptz)",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleOnvifPtz(server, req, res);
-           });
+  svr.Post(
+      R"(/api/onvif/device/(.+)/ptz)",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleOnvifPtz(server, req, res);
+      });
 
   // ========== Notification endpoints ==========
   svr.Get("/api/system/notifications",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetNotificationConfig(server, req, res);
           });
 
   svr.Put("/api/system/notifications",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateNotificationConfig(server, req, res);
           });
 
-  svr.Post("/api/system/notifications/test",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleTestNotification(server, req, res);
-           });
+  svr.Post(
+      "/api/system/notifications/test",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleTestNotification(server, req, res);
+      });
 
   svr.Get("/api/system/notifications/history",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetNotificationHistory(server, req, res);
           });
 
   // ========== Rules endpoints ==========
   svr.Get("/api/rules",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleListRules(server, req, res);
           });
 
-  svr.Post("/api/rules",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleCreateRule(server, req, res);
-           });
+  svr.Post("/api/rules", [this, &server](const httplib::Request& req,
+                                         httplib::Response& res) {
+    HandleCreateRule(server, req, res);
+  });
 
   svr.Get(R"(/api/rules/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetRule(server, req, res);
           });
 
   svr.Put(R"(/api/rules/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateRule(server, req, res);
           });
 
-  svr.Delete(R"(/api/rules/(\d+))",
-             [this, &server](const httplib::Request& req,
-                             httplib::Response& res) {
-               HandleDeleteRule(server, req, res);
-             });
+  svr.Delete(R"(/api/rules/(\d+))", [this, &server](const httplib::Request& req,
+                                                    httplib::Response& res) {
+    HandleDeleteRule(server, req, res);
+  });
 
   svr.Get("/api/rules/events",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleQueryRuleEvents(server, req, res);
           });
 
   // ========== LPR (Plate) endpoints ==========
   svr.Get("/api/analytics/plates",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleQueryPlates(server, req, res);
           });
 
   // ========== Face endpoints ==========
   svr.Get("/api/analytics/faces",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleQueryFaces(server, req, res);
           });
 
-  svr.Post("/api/analytics/faces/search",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleSearchFaces(server, req, res);
-           });
+  svr.Post(
+      "/api/analytics/faces/search",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleSearchFaces(server, req, res);
+      });
 
   // ========== Analytics endpoints ==========
   svr.Get("/api/analytics/summary",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleAnalyticsSummary(server, req, res);
           });
 
   svr.Get("/api/analytics/trends",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleAnalyticsTrends(server, req, res);
           });
 
   svr.Get("/api/analytics/heatmap",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleAnalyticsHeatmap(server, req, res);
           });
 
   svr.Get("/api/analytics/peak-hours",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleAnalyticsPeakHours(server, req, res);
           });
 
   svr.Get("/api/analytics/counting",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleAnalyticsCounting(server, req, res);
           });
 
   // ========== Observability endpoints ==========
   svr.Get("/api/health",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleHealthCheck(server, req, res);
           });
 
   svr.Get("/metrics",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleMetrics(server, req, res);
           });
 
   // ========== WebRTC endpoints ==========
-  svr.Post("/api/webrtc/offer",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleWebRtcOffer(server, req, res);
-           });
+  svr.Post("/api/webrtc/offer", [this, &server](const httplib::Request& req,
+                                                httplib::Response& res) {
+    HandleWebRtcOffer(server, req, res);
+  });
 
-  svr.Post("/api/webrtc/ice",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleWebRtcIce(server, req, res);
-           });
+  svr.Post("/api/webrtc/ice", [this, &server](const httplib::Request& req,
+                                              httplib::Response& res) {
+    HandleWebRtcIce(server, req, res);
+  });
 
-  svr.Delete(R"(/api/webrtc/(\w+))",
-             [this, &server](const httplib::Request& req,
-                             httplib::Response& res) {
-               HandleWebRtcClose(server, req, res);
-             });
+  svr.Delete(
+      R"(/api/webrtc/(\w+))",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleWebRtcClose(server, req, res);
+      });
 
   // ========== Cloud Backup endpoints ==========
   svr.Get("/api/backup/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetBackupConfig(server, req, res);
           });
 
   svr.Put("/api/backup/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateBackupConfig(server, req, res);
           });
 
   svr.Get("/api/backup/status",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetBackupStatus(server, req, res);
           });
 
-  svr.Post("/api/backup/test",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleTestBackupConnection(server, req, res);
-           });
+  svr.Post("/api/backup/test", [this, &server](const httplib::Request& req,
+                                               httplib::Response& res) {
+    HandleTestBackupConnection(server, req, res);
+  });
 
-  svr.Post("/api/backup/trigger",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleTriggerBackup(server, req, res);
-           });
+  svr.Post("/api/backup/trigger", [this, &server](const httplib::Request& req,
+                                                  httplib::Response& res) {
+    HandleTriggerBackup(server, req, res);
+  });
 
   // ========== MQTT endpoints ==========
   svr.Get("/api/mqtt/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleGetMqttConfig(server, req, res);
           });
 
   svr.Put("/api/mqtt/config",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateMqttConfig(server, req, res);
           });
 
-  svr.Post("/api/mqtt/test",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleTestMqtt(server, req, res);
-           });
+  svr.Post("/api/mqtt/test", [this, &server](const httplib::Request& req,
+                                             httplib::Response& res) {
+    HandleTestMqtt(server, req, res);
+  });
 
   // ========== Plugin endpoints ==========
   svr.Get("/api/plugins",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleListPlugins(server, req, res);
           });
 
-  svr.Post("/api/plugins/upload",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleUploadPlugin(server, req, res);
-           });
+  svr.Post("/api/plugins/upload", [this, &server](const httplib::Request& req,
+                                                  httplib::Response& res) {
+    HandleUploadPlugin(server, req, res);
+  });
 
   // ========== Alarm endpoints ==========
   svr.Get("/api/alarms/rules",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleListAlarmRules(server, req, res);
           });
 
-  svr.Post("/api/alarms/rules",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleCreateAlarmRule(server, req, res);
-           });
+  svr.Post("/api/alarms/rules", [this, &server](const httplib::Request& req,
+                                                httplib::Response& res) {
+    HandleCreateAlarmRule(server, req, res);
+  });
 
   svr.Put(R"(/api/alarms/rules/(\d+))",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleUpdateAlarmRule(server, req, res);
           });
 
-  svr.Delete(R"(/api/alarms/rules/(\d+))",
-             [this, &server](const httplib::Request& req,
-                             httplib::Response& res) {
-               HandleDeleteAlarmRule(server, req, res);
-             });
+  svr.Delete(
+      R"(/api/alarms/rules/(\d+))",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleDeleteAlarmRule(server, req, res);
+      });
 
   svr.Get("/api/alarms",
-          [this, &server](const httplib::Request& req,
-                          httplib::Response& res) {
+          [this, &server](const httplib::Request& req, httplib::Response& res) {
             HandleQueryAlarms(server, req, res);
           });
 
-  svr.Post(R"(/api/alarms/(\d+)/acknowledge)",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleAcknowledgeAlarm(server, req, res);
-           });
+  svr.Post(
+      R"(/api/alarms/(\d+)/acknowledge)",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleAcknowledgeAlarm(server, req, res);
+      });
 
-  svr.Post("/api/alarms/acknowledge-all",
-           [this, &server](const httplib::Request& req,
-                           httplib::Response& res) {
-             HandleAcknowledgeAllAlarms(server, req, res);
-           });
+  svr.Post(
+      "/api/alarms/acknowledge-all",
+      [this, &server](const httplib::Request& req, httplib::Response& res) {
+        HandleAcknowledgeAllAlarms(server, req, res);
+      });
 
   spdlog::info("ApiRoutes: registered 70 endpoints");
 }
@@ -532,8 +469,7 @@ void ApiRoutes::HandleLogin(HttpServer& srv, const httplib::Request& req,
   }
 }
 
-void ApiRoutes::HandleGetProfile(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleGetProfile(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -606,8 +542,7 @@ void ApiRoutes::HandleChangePassword(HttpServer& srv,
 // User Management Handlers
 // ============================================================
 
-void ApiRoutes::HandleListUsers(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleListUsers(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -632,8 +567,7 @@ void ApiRoutes::HandleListUsers(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, arr.dump());
 }
 
-void ApiRoutes::HandleCreateUser(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleCreateUser(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -655,8 +589,7 @@ void ApiRoutes::HandleCreateUser(HttpServer& srv,
       return;
     }
     if (password.size() < 6) {
-      HttpServer::JsonError(res, 400,
-                            "password must be at least 6 characters");
+      HttpServer::JsonError(res, 400, "password must be at least 6 characters");
       return;
     }
 
@@ -666,8 +599,8 @@ void ApiRoutes::HandleCreateUser(HttpServer& srv,
       return;
     }
 
-    int64_t id = user_store_->CreateUser(username, password, display_name,
-                                         role);
+    int64_t id =
+        user_store_->CreateUser(username, password, display_name, role);
     if (id < 0) {
       HttpServer::JsonError(res, 500, "failed to create user");
       return;
@@ -680,8 +613,7 @@ void ApiRoutes::HandleCreateUser(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleUpdateUser(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleUpdateUser(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -728,8 +660,7 @@ void ApiRoutes::HandleUpdateUser(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleDeleteUser(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleDeleteUser(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -757,8 +688,7 @@ void ApiRoutes::HandleDeleteUser(HttpServer& srv,
 // Channel Handlers
 // ============================================================
 
-void ApiRoutes::HandleListChannels(HttpServer& srv,
-                                   const httplib::Request& req,
+void ApiRoutes::HandleListChannels(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -821,7 +751,8 @@ void ApiRoutes::HandleCreateChannel(HttpServer& srv,
     if (j.contains("framerate")) config.framerate = j["framerate"];
     if (j.contains("codec")) {
       auto codec_str = j["codec"].get<std::string>();
-      config.codec = (codec_str == "h265") ? CodecType::kH265 : CodecType::kH264;
+      config.codec =
+          (codec_str == "h265") ? CodecType::kH265 : CodecType::kH264;
     }
 
     if (config.name.empty()) {
@@ -841,8 +772,7 @@ void ApiRoutes::HandleCreateChannel(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleGetChannel(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleGetChannel(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -923,7 +853,8 @@ void ApiRoutes::HandleUpdateChannel(HttpServer& srv,
     if (j.contains("confidence_threshold"))
       config.confidence_threshold = j["confidence_threshold"];
     if (j.contains("analysis_fps")) config.analysis_fps = j["analysis_fps"];
-    if (j.contains("record_enabled")) config.record_enabled = j["record_enabled"];
+    if (j.contains("record_enabled"))
+      config.record_enabled = j["record_enabled"];
     if (j.contains("latitude")) config.latitude = j["latitude"];
     if (j.contains("longitude")) config.longitude = j["longitude"];
     if (j.contains("width")) config.width = j["width"];
@@ -931,7 +862,8 @@ void ApiRoutes::HandleUpdateChannel(HttpServer& srv,
     if (j.contains("framerate")) config.framerate = j["framerate"];
     if (j.contains("codec")) {
       auto codec_str = j["codec"].get<std::string>();
-      config.codec = (codec_str == "h265") ? CodecType::kH265 : CodecType::kH264;
+      config.codec =
+          (codec_str == "h265") ? CodecType::kH265 : CodecType::kH264;
     }
 
     bool ok = channel_mgr_->EditChannel(ch_id, config);
@@ -963,8 +895,7 @@ void ApiRoutes::HandleDeleteChannel(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleStartChannel(HttpServer& srv,
-                                   const httplib::Request& req,
+void ApiRoutes::HandleStartChannel(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -984,8 +915,7 @@ void ApiRoutes::HandleStartChannel(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleStopChannel(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleStopChannel(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1084,7 +1014,8 @@ void ApiRoutes::HandleUpdateOverlayConfig(HttpServer& srv,
     ov.show_trajectory = j.value("show_trajectory", ov.show_trajectory);
     ov.trajectory_max_points =
         j.value("trajectory_max_points", ov.trajectory_max_points);
-    ov.timestamp_position = j.value("timestamp_position", ov.timestamp_position);
+    ov.timestamp_position =
+        j.value("timestamp_position", ov.timestamp_position);
     ov.fill_opacity = j.value("fill_opacity", ov.fill_opacity);
     ov.timestamp_format = j.value("timestamp_format", ov.timestamp_format);
 
@@ -1127,8 +1058,8 @@ void ApiRoutes::HandleGetRecordings(HttpServer& srv,
     return;
   }
 
-  auto segments = record_index_->QuerySegments(channel_id, start_time,
-                                               end_time);
+  auto segments =
+      record_index_->QuerySegments(channel_id, start_time, end_time);
   nlohmann::json arr = nlohmann::json::array();
   for (const auto& seg : segments) {
     arr.push_back({{"id", seg.id},
@@ -1143,8 +1074,7 @@ void ApiRoutes::HandleGetRecordings(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, arr.dump());
 }
 
-void ApiRoutes::HandleGetEvents(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleGetEvents(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1183,8 +1113,7 @@ void ApiRoutes::HandleGetEvents(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, arr.dump());
 }
 
-void ApiRoutes::HandleGetTimeline(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleGetTimeline(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1210,8 +1139,8 @@ void ApiRoutes::HandleGetTimeline(HttpServer& srv,
     return;
   }
 
-  auto segments = record_index_->QuerySegments(channel_id, start_time,
-                                               end_time);
+  auto segments =
+      record_index_->QuerySegments(channel_id, start_time, end_time);
   auto events = record_index_->QueryEvents(channel_id, start_time, end_time);
 
   // Build timeline response: segments with embedded event markers
@@ -1243,17 +1172,14 @@ void ApiRoutes::HandleGetTimeline(HttpServer& srv,
   }
 
   nlohmann::json result = {
-      {"channel_id", channel_id},
-      {"start_time", start_time},
-      {"end_time", end_time},
-      {"segments", timeline},
+      {"channel_id", channel_id},      {"start_time", start_time},
+      {"end_time", end_time},          {"segments", timeline},
       {"total_events", events.size()},
   };
   HttpServer::JsonResponse(res, 200, result.dump());
 }
 
-void ApiRoutes::HandleSearchEvents(HttpServer& srv,
-                                   const httplib::Request& req,
+void ApiRoutes::HandleSearchEvents(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1285,8 +1211,8 @@ void ApiRoutes::HandleSearchEvents(HttpServer& srv,
     return;
   }
 
-  auto all_events = record_index_->QueryEvents(channel_id, start_time,
-                                                end_time);
+  auto all_events =
+      record_index_->QueryEvents(channel_id, start_time, end_time);
 
   // Filter by event_type and min_confidence
   nlohmann::json arr = nlohmann::json::array();
@@ -1305,8 +1231,7 @@ void ApiRoutes::HandleSearchEvents(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, arr.dump());
 }
 
-void ApiRoutes::HandleGetConfig(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleGetConfig(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1339,8 +1264,7 @@ void ApiRoutes::HandleGetConfig(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, cfg.dump());
 }
 
-void ApiRoutes::HandleUpdateConfig(HttpServer& srv,
-                                   const httplib::Request& req,
+void ApiRoutes::HandleUpdateConfig(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1363,8 +1287,8 @@ void ApiRoutes::HandleUpdateConfig(HttpServer& srv,
   }
 
   // Reject changes to critical sections that require restart
-  static const std::vector<std::string> immutable_sections = {
-      "auth", "tls", "network"};
+  static const std::vector<std::string> immutable_sections = {"auth", "tls",
+                                                              "network"};
   for (const auto& s : immutable_sections) {
     if (patch.contains(s)) {
       HttpServer::JsonError(
@@ -1449,9 +1373,10 @@ void ApiRoutes::HandleUpdateStorageConfig(HttpServer& srv,
     int retention_days = j.value("retention_days", 30);
     int max_size_gb = j.value("max_size_gb", 100);
 
-    spdlog::info("Storage config updated: segment={}min retention={}d "
-                 "max_size={}GB",
-                 segment_minutes, retention_days, max_size_gb);
+    spdlog::info(
+        "Storage config updated: segment={}min retention={}d "
+        "max_size={}GB",
+        segment_minutes, retention_days, max_size_gb);
 
     // Persist to config if ConfigManager supports it.
     auto& config = loong::core::ConfigManager::Instance();
@@ -1462,7 +1387,8 @@ void ApiRoutes::HandleUpdateStorageConfig(HttpServer& srv,
     nlohmann::json result = {{"success", true}};
     HttpServer::JsonResponse(res, 200, result.dump());
   } catch (const std::exception& e) {
-    HttpServer::JsonError(res, 400, std::string("invalid request: ") + e.what());
+    HttpServer::JsonError(res, 400,
+                          std::string("invalid request: ") + e.what());
   }
 }
 
@@ -1496,7 +1422,7 @@ void ApiRoutes::HandleRecordingPlayback(HttpServer& srv,
   }
 
   std::string body((std::istreambuf_iterator<char>(ifs)),
-                    std::istreambuf_iterator<char>());
+                   std::istreambuf_iterator<char>());
   HttpServer::SetCorsHeaders(res);
   res.set_content(body, "video/mp4");
   res.status = 200;
@@ -1532,7 +1458,7 @@ void ApiRoutes::HandleRecordingDownload(HttpServer& srv,
                              : file_path;
 
   std::string body((std::istreambuf_iterator<char>(ifs)),
-                    std::istreambuf_iterator<char>());
+                   std::istreambuf_iterator<char>());
 
   HttpServer::SetCorsHeaders(res);
   res.set_header("Content-Disposition",
@@ -1545,8 +1471,7 @@ void ApiRoutes::HandleRecordingDownload(HttpServer& srv,
 // FLV Streaming Handler
 // ============================================================
 
-void ApiRoutes::HandleFlvStream(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleFlvStream(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1579,10 +1504,8 @@ void ApiRoutes::HandleFlvStream(HttpServer& srv,
 
   res.set_chunked_content_provider(
       "video/x-flv",
-      [flv_svc, ch_id, viewer](size_t /*offset*/,
-                                httplib::DataSink& sink) -> bool {
-        return flv_svc->StreamToViewer(ch_id, viewer, sink);
-      },
+      [flv_svc, ch_id, viewer](size_t /*offset*/, httplib::DataSink& sink)
+          -> bool { return flv_svc->StreamToViewer(ch_id, viewer, sink); },
       [flv_svc, ch_id, viewer](bool /*success*/) {
         flv_svc->RemoveViewer(ch_id, viewer);
         spdlog::info("FLV viewer disconnected from channel {}", ch_id);
@@ -1593,8 +1516,7 @@ void ApiRoutes::HandleFlvStream(HttpServer& srv,
 // HLS Streaming Handlers
 // ============================================================
 
-void ApiRoutes::HandleHlsPlaylist(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleHlsPlaylist(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1632,8 +1554,7 @@ void ApiRoutes::HandleHlsPlaylist(HttpServer& srv,
   res.status = 200;
 }
 
-void ApiRoutes::HandleHlsSegment(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleHlsSegment(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1661,10 +1582,9 @@ void ApiRoutes::HandleHlsSegment(HttpServer& srv,
 
   HttpServer::SetCorsHeaders(res);
   res.set_header("Cache-Control", "public, max-age=30");
-  res.set_content(
-      std::string(reinterpret_cast<const char*>(segment->data()),
-                  segment->size()),
-      "video/mp2t");
+  res.set_content(std::string(reinterpret_cast<const char*>(segment->data()),
+                              segment->size()),
+                  "video/mp2t");
   res.status = 200;
 }
 
@@ -1725,25 +1645,20 @@ void ApiRoutes::HandleOnvifDeviceInfo(HttpServer& srv,
   nlohmann::json profiles_arr = nlohmann::json::array();
   for (const auto& p : profiles) {
     std::string stream_uri = device.GetStreamUri(p.token);
-    profiles_arr.push_back({{"token", p.token},
-                            {"name", p.name},
-                            {"stream_uri", stream_uri}});
+    profiles_arr.push_back(
+        {{"token", p.token}, {"name", p.name}, {"stream_uri", stream_uri}});
   }
 
   nlohmann::json result = {
-      {"xaddr", xaddr},
-      {"manufacturer", mfr},
-      {"model", model},
-      {"firmware_version", fw},
-      {"serial_number", serial},
-      {"hardware_id", hw},
+      {"xaddr", xaddr},           {"manufacturer", mfr},
+      {"model", model},           {"firmware_version", fw},
+      {"serial_number", serial},  {"hardware_id", hw},
       {"profiles", profiles_arr},
   };
   HttpServer::JsonResponse(res, 200, result.dump(2));
 }
 
-void ApiRoutes::HandleOnvifPtz(HttpServer& srv,
-                               const httplib::Request& req,
+void ApiRoutes::HandleOnvifPtz(HttpServer& srv, const httplib::Request& req,
                                httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -1752,8 +1667,8 @@ void ApiRoutes::HandleOnvifPtz(HttpServer& srv,
 
   try {
     auto j = nlohmann::json::parse(req.body);
-    std::string ptz_url = j.value("ptz_url",
-                                  "http://" + addr + "/onvif/ptz_service");
+    std::string ptz_url =
+        j.value("ptz_url", "http://" + addr + "/onvif/ptz_service");
     std::string profile_token = j.value("profile_token", "");
     std::string action = j.value("action", "");
     std::string user = j.value("username", "");
@@ -1817,14 +1732,10 @@ void ApiRoutes::HandleGetNotificationConfig(HttpServer& srv,
 
   nlohmann::json result;
   result["smtp"] = {
-      {"enabled", smtp.enabled},
-      {"host", smtp.host},
-      {"port", smtp.port},
-      {"use_tls", smtp.use_tls},
-      {"username", smtp.username},
-      {"from_address", smtp.from_address},
-      {"from_name", smtp.from_name},
-      {"to_addresses", smtp.to_addresses},
+      {"enabled", smtp.enabled},     {"host", smtp.host},
+      {"port", smtp.port},           {"use_tls", smtp.use_tls},
+      {"username", smtp.username},   {"from_address", smtp.from_address},
+      {"from_name", smtp.from_name}, {"to_addresses", smtp.to_addresses},
   };
   result["webhook"] = {
       {"enabled", webhook.enabled},
@@ -2021,8 +1932,8 @@ void ApiRoutes::HandleMetrics(HttpServer& /*srv*/,
 
     out += "# HELP loong_cpu_usage_percent CPU usage percentage\n";
     out += "# TYPE loong_cpu_usage_percent gauge\n";
-    out += "loong_cpu_usage_percent " + std::to_string(m.cpu_usage_percent) +
-           "\n";
+    out +=
+        "loong_cpu_usage_percent " + std::to_string(m.cpu_usage_percent) + "\n";
 
     out += "# HELP loong_memory_used_bytes Memory used in bytes\n";
     out += "# TYPE loong_memory_used_bytes gauge\n";
@@ -2061,8 +1972,8 @@ void ApiRoutes::HandleMetrics(HttpServer& /*srv*/,
     if (m.gpu_available) {
       out += "# HELP loong_gpu_usage_percent GPU usage percentage\n";
       out += "# TYPE loong_gpu_usage_percent gauge\n";
-      out += "loong_gpu_usage_percent " +
-             std::to_string(m.gpu_usage_percent) + "\n";
+      out += "loong_gpu_usage_percent " + std::to_string(m.gpu_usage_percent) +
+             "\n";
 
       out += "# HELP loong_gpu_memory_used_bytes GPU memory used\n";
       out += "# TYPE loong_gpu_memory_used_bytes gauge\n";
@@ -2098,8 +2009,8 @@ void ApiRoutes::HandleMetrics(HttpServer& /*srv*/,
 
       out += "# HELP loong_channel_fps_in Input FPS per channel\n";
       out += "# TYPE loong_channel_fps_in gauge\n";
-      out += "loong_channel_fps_in" + labels + " " +
-             std::to_string(s.fps_in) + "\n";
+      out += "loong_channel_fps_in" + labels + " " + std::to_string(s.fps_in) +
+             "\n";
 
       out += "# HELP loong_channel_fps_decode Decode FPS per channel\n";
       out += "# TYPE loong_channel_fps_decode gauge\n";
@@ -2108,8 +2019,8 @@ void ApiRoutes::HandleMetrics(HttpServer& /*srv*/,
 
       out += "# HELP loong_channel_fps_ai AI FPS per channel\n";
       out += "# TYPE loong_channel_fps_ai gauge\n";
-      out += "loong_channel_fps_ai" + labels + " " +
-             std::to_string(s.fps_ai) + "\n";
+      out += "loong_channel_fps_ai" + labels + " " + std::to_string(s.fps_ai) +
+             "\n";
 
       out += "# HELP loong_channel_frames_processed Total frames processed\n";
       out += "# TYPE loong_channel_frames_processed counter\n";
@@ -2132,8 +2043,7 @@ void ApiRoutes::HandleMetrics(HttpServer& /*srv*/,
 // Rules Handlers
 // ============================================================
 
-void ApiRoutes::HandleListRules(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleListRules(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2196,8 +2106,7 @@ void ApiRoutes::HandleListRules(HttpServer& srv,
   res.status = 200;
 }
 
-void ApiRoutes::HandleCreateRule(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleCreateRule(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2235,8 +2144,7 @@ void ApiRoutes::HandleCreateRule(HttpServer& srv,
 
     if (body.contains("region") && body["region"].contains("vertices")) {
       for (const auto& v : body["region"]["vertices"]) {
-        rule.region.vertices.push_back(
-            {v.value("x", 0.0), v.value("y", 0.0)});
+        rule.region.vertices.push_back({v.value("x", 0.0), v.value("y", 0.0)});
       }
     }
 
@@ -2279,8 +2187,7 @@ void ApiRoutes::HandleCreateRule(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleGetRule(HttpServer& srv,
-                              const httplib::Request& req,
+void ApiRoutes::HandleGetRule(HttpServer& srv, const httplib::Request& req,
                               httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2335,8 +2242,7 @@ void ApiRoutes::HandleGetRule(HttpServer& srv,
   res.status = 200;
 }
 
-void ApiRoutes::HandleUpdateRule(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleUpdateRule(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2411,8 +2317,7 @@ void ApiRoutes::HandleUpdateRule(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleDeleteRule(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleDeleteRule(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2466,8 +2371,7 @@ void ApiRoutes::HandleQueryRuleEvents(HttpServer& srv,
       start_time = std::stoll(req.get_param_value("start_time"));
     if (req.has_param("end_time"))
       end_time = std::stoll(req.get_param_value("end_time"));
-    if (req.has_param("limit"))
-      limit = std::stoi(req.get_param_value("limit"));
+    if (req.has_param("limit")) limit = std::stoi(req.get_param_value("limit"));
   } catch (const std::exception& e) {
     spdlog::debug("rule events query param parse: {}", e.what());
   }
@@ -2482,9 +2386,8 @@ void ApiRoutes::HandleQueryRuleEvents(HttpServer& srv,
         {"rule_type", rules::RuleTypeToString(ev.rule_type)},
         {"channel_id", ev.channel_id},
         {"timestamp", ev.timestamp},
-        {"severity", ev.severity == rules::RuleEventSeverity::kAlarm
-                         ? "alarm"
-                         : "info"},
+        {"severity",
+         ev.severity == rules::RuleEventSeverity::kAlarm ? "alarm" : "info"},
         {"direction", ev.direction},
         {"count_value", ev.count_value},
         {"dwell_time_sec", ev.dwell_time_sec},
@@ -2500,8 +2403,7 @@ void ApiRoutes::HandleQueryRuleEvents(HttpServer& srv,
 // LPR (Plate) handlers
 // ============================================================
 
-void ApiRoutes::HandleQueryPlates(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleQueryPlates(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2537,13 +2439,13 @@ void ApiRoutes::HandleQueryPlates(HttpServer& srv,
   nlohmann::json j = nlohmann::json::array();
   for (const auto& r : records) {
     j.push_back({
-      {"id", r.id},
-      {"plate_number", r.plate_number},
-      {"plate_color", r.plate_color},
-      {"confidence", r.confidence},
-      {"channel_id", r.channel_id},
-      {"timestamp", r.timestamp},
-      {"snapshot_path", r.snapshot_path},
+        {"id", r.id},
+        {"plate_number", r.plate_number},
+        {"plate_color", r.plate_color},
+        {"confidence", r.confidence},
+        {"channel_id", r.channel_id},
+        {"timestamp", r.timestamp},
+        {"snapshot_path", r.snapshot_path},
     });
   }
 
@@ -2559,8 +2461,7 @@ void ApiRoutes::HandleQueryPlates(HttpServer& srv,
 // Face Handlers
 // ============================================================
 
-void ApiRoutes::HandleQueryFaces(HttpServer& srv,
-                                 const httplib::Request& req,
+void ApiRoutes::HandleQueryFaces(HttpServer& srv, const httplib::Request& req,
                                  httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2602,14 +2503,14 @@ void ApiRoutes::HandleQueryFaces(HttpServer& srv,
   nlohmann::json j = nlohmann::json::array();
   for (const auto& r : records) {
     j.push_back({
-      {"id", r.id},
-      {"channel_id", r.channel_id},
-      {"timestamp", r.timestamp},
-      {"confidence", r.confidence},
-      {"age", r.age},
-      {"gender", r.gender},
-      {"snapshot_path", r.snapshot_path},
-      {"has_embedding", !r.embedding.empty()},
+        {"id", r.id},
+        {"channel_id", r.channel_id},
+        {"timestamp", r.timestamp},
+        {"confidence", r.confidence},
+        {"age", r.age},
+        {"gender", r.gender},
+        {"snapshot_path", r.snapshot_path},
+        {"has_embedding", !r.embedding.empty()},
     });
   }
 
@@ -2621,8 +2522,7 @@ void ApiRoutes::HandleQueryFaces(HttpServer& srv,
   res.status = 200;
 }
 
-void ApiRoutes::HandleSearchFaces(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleSearchFaces(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2668,14 +2568,14 @@ void ApiRoutes::HandleSearchFaces(HttpServer& srv,
   nlohmann::json j = nlohmann::json::array();
   for (const auto& [record, similarity] : matches) {
     j.push_back({
-      {"id", record.id},
-      {"channel_id", record.channel_id},
-      {"timestamp", record.timestamp},
-      {"confidence", record.confidence},
-      {"age", record.age},
-      {"gender", record.gender},
-      {"snapshot_path", record.snapshot_path},
-      {"similarity", similarity},
+        {"id", record.id},
+        {"channel_id", record.channel_id},
+        {"timestamp", record.timestamp},
+        {"confidence", record.confidence},
+        {"age", record.age},
+        {"gender", record.gender},
+        {"snapshot_path", record.snapshot_path},
+        {"similarity", similarity},
     });
   }
 
@@ -2752,25 +2652,27 @@ void ApiRoutes::HandleAnalyticsTrends(HttpServer& srv,
     end_time = std::stoll(req.get_param_value("end_time"));
   if (req.has_param("channel_id"))
     channel_id = std::stoi(req.get_param_value("channel_id"));
-  if (req.has_param("rule_type"))
-    rule_type = req.get_param_value("rule_type");
+  if (req.has_param("rule_type")) rule_type = req.get_param_value("rule_type");
   if (req.has_param("granularity"))
     granularity_str = req.get_param_value("granularity");
 
   auto granularity = analytics::TimeGranularity::kHourly;
-  if (granularity_str == "daily")        granularity = analytics::TimeGranularity::kDaily;
-  else if (granularity_str == "weekly")  granularity = analytics::TimeGranularity::kWeekly;
-  else if (granularity_str == "monthly") granularity = analytics::TimeGranularity::kMonthly;
+  if (granularity_str == "daily")
+    granularity = analytics::TimeGranularity::kDaily;
+  else if (granularity_str == "weekly")
+    granularity = analytics::TimeGranularity::kWeekly;
+  else if (granularity_str == "monthly")
+    granularity = analytics::TimeGranularity::kMonthly;
 
-  auto trends = analytics_store_->GetTrends(
-      start_time, end_time, granularity, channel_id, rule_type);
+  auto trends = analytics_store_->GetTrends(start_time, end_time, granularity,
+                                            channel_id, rule_type);
 
   nlohmann::json j = nlohmann::json::array();
   for (const auto& b : trends) {
     j.push_back({
-      {"bucket_start", b.bucket_start},
-      {"event_count", b.event_count},
-      {"count_sum", b.count_sum},
+        {"bucket_start", b.bucket_start},
+        {"event_count", b.event_count},
+        {"count_sum", b.count_sum},
     });
   }
 
@@ -2815,15 +2717,15 @@ void ApiRoutes::HandleAnalyticsHeatmap(HttpServer& srv,
   if (req.has_param("image_height"))
     img_h = std::stoi(req.get_param_value("image_height"));
 
-  auto cells = analytics_store_->GetHeatmap(
-      start_time, end_time, channel_id, grid_cols, grid_rows, img_w, img_h);
+  auto cells = analytics_store_->GetHeatmap(start_time, end_time, channel_id,
+                                            grid_cols, grid_rows, img_w, img_h);
 
   nlohmann::json j = nlohmann::json::array();
   for (const auto& c : cells) {
     j.push_back({
-      {"x", c.grid_x},
-      {"y", c.grid_y},
-      {"count", c.hit_count},
+        {"x", c.grid_x},
+        {"y", c.grid_y},
+        {"count", c.hit_count},
     });
   }
 
@@ -2864,9 +2766,9 @@ void ApiRoutes::HandleAnalyticsPeakHours(HttpServer& srv,
   nlohmann::json j = nlohmann::json::array();
   for (const auto& h : hours) {
     j.push_back({
-      {"hour", h.hour},
-      {"event_count", h.event_count},
-      {"percentage", h.percentage},
+        {"hour", h.hour},
+        {"event_count", h.event_count},
+        {"percentage", h.percentage},
     });
   }
 
@@ -2883,8 +2785,8 @@ void ApiRoutes::HandleAnalyticsPeakHours(HttpServer& srv,
 // ============================================================
 
 void ApiRoutes::HandleAnalyticsCounting(HttpServer& srv,
-                                         const httplib::Request& req,
-                                         httplib::Response& res) {
+                                        const httplib::Request& req,
+                                        httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
 
@@ -2899,9 +2801,8 @@ void ApiRoutes::HandleAnalyticsCounting(HttpServer& srv,
   if (req.has_param("channel_id"))
     channel_id = std::stoi(req.get_param_value("channel_id"));
 
-  auto rules = (channel_id >= 0)
-                   ? rule_engine_->ListRulesByChannel(channel_id)
-                   : rule_engine_->ListRules();
+  auto rules = (channel_id >= 0) ? rule_engine_->ListRulesByChannel(channel_id)
+                                 : rule_engine_->ListRules();
 
   nlohmann::json counters = nlohmann::json::array();
   for (const auto& rule : rules) {
@@ -2940,8 +2841,7 @@ void ApiRoutes::HandleAnalyticsCounting(HttpServer& srv,
 // WebRTC Handlers
 // ============================================================
 
-void ApiRoutes::HandleWebRtcOffer(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleWebRtcOffer(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -2983,8 +2883,7 @@ void ApiRoutes::HandleWebRtcOffer(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, result.dump());
 }
 
-void ApiRoutes::HandleWebRtcIce(HttpServer& srv,
-                                const httplib::Request& req,
+void ApiRoutes::HandleWebRtcIce(HttpServer& srv, const httplib::Request& req,
                                 httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3010,13 +2909,13 @@ void ApiRoutes::HandleWebRtcIce(HttpServer& srv,
   }
 
   bool ok = webrtc_service_->HandleIceCandidate(session_id, candidate);
-  HttpServer::JsonResponse(res, ok ? 200 : 404,
-                           ok ? R"({"success":true})"
-                              : R"({"success":false,"error":"session not found"})");
+  HttpServer::JsonResponse(
+      res, ok ? 200 : 404,
+      ok ? R"({"success":true})"
+         : R"({"success":false,"error":"session not found"})");
 }
 
-void ApiRoutes::HandleWebRtcClose(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleWebRtcClose(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3028,9 +2927,10 @@ void ApiRoutes::HandleWebRtcClose(HttpServer& srv,
 
   std::string session_id = req.matches[1].str();
   bool ok = webrtc_service_->CloseSession(session_id);
-  HttpServer::JsonResponse(res, ok ? 200 : 404,
-                           ok ? R"({"success":true})"
-                              : R"({"success":false,"error":"session not found"})");
+  HttpServer::JsonResponse(
+      res, ok ? 200 : 404,
+      ok ? R"({"success":true})"
+         : R"({"success":false,"error":"session not found"})");
 }
 
 // ============================================================
@@ -3052,7 +2952,8 @@ void ApiRoutes::HandleGetBackupConfig(HttpServer& srv,
   auto policy = cloud_backup_->GetPolicy();
   nlohmann::json j = {
       {"enabled", config.enabled},
-      {"provider", config.provider == storage::CloudProvider::kS3 ? "s3" : "none"},
+      {"provider",
+       config.provider == storage::CloudProvider::kS3 ? "s3" : "none"},
       {"endpoint", config.endpoint},
       {"region", config.region},
       {"bucket", config.bucket},
@@ -3181,7 +3082,8 @@ void ApiRoutes::HandleTriggerBackup(HttpServer& srv,
   }
 
   cloud_backup_->TriggerBackup();
-  HttpServer::JsonResponse(res, 200, R"({"success":true,"message":"backup triggered"})");
+  HttpServer::JsonResponse(res, 200,
+                           R"({"success":true,"message":"backup triggered"})");
 }
 
 // ============================================================
@@ -3258,8 +3160,7 @@ void ApiRoutes::HandleUpdateMqttConfig(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, R"({"success":true})");
 }
 
-void ApiRoutes::HandleTestMqtt(HttpServer& srv,
-                               const httplib::Request& req,
+void ApiRoutes::HandleTestMqtt(HttpServer& srv, const httplib::Request& req,
                                httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3281,8 +3182,7 @@ void ApiRoutes::HandleTestMqtt(HttpServer& srv,
 // Plugin Handlers
 // ============================================================
 
-void ApiRoutes::HandleListPlugins(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleListPlugins(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3307,8 +3207,7 @@ void ApiRoutes::HandleListPlugins(HttpServer& srv,
   HttpServer::JsonResponse(res, 200, resp.dump());
 }
 
-void ApiRoutes::HandleUploadPlugin(HttpServer& srv,
-                                   const httplib::Request& req,
+void ApiRoutes::HandleUploadPlugin(HttpServer& srv, const httplib::Request& req,
                                    httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3336,8 +3235,7 @@ void ApiRoutes::HandleUploadPlugin(HttpServer& srv,
   }
 
   std::string filename = file.filename;
-  if (filename.size() < 4 ||
-      filename.substr(filename.size() - 3) != ".so") {
+  if (filename.size() < 4 || filename.substr(filename.size() - 3) != ".so") {
     HttpServer::JsonError(res, 400, "file must be a .so shared library");
     return;
   }
@@ -3466,16 +3364,20 @@ void ApiRoutes::HandleUpdateAlarmRule(HttpServer& srv,
     if (j.contains("channel_id")) existing.channel_id = j["channel_id"];
     if (j.contains("event_type"))
       existing.event_type = j["event_type"].get<std::string>();
-    if (j.contains("min_confidence")) existing.min_confidence = j["min_confidence"];
+    if (j.contains("min_confidence"))
+      existing.min_confidence = j["min_confidence"];
     if (j.contains("enabled")) existing.enabled = j["enabled"];
     if (j.contains("description"))
       existing.description = j["description"].get<std::string>();
     if (j.contains("cooldown_sec")) existing.cooldown_sec = j["cooldown_sec"];
     if (j.contains("severity")) {
       auto sev = j["severity"].get<std::string>();
-      if (sev == "info") existing.severity = system::AlarmSeverity::kInfo;
-      else if (sev == "critical") existing.severity = system::AlarmSeverity::kCritical;
-      else existing.severity = system::AlarmSeverity::kWarning;
+      if (sev == "info")
+        existing.severity = system::AlarmSeverity::kInfo;
+      else if (sev == "critical")
+        existing.severity = system::AlarmSeverity::kCritical;
+      else
+        existing.severity = system::AlarmSeverity::kWarning;
     }
 
     existing.id = rule_id;
@@ -3508,8 +3410,7 @@ void ApiRoutes::HandleDeleteAlarmRule(HttpServer& srv,
   }
 }
 
-void ApiRoutes::HandleQueryAlarms(HttpServer& srv,
-                                  const httplib::Request& req,
+void ApiRoutes::HandleQueryAlarms(HttpServer& srv, const httplib::Request& req,
                                   httplib::Response& res) {
   system::AuthContext ctx;
   if (!srv.CheckAuth(req, res, ctx)) return;
@@ -3528,15 +3429,14 @@ void ApiRoutes::HandleQueryAlarms(HttpServer& srv,
     start_time = std::stoll(req.get_param_value("start_time"));
   if (req.has_param("end_time"))
     end_time = std::stoll(req.get_param_value("end_time"));
-  if (req.has_param("limit"))
-    limit = std::stoi(req.get_param_value("limit"));
+  if (req.has_param("limit")) limit = std::stoi(req.get_param_value("limit"));
   if (req.has_param("channel_id"))
     channel_id = std::stoi(req.get_param_value("channel_id"));
 
   std::vector<system::AlarmRecord> records;
   if (channel_id >= 0) {
-    records = alarm_mgr_->QueryAlarmsByChannel(channel_id, start_time,
-                                               end_time, limit);
+    records = alarm_mgr_->QueryAlarmsByChannel(channel_id, start_time, end_time,
+                                               limit);
   } else {
     records = alarm_mgr_->QueryAlarms(start_time, end_time, limit);
   }

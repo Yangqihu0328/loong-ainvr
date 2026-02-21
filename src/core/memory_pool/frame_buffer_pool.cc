@@ -29,8 +29,8 @@ FrameBufferPool::FrameBufferPool(size_t count, size_t buffer_size)
     all_buffers_.push_back(std::move(buf));
   }
 
-  spdlog::info("FrameBufferPool created: {} buffers x {} bytes = {} MB",
-               count, buffer_size,
+  spdlog::info("FrameBufferPool created: {} buffers x {} bytes = {} MB", count,
+               buffer_size,
                (static_cast<size_t>(count) * buffer_size) / (1024 * 1024));
 }
 
@@ -46,9 +46,7 @@ std::shared_ptr<FrameBuffer> FrameBufferPool::Acquire() {
   FrameBuffer* raw = available_.front();
   available_.pop();
 
-  return {raw, [this](FrameBuffer* buf) {
-    this->Release(buf);
-  }};
+  return {raw, [this](FrameBuffer* buf) { this->Release(buf); }};
 }
 
 void FrameBufferPool::Release(FrameBuffer* buffer) {

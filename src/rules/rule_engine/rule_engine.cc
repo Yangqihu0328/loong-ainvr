@@ -2,12 +2,13 @@
 
 #include "rules/rule_engine/rule_engine.h"
 
-#include <chrono>
-
 #include "core/event_bus/event_bus.h"
-#include "nlohmann/json.hpp"
 #include "rules/evaluators/counting_evaluator.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
+
+#include "nlohmann/json.hpp"
 
 namespace loong::rules {
 
@@ -58,8 +59,8 @@ void RuleEngine::ReloadChannel(int channel_id) {
   evaluators_.erase(channel_id);
   evaluators_.emplace(channel_id, std::move(new_entries));
 
-  spdlog::debug("RuleEngine: reloaded channel {} ({} evaluators)",
-                channel_id, evaluators_[channel_id].size());
+  spdlog::debug("RuleEngine: reloaded channel {} ({} evaluators)", channel_id,
+                evaluators_[channel_id].size());
 }
 
 // ── CRUD ──
@@ -126,8 +127,7 @@ std::vector<RuleEvent> RuleEngine::Evaluate(
 
     // Cooldown: skip if last event was too recent
     if (entry.last_event_time_ms > 0 &&
-        (context.timestamp_ms - entry.last_event_time_ms) <
-            entry.cooldown_ms) {
+        (context.timestamp_ms - entry.last_event_time_ms) < entry.cooldown_ms) {
       continue;
     }
 

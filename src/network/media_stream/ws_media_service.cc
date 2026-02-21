@@ -18,12 +18,10 @@
 
 namespace loong::network {
 
-WsMediaService::WsMediaService(std::string  host, int port)
+WsMediaService::WsMediaService(std::string host, int port)
     : host_(std::move(host)), port_(port) {}
 
-WsMediaService::~WsMediaService() {
-  Stop();
-}
+WsMediaService::~WsMediaService() { Stop(); }
 
 bool WsMediaService::Start() {
   listen_fd_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -100,8 +98,8 @@ void WsMediaService::Stop() {
 }
 
 void WsMediaService::RegisterChannel(int channel_id, CodecType codec,
-                                      uint16_t width, uint16_t height,
-                                      int framerate) {
+                                     uint16_t width, uint16_t height,
+                                     int framerate) {
   std::lock_guard<std::mutex> lock(channels_mutex_);
   auto stream = std::make_unique<ChannelStream>();
   stream->codec = codec;
@@ -112,8 +110,7 @@ void WsMediaService::RegisterChannel(int channel_id, CodecType codec,
   channels_[channel_id] = std::move(stream);
   spdlog::info("WsMediaService: registered channel {} ({}x{}, {} @{}fps)",
                channel_id, width, height,
-               codec == CodecType::kH265 ? "H.265" : "H.264",
-               fps);
+               codec == CodecType::kH265 ? "H.265" : "H.264", fps);
 }
 
 void WsMediaService::UnregisterChannel(int channel_id) {
@@ -146,9 +143,8 @@ void WsMediaService::UnregisterChannel(int channel_id) {
   spdlog::info("WsMediaService: unregistered channel {}", channel_id);
 }
 
-void WsMediaService::PushFrame(int channel_id, const uint8_t* data,
-                                size_t size, int64_t pts,
-                                bool is_keyframe) {
+void WsMediaService::PushFrame(int channel_id, const uint8_t* data, size_t size,
+                               int64_t pts, bool is_keyframe) {
   if (!running_) return;
 
   std::lock_guard<std::mutex> lock(channels_mutex_);
@@ -192,12 +188,11 @@ void WsMediaService::PushFrame(int channel_id, const uint8_t* data,
     if (params_changed) {
       if (stream->codec == CodecType::kH264) {
         stream->init_segment = Fmp4Muxer::MakeH264InitSegment(
-            stream->h264_sps, stream->h264_pps,
-            stream->width, stream->height);
+            stream->h264_sps, stream->h264_pps, stream->width, stream->height);
       } else if (stream->codec == CodecType::kH265) {
         stream->init_segment = Fmp4Muxer::MakeH265InitSegment(
-            stream->h265_vps, stream->h265_sps, stream->h265_pps,
-            stream->width, stream->height);
+            stream->h265_vps, stream->h265_sps, stream->h265_pps, stream->width,
+            stream->height);
       }
       spdlog::debug("WsMediaService: ch{} regenerated init segment ({} bytes)",
                     channel_id, stream->init_segment.size());
@@ -220,9 +215,9 @@ void WsMediaService::PushFrame(int channel_id, const uint8_t* data,
 
   uint32_t duration = Fmp4Muxer::kTimescale / stream->framerate;
 
-  auto segment = Fmp4Muxer::MakeMediaSegment(
-      data, size, decode_time, duration,
-      stream->sequence_number++, is_keyframe, stream->codec);
+  auto segment = Fmp4Muxer::MakeMediaSegment(data, size, decode_time, duration,
+                                             stream->sequence_number++,
+                                             is_keyframe, stream->codec);
   if (segment.empty()) return;
 
   // Wrap segment in WebSocket binary frame
@@ -259,9 +254,8 @@ void WsMediaService::PushFrame(int channel_id, const uint8_t* data,
 
     // Send init segment to new viewers who haven't received it
     if (!viewer->got_init_segment && !stream->init_segment.empty()) {
-      auto init_ws =
-          BuildWsBinaryFrame(stream->init_segment.data(),
-                             stream->init_segment.size());
+      auto init_ws = BuildWsBinaryFrame(stream->init_segment.data(),
+                                        stream->init_segment.size());
       viewer->pending_segments.push_back(std::move(init_ws));
       viewer->got_init_segment = true;
     }
@@ -316,9 +310,9 @@ void WsMediaService::AcceptLoop() {
 
     struct sockaddr_in client_addr {};
     socklen_t addr_len = sizeof(client_addr);
-    int client_fd = accept(listen_fd_,
-                           reinterpret_cast<struct sockaddr*>(&client_addr),
-                           &addr_len);
+    int client_fd =
+        accept(listen_fd_, reinterpret_cast<struct sockaddr*>(&client_addr),
+               &addr_len);
     if (client_fd < 0) continue;
 
     // Disable Nagle for low latency
@@ -349,8 +343,8 @@ void WsMediaService::AcceptLoop() {
       }
       std::lock_guard<std::mutex> slock(it->second->mtx);
       it->second->viewers.push_back(viewer);
-      spdlog::info("WsMediaService: new viewer for ch{} (fd={})",
-                   channel_id, client_fd);
+      spdlog::info("WsMediaService: new viewer for ch{} (fd={})", channel_id,
+                   client_fd);
     }
 
     // Spawn handler thread for this viewer
@@ -428,7 +422,7 @@ int WsMediaService::ParseChannelId(const std::string& path) {
 }
 
 void WsMediaService::HandleClient(std::shared_ptr<MediaViewer> viewer,
-                                   int channel_id) {
+                                  int channel_id) {
   // This thread reads from the viewer (handling ping/pong and close)
   // and writes pending segments to the WebSocket.
   std::vector<uint8_t> recv_buffer;
@@ -450,8 +444,8 @@ void WsMediaService::HandleClient(std::shared_ptr<MediaViewer> viewer,
 
       while (!recv_buffer.empty()) {
         WsFrame frame;
-        size_t consumed = WebSocketFrame::ParseFrame(
-            recv_buffer.data(), recv_buffer.size(), frame);
+        size_t consumed = WebSocketFrame::ParseFrame(recv_buffer.data(),
+                                                     recv_buffer.size(), frame);
         if (consumed == 0) break;
 
         recv_buffer.erase(
@@ -509,8 +503,8 @@ void WsMediaService::HandleClient(std::shared_ptr<MediaViewer> viewer,
   spdlog::info("WsMediaService: viewer disconnected from ch{}", channel_id);
 }
 
-void WsMediaService::RemoveViewer(
-    int channel_id, const std::shared_ptr<MediaViewer>& viewer) {
+void WsMediaService::RemoveViewer(int channel_id,
+                                  const std::shared_ptr<MediaViewer>& viewer) {
   std::lock_guard<std::mutex> lock(channels_mutex_);
   auto it = channels_.find(channel_id);
   if (it == channels_.end()) return;
@@ -518,25 +512,23 @@ void WsMediaService::RemoveViewer(
   auto& stream = it->second;
   std::lock_guard<std::mutex> slock(stream->mtx);
   auto& viewers = stream->viewers;
-  viewers.erase(
-      std::remove_if(viewers.begin(), viewers.end(),
-                     [&viewer](const std::weak_ptr<MediaViewer>& wp) {
-                       auto sp = wp.lock();
-                       return !sp || sp == viewer;
-                     }),
-      viewers.end());
+  viewers.erase(std::remove_if(viewers.begin(), viewers.end(),
+                               [&viewer](const std::weak_ptr<MediaViewer>& wp) {
+                                 auto sp = wp.lock();
+                                 return !sp || sp == viewer;
+                               }),
+                viewers.end());
 }
 
-void WsMediaService::SendBinaryFrame(
-    const std::shared_ptr<MediaViewer>& viewer,
-    const std::vector<uint8_t>& data) {
+void WsMediaService::SendBinaryFrame(const std::shared_ptr<MediaViewer>& viewer,
+                                     const std::vector<uint8_t>& data) {
   if (!viewer->active || viewer->fd < 0) return;
   auto frame = BuildWsBinaryFrame(data.data(), data.size());
   send(viewer->fd, frame.data(), frame.size(), MSG_NOSIGNAL);
 }
 
 std::vector<uint8_t> WsMediaService::BuildWsBinaryFrame(const uint8_t* data,
-                                                         size_t size) {
+                                                        size_t size) {
   std::vector<uint8_t> frame;
   frame.reserve(10 + size);
 

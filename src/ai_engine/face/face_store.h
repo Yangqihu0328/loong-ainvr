@@ -5,10 +5,9 @@
 
 #include <cstdint>
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
 
 namespace loong::ai_engine {
 
@@ -16,22 +15,22 @@ namespace loong::ai_engine {
 struct FaceRecord {
   int64_t id = 0;
   int channel_id = -1;
-  int64_t timestamp = 0;          // Unix timestamp (ms)
+  int64_t timestamp = 0;  // Unix timestamp (ms)
   float confidence = 0.0F;
   int age = -1;
-  std::string gender;             // "male" / "female" / "unknown"
-  std::vector<float> embedding;   // 512-d feature vector
-  std::string snapshot_path;      // Path to face snapshot image
+  std::string gender;            // "male" / "female" / "unknown"
+  std::vector<float> embedding;  // 512-d feature vector
+  std::string snapshot_path;     // Path to face snapshot image
 };
 
 /// Query parameters for searching face records.
 struct FaceQuery {
-  int channel_id = -1;            // -1 = all channels
-  int64_t start_time = 0;        // 0 = no lower bound
-  int64_t end_time = 0;          // 0 = no upper bound
-  std::string gender;             // "" = any
-  int age_min = -1;               // -1 = no lower bound
-  int age_max = -1;               // -1 = no upper bound
+  int channel_id = -1;     // -1 = all channels
+  int64_t start_time = 0;  // 0 = no lower bound
+  int64_t end_time = 0;    // 0 = no upper bound
+  std::string gender;      // "" = any
+  int age_min = -1;        // -1 = no lower bound
+  int age_max = -1;        // -1 = no upper bound
   int limit = 100;
   int offset = 0;
 };
@@ -61,8 +60,7 @@ class FaceStore {
   /// Find faces similar to a given embedding (cosine similarity >= threshold).
   /// Returns matches sorted by similarity descending, up to `limit` results.
   std::vector<std::pair<FaceRecord, float>> SearchByEmbedding(
-      const std::vector<float>& query_embedding,
-      float threshold = 0.5F,
+      const std::vector<float>& query_embedding, float threshold = 0.5F,
       int limit = 10);
 
   /// Delete records older than the given timestamp.

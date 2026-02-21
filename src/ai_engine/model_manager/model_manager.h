@@ -3,26 +3,26 @@
 #ifndef LOONG_AI_ENGINE_MODEL_MANAGER_MODEL_MANAGER_H_
 #define LOONG_AI_ENGINE_MODEL_MANAGER_MODEL_MANAGER_H_
 
+#include "ai_engine/inference/inference_backend.h"
+#include "ai_engine/inference/inference_engine.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "ai_engine/inference/inference_backend.h"
-#include "ai_engine/inference/inference_engine.h"
-
 namespace loong::ai_engine {
 
 /// Metadata describing a registered model.
 struct ModelInfo {
-  std::string name;          // Unique model name, e.g. "yolov8n-640"
-  std::string family;        // YOLO family, e.g. "yolov8"
-  std::string model_path;    // Filesystem path to model file (.onnx / .engine)
-  std::string backend;       // Preferred backend, e.g. "onnxruntime"
-  TensorShape input_shape;   // Expected input shape, e.g. {1, 3, 640, 640}
+  std::string name;         // Unique model name, e.g. "yolov8n-640"
+  std::string family;       // YOLO family, e.g. "yolov8"
+  std::string model_path;   // Filesystem path to model file (.onnx / .engine)
+  std::string backend;      // Preferred backend, e.g. "onnxruntime"
+  TensorShape input_shape;  // Expected input shape, e.g. {1, 3, 640, 640}
   std::vector<std::string> class_names;  // COCO / custom class labels
-  bool loaded = false;       // Whether a backend has loaded this model
+  bool loaded = false;  // Whether a backend has loaded this model
 };
 
 /// Manages model registration, lifecycle, and InferenceEngine creation.
@@ -55,8 +55,7 @@ class ModelManager {
   /// Internally selects the adapter from the model family and
   /// creates the backend from model info.
   /// Returns nullptr if the model is not registered or creation fails.
-  std::shared_ptr<InferenceEngine> CreateEngine(
-      const std::string& model_name);
+  std::shared_ptr<InferenceEngine> CreateEngine(const std::string& model_name);
 
   /// Create a new InferenceEngine with an explicit backend override.
   std::shared_ptr<InferenceEngine> CreateEngine(
@@ -77,8 +76,7 @@ class ModelManager {
 
   /// Load COCO class names from a text file (one class per line).
   /// Returns the loaded class name list.
-  static std::vector<std::string> LoadClassNames(
-      const std::string& file_path);
+  static std::vector<std::string> LoadClassNames(const std::string& file_path);
 
   // Non-copyable
   ModelManager(const ModelManager&) = delete;

@@ -2,12 +2,11 @@
 
 #include "storage/cloud_backup/cloud_backup_service.h"
 
+#include "storage/cloud_backup/s3_backend.h"
+
 #include <chrono>
 #include <filesystem>
-
 #include <spdlog/spdlog.h>
-
-#include "storage/cloud_backup/s3_backend.h"
 
 namespace loong::storage {
 
@@ -44,7 +43,7 @@ BackupPolicy CloudBackupService::GetPolicy() const {
 }
 
 void CloudBackupService::Start(const std::string& recordings_dir,
-                                const std::string& snapshots_dir) {
+                               const std::string& snapshots_dir) {
   if (running_.load()) return;
 
   {
@@ -74,9 +73,7 @@ void CloudBackupService::Stop() {
   spdlog::info("CloudBackupService: stopped");
 }
 
-void CloudBackupService::TriggerBackup() {
-  ScanAndUpload();
-}
+void CloudBackupService::TriggerBackup() { ScanAndUpload(); }
 
 bool CloudBackupService::TestConnection() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -124,8 +121,7 @@ void CloudBackupService::ScanAndUpload() {
     if (dir.empty() || !fs::exists(dir)) return;
 
     std::error_code ec;
-    for (const auto& entry :
-         fs::recursive_directory_iterator(dir, ec)) {
+    for (const auto& entry : fs::recursive_directory_iterator(dir, ec)) {
       if (!running_.load()) break;
       if (!entry.is_regular_file()) continue;
 
@@ -159,13 +155,11 @@ std::string CloudBackupService::MakeRemoteKey(
   std::string key = config_.prefix;
 
   std::string rel = local_path;
-  if (!recordings_dir_.empty() &&
-      local_path.find(recordings_dir_) == 0) {
+  if (!recordings_dir_.empty() && local_path.find(recordings_dir_) == 0) {
     rel = local_path.substr(recordings_dir_.size());
     if (!rel.empty() && rel[0] == '/') rel = rel.substr(1);
     key += "recordings/" + rel;
-  } else if (!snapshots_dir_.empty() &&
-             local_path.find(snapshots_dir_) == 0) {
+  } else if (!snapshots_dir_.empty() && local_path.find(snapshots_dir_) == 0) {
     rel = local_path.substr(snapshots_dir_.size());
     if (!rel.empty() && rel[0] == '/') rel = rel.substr(1);
     key += "snapshots/" + rel;
@@ -177,7 +171,7 @@ std::string CloudBackupService::MakeRemoteKey(
 }
 
 bool CloudBackupService::UploadFile(const std::string& local_path,
-                                     const std::string& remote_key) {
+                                    const std::string& remote_key) {
   BackupTask task;
   task.local_path = local_path;
   task.remote_key = remote_key;

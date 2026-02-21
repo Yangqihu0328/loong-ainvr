@@ -2,12 +2,12 @@
 
 #include "ai_engine/lpr/lpr_ocr_adapter.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <numeric>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::ai_engine {
 
@@ -72,8 +72,8 @@ bool LprOcrAdapter::PostProcess(const std::vector<float>& output_data,
   }
 
   float avg_conf = 0.0F;
-  std::string plate_text = CtcGreedyDecode(
-      output_data, time_steps, num_classes, charset_, &avg_conf);
+  std::string plate_text = CtcGreedyDecode(output_data, time_steps, num_classes,
+                                           charset_, &avg_conf);
 
   if (plate_text.empty() || avg_conf < confidence_threshold) {
     return true;
@@ -93,10 +93,8 @@ bool LprOcrAdapter::PostProcess(const std::vector<float>& output_data,
 }
 
 std::string LprOcrAdapter::CtcGreedyDecode(
-    const std::vector<float>& logits,
-    int time_steps, int num_classes,
-    const std::vector<std::string>& charset,
-    float* avg_confidence) {
+    const std::vector<float>& logits, int time_steps, int num_classes,
+    const std::vector<std::string>& charset, float* avg_confidence) {
   if (time_steps <= 0 || num_classes <= 0) return {};
   if (logits.size() < static_cast<size_t>(time_steps * num_classes)) return {};
 
@@ -141,7 +139,8 @@ std::string LprOcrAdapter::CtcGreedyDecode(
   }
 
   if (avg_confidence) {
-    *avg_confidence = (char_count > 0) ? (total_conf / static_cast<float>(char_count)) : 0.0F;
+    *avg_confidence =
+        (char_count > 0) ? (total_conf / static_cast<float>(char_count)) : 0.0F;
   }
 
   return result;
@@ -153,16 +152,13 @@ void LprOcrAdapter::SetCharset(std::vector<std::string> charset) {
 
 std::vector<std::string> LprOcrAdapter::DefaultChineseCharset() {
   return {
-    "",  // index 0 = CTC blank
-    "京", "津", "沪", "渝", "冀", "豫", "云", "辽", "黑", "湘",
-    "皖", "鲁", "新", "苏", "浙", "赣", "鄂", "桂", "甘", "晋",
-    "蒙", "陕", "吉", "闽", "贵", "粤", "川", "青", "藏", "琼",
-    "宁",
-    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-    "A", "B", "C", "D", "E", "F", "G", "H", "J", "K",
-    "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V",
-    "W", "X", "Y", "Z",
-    "港", "澳", "学", "警", "挂",
+      "",  // index 0 = CTC blank
+      "京", "津", "沪", "渝", "冀", "豫", "云", "辽", "黑", "湘", "皖", "鲁",
+      "新", "苏", "浙", "赣", "鄂", "桂", "甘", "晋", "蒙", "陕", "吉", "闽",
+      "贵", "粤", "川", "青", "藏", "琼", "宁", "0",  "1",  "2",  "3",  "4",
+      "5",  "6",  "7",  "8",  "9",  "A",  "B",  "C",  "D",  "E",  "F",  "G",
+      "H",  "J",  "K",  "L",  "M",  "N",  "P",  "Q",  "R",  "S",  "T",  "U",
+      "V",  "W",  "X",  "Y",  "Z",  "港", "澳", "学", "警", "挂",
   };
 }
 

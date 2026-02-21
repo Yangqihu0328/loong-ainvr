@@ -1,15 +1,15 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include "core/config/config_manager.h"
 #include "core/config/config_watcher.h"
+
+#include "core/config/config_manager.h"
 #include "core/config/hot_reload_manager.h"
+#include "gtest/gtest.h"
 
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <thread>
-
-#include "gtest/gtest.h"
 
 namespace loong::core {
 namespace {
@@ -17,10 +17,10 @@ namespace {
 class ConfigWatcherTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_dir_ = "/tmp/loong_watcher_test_" +
-                std::to_string(std::chrono::steady_clock::now()
-                                   .time_since_epoch()
-                                   .count());
+    test_dir_ =
+        "/tmp/loong_watcher_test_" +
+        std::to_string(
+            std::chrono::steady_clock::now().time_since_epoch().count());
     std::filesystem::create_directories(test_dir_);
     test_file_ = test_dir_ + "/test.json";
 
@@ -30,9 +30,7 @@ class ConfigWatcherTest : public ::testing::Test {
     f.close();
   }
 
-  void TearDown() override {
-    std::filesystem::remove_all(test_dir_);
-  }
+  void TearDown() override { std::filesystem::remove_all(test_dir_); }
 
   std::string test_dir_;
   std::string test_file_;
@@ -69,9 +67,7 @@ TEST_F(ConfigWatcherTest, StopIdempotent) {
 TEST_F(ConfigWatcherTest, DetectFileChange) {
   ConfigWatcher watcher;
   std::atomic<int> change_count{0};
-  watcher.OnChange([&](const std::string&) {
-    change_count.fetch_add(1);
-  });
+  watcher.OnChange([&](const std::string&) { change_count.fetch_add(1); });
 
   ASSERT_TRUE(watcher.Watch(test_file_));
 
@@ -98,10 +94,10 @@ TEST_F(ConfigWatcherTest, DetectFileChange) {
 class HotReloadManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_dir_ = "/tmp/loong_hotreload_test_" +
-                std::to_string(std::chrono::steady_clock::now()
-                                   .time_since_epoch()
-                                   .count());
+    test_dir_ =
+        "/tmp/loong_hotreload_test_" +
+        std::to_string(
+            std::chrono::steady_clock::now().time_since_epoch().count());
     std::filesystem::create_directories(test_dir_);
     test_file_ = test_dir_ + "/config.json";
 
@@ -117,9 +113,7 @@ class HotReloadManagerTest : public ::testing::Test {
     ConfigManager::Instance().LoadFromFile(test_file_);
   }
 
-  void TearDown() override {
-    std::filesystem::remove_all(test_dir_);
-  }
+  void TearDown() override { std::filesystem::remove_all(test_dir_); }
 
   std::string test_dir_;
   std::string test_file_;
@@ -151,7 +145,8 @@ TEST_F(HotReloadManagerTest, ApplyPatchUpdatesConfig) {
   HotReloadManager mgr;
   mgr.Start(test_file_);
 
-  nlohmann::json patch = {{"ai", {{"backend", "onnxruntime"}, {"confidence", 0.7}}}};
+  nlohmann::json patch = {
+      {"ai", {{"backend", "onnxruntime"}, {"confidence", 0.7}}}};
   EXPECT_TRUE(mgr.ApplyPatch(patch));
 
   auto cfg = mgr.GetCurrentConfig();
@@ -166,11 +161,11 @@ TEST_F(HotReloadManagerTest, SectionHandlerInvoked) {
 
   std::string received_section;
   nlohmann::json received_cfg;
-  mgr.RegisterSection("ai", [&](const std::string& section,
-                                  const nlohmann::json& cfg) {
-    received_section = section;
-    received_cfg = cfg;
-  });
+  mgr.RegisterSection(
+      "ai", [&](const std::string& section, const nlohmann::json& cfg) {
+        received_section = section;
+        received_cfg = cfg;
+      });
 
   nlohmann::json patch = {{"ai", {{"backend", "tensorrt"}}}};
   mgr.ApplyPatch(patch);
@@ -205,9 +200,8 @@ TEST_F(HotReloadManagerTest, UnchangedSectionNotNotified) {
   mgr.Start(test_file_);
 
   int ai_calls = 0;
-  mgr.RegisterSection("ai", [&](const std::string&, const nlohmann::json&) {
-    ++ai_calls;
-  });
+  mgr.RegisterSection(
+      "ai", [&](const std::string&, const nlohmann::json&) { ++ai_calls; });
 
   // Patch only hls, not ai
   nlohmann::json patch = {{"hls", {{"max_segments", 10}}}};

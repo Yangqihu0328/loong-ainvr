@@ -2,19 +2,19 @@
 
 #include "ai_engine/face/face_attribute_adapter.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <numeric>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::ai_engine {
 
 FaceAttributeAdapter::FaceAttributeAdapter(int input_size)
     : input_size_(input_size) {}
 
-bool FaceAttributeAdapter::PreProcess(const uint8_t* image_data,
-                                      int width, int height,
+bool FaceAttributeAdapter::PreProcess(const uint8_t* image_data, int width,
+                                      int height,
                                       std::vector<float>& input_data,
                                       TensorShape& input_shape) {
   if (!image_data || width <= 0 || height <= 0) return false;
@@ -50,12 +50,12 @@ bool FaceAttributeAdapter::PreProcess(const uint8_t* image_data,
   return true;
 }
 
-bool FaceAttributeAdapter::PostProcess(
-    const std::vector<float>& output_data,
-    const TensorShape& output_shape,
-    int original_width, int original_height,
-    float confidence_threshold, float /*nms_threshold*/,
-    std::vector<Detection>& detections) {
+bool FaceAttributeAdapter::PostProcess(const std::vector<float>& output_data,
+                                       const TensorShape& output_shape,
+                                       int original_width, int original_height,
+                                       float confidence_threshold,
+                                       float /*nms_threshold*/,
+                                       std::vector<Detection>& detections) {
   last_attrs_ = {};
   detections.clear();
 
@@ -72,9 +72,11 @@ bool FaceAttributeAdapter::PostProcess(
     float gender_logit = output_data[kEmbeddingDim];
     float gender_prob = 1.0F / (1.0F + std::exp(-gender_logit));
     last_attrs_.gender = (gender_prob > 0.5F) ? "male" : "female";
-    last_attrs_.gender_confidence = (gender_prob > 0.5F) ? gender_prob : (1.0F - gender_prob);
+    last_attrs_.gender_confidence =
+        (gender_prob > 0.5F) ? gender_prob : (1.0F - gender_prob);
 
-    last_attrs_.age = static_cast<int>(std::round(output_data[kEmbeddingDim + 1]));
+    last_attrs_.age =
+        static_cast<int>(std::round(output_data[kEmbeddingDim + 1]));
     if (last_attrs_.age < 0) last_attrs_.age = 0;
     if (last_attrs_.age > 120) last_attrs_.age = 120;
 

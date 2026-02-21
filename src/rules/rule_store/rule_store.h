@@ -3,14 +3,13 @@
 #ifndef LOONG_RULES_RULE_STORE_RULE_STORE_H_
 #define LOONG_RULES_RULE_STORE_RULE_STORE_H_
 
+#include "rules/rule_types.h"
+
 #include <cstdint>
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
-
-#include "rules/rule_types.h"
 
 namespace loong::rules {
 

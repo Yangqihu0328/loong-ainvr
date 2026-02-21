@@ -3,13 +3,13 @@
 #ifndef LOONG_STORAGE_PLAYBACK_PLAYBACK_H_
 #define LOONG_STORAGE_PLAYBACK_PLAYBACK_H_
 
+#include "storage/record_index/record_index.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "storage/record_index/record_index.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -20,11 +20,11 @@ namespace loong::storage {
 
 /// Playback speed multiplier.
 enum class PlaybackSpeed {
-  kHalf = -2,     // 0.5x
-  kNormal = 1,    // 1x
-  kDouble = 2,    // 2x
-  kQuad = 4,      // 4x
-  kOcta = 8,      // 8x
+  kHalf = -2,   // 0.5x
+  kNormal = 1,  // 1x
+  kDouble = 2,  // 2x
+  kQuad = 4,    // 4x
+  kOcta = 8,    // 8x
 };
 
 /// State of the playback session.
@@ -40,8 +40,8 @@ enum class PlaybackState {
 /// A decoded or raw packet from playback.
 struct PlaybackFrame {
   std::vector<uint8_t> data;
-  int64_t pts = 0;       // Presentation timestamp (microseconds)
-  int64_t dts = 0;       // Decode timestamp
+  int64_t pts = 0;  // Presentation timestamp (microseconds)
+  int64_t dts = 0;  // Decode timestamp
   bool is_keyframe = false;
   int width = 0;
   int height = 0;

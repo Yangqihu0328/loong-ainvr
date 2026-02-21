@@ -1,14 +1,13 @@
 // Copyright 2026 Loong AI NVR Project
 // Unit tests for AI Model Plugin System (FEAT-6.1)
 
-#include <gtest/gtest.h>
+#include "ai_engine/plugin/model_plugin.h"
+#include "ai_engine/plugin/plugin_manager.h"
 
 #include <filesystem>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <thread>
-
-#include "ai_engine/plugin/model_plugin.h"
-#include "ai_engine/plugin/plugin_manager.h"
 
 namespace loong::ai_engine {
 namespace {
@@ -33,14 +32,12 @@ class PluginManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_dir_ = "/tmp/loong_plugin_test_" +
-                std::to_string(std::hash<std::thread::id>{}(
-                    std::this_thread::get_id()));
+                std::to_string(
+                    std::hash<std::thread::id>{}(std::this_thread::get_id()));
     std::filesystem::create_directories(test_dir_);
   }
 
-  void TearDown() override {
-    std::filesystem::remove_all(test_dir_);
-  }
+  void TearDown() override { std::filesystem::remove_all(test_dir_); }
 
   std::string test_dir_;
 };
@@ -118,9 +115,7 @@ TEST_F(PluginManagerTest, UnloadNonexistent) {
 // Plugin API Version Constant
 // ============================================================
 
-TEST(PluginApiTest, VersionConstant) {
-  EXPECT_EQ(kPluginApiVersion, 1);
-}
+TEST(PluginApiTest, VersionConstant) { EXPECT_EQ(kPluginApiVersion, 1); }
 
 }  // namespace
 }  // namespace loong::ai_engine

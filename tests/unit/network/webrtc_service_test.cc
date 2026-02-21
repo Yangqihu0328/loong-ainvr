@@ -1,9 +1,9 @@
 // Copyright 2026 Loong AI NVR Project
 // Unit tests for WebRTC Service (FEAT-3.1)
 
-#include <gtest/gtest.h>
-
 #include "network/webrtc/webrtc_service.h"
+
+#include <gtest/gtest.h>
 
 namespace loong::network {
 namespace {

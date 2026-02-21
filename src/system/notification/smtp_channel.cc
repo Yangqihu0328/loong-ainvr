@@ -2,20 +2,20 @@
 
 #include "system/notification/smtp_channel.h"
 
+#include "spdlog/spdlog.h"
+
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <arpa/inet.h>
 #include <chrono>
 #include <cstring>
 #include <ctime>
-#include <sstream>
-
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/ssl.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#include "spdlog/spdlog.h"
+#include <sstream>
 
 namespace loong::system {
 
@@ -71,15 +71,14 @@ bool SmtpChannel::IsConfigured() const {
          !config_.from_address.empty() && !config_.to_addresses.empty();
 }
 
-void SmtpChannel::UpdateConfig(const SmtpConfig& config) {
-  config_ = config;
-}
+void SmtpChannel::UpdateConfig(const SmtpConfig& config) { config_ = config; }
 
 NotificationResult SmtpChannel::Test() {
   NotificationMessage test_msg;
   test_msg.title = "Loong AI NVR Test Notification";
-  test_msg.body = "This is a test notification from Loong AI NVR. "
-                  "If you received this, email notifications are working.";
+  test_msg.body =
+      "This is a test notification from Loong AI NVR. "
+      "If you received this, email notifications are working.";
   test_msg.severity = "info";
   test_msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                            std::chrono::system_clock::now().time_since_epoch())
@@ -111,8 +110,8 @@ NotificationResult SmtpChannel::SendEmail(const std::string& subject,
     return {false, "DNS resolution failed for " + config_.host};
   }
 
-  int sock = socket(result->ai_family, result->ai_socktype,
-                    result->ai_protocol);
+  int sock =
+      socket(result->ai_family, result->ai_socktype, result->ai_protocol);
   if (sock < 0) {
     freeaddrinfo(result);
     return {false, "socket creation failed"};
@@ -127,8 +126,8 @@ NotificationResult SmtpChannel::SendEmail(const std::string& subject,
   if (connect(sock, result->ai_addr, result->ai_addrlen) != 0) {
     freeaddrinfo(result);
     close(sock);
-    return {false, "connection to " + config_.host + ":" + port_str +
-                       " failed"};
+    return {false,
+            "connection to " + config_.host + ":" + port_str + " failed"};
   }
   freeaddrinfo(result);
 
@@ -205,8 +204,7 @@ NotificationResult SmtpChannel::SendEmail(const std::string& subject,
   }
 
   // MAIL FROM
-  SendCmd(ssl, sock,
-          "MAIL FROM:<" + config_.from_address + ">\r\n");
+  SendCmd(ssl, sock, "MAIL FROM:<" + config_.from_address + ">\r\n");
   resp = ReadResponse(ssl, sock);
   if (GetResponseCode(resp) != 250) {
     cleanup();
@@ -281,13 +279,11 @@ std::string SmtpChannel::FormatHtmlBody(const NotificationMessage& msg) {
 
   if (msg.channel_id >= 0) {
     html << "<tr><td style='padding:4px 12px;font-weight:bold;'>Channel</td>"
-         << "<td style='padding:4px 12px;'>" << msg.channel_id
-         << "</td></tr>";
+         << "<td style='padding:4px 12px;'>" << msg.channel_id << "</td></tr>";
   }
   if (!msg.event_type.empty()) {
     html << "<tr><td style='padding:4px 12px;font-weight:bold;'>Event</td>"
-         << "<td style='padding:4px 12px;'>" << msg.event_type
-         << "</td></tr>";
+         << "<td style='padding:4px 12px;'>" << msg.event_type << "</td></tr>";
   }
   if (msg.confidence > 0) {
     html << "<tr><td style='padding:4px 12px;font-weight:bold;'>"

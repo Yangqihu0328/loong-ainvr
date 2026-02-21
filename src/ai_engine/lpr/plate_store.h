@@ -5,10 +5,9 @@
 
 #include <cstdint>
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
 
 namespace loong::ai_engine {
 
@@ -16,7 +15,7 @@ namespace loong::ai_engine {
 struct PlateRecord {
   int64_t id = 0;
   std::string plate_number;
-  std::string plate_color;    // blue_plate, green_plate, etc.
+  std::string plate_color;  // blue_plate, green_plate, etc.
   float confidence = 0.0F;
   int channel_id = -1;
   int64_t timestamp = 0;      // Unix timestamp (ms)
@@ -25,10 +24,10 @@ struct PlateRecord {
 
 /// Query parameters for searching plate records.
 struct PlateQuery {
-  std::string plate_number;   // Fuzzy match (LIKE %number%)
-  int channel_id = -1;        // -1 = all channels
-  int64_t start_time = 0;     // 0 = no lower bound
-  int64_t end_time = 0;       // 0 = no upper bound
+  std::string plate_number;  // Fuzzy match (LIKE %number%)
+  int channel_id = -1;       // -1 = all channels
+  int64_t start_time = 0;    // 0 = no lower bound
+  int64_t end_time = 0;      // 0 = no upper bound
   int limit = 100;
   int offset = 0;
 };

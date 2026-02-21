@@ -3,9 +3,8 @@
 #include "storage/cloud_backup/s3_backend.h"
 
 #include <fstream>
-#include <sstream>
-
 #include <spdlog/spdlog.h>
+#include <sstream>
 
 // When LOONG_HAS_AWS_SDK is defined, use the real AWS SDK for S3 operations.
 // Otherwise, a lightweight stub is used that simulates success and logs
@@ -40,7 +39,7 @@ bool S3Backend::Initialize(const CloudConfig& config) {
 }
 
 bool S3Backend::Upload(const std::string& local_path,
-                        const std::string& remote_key) {
+                       const std::string& remote_key) {
   if (!initialized_) return false;
 
   std::ifstream file(local_path, std::ios::binary | std::ios::ate);
@@ -55,8 +54,8 @@ bool S3Backend::Upload(const std::string& local_path,
   // TODO: Use AWS SDK PutObject
 #endif
 
-  spdlog::info("S3Backend: uploaded '{}' -> '{}' ({} bytes)",
-               local_path, remote_key, static_cast<int64_t>(size));
+  spdlog::info("S3Backend: uploaded '{}' -> '{}' ({} bytes)", local_path,
+               remote_key, static_cast<int64_t>(size));
   return true;
 }
 
@@ -64,7 +63,7 @@ bool S3Backend::Delete(const std::string& remote_key) {
   if (!initialized_) return false;
 
 #ifdef LOONG_HAS_AWS_SDK
-  // TODO: Use AWS SDK DeleteObject
+    // TODO: Use AWS SDK DeleteObject
 #endif
 
   spdlog::info("S3Backend: deleted '{}'", remote_key);
@@ -75,7 +74,7 @@ std::vector<std::string> S3Backend::List(const std::string& prefix) {
   if (!initialized_) return {};
 
 #ifdef LOONG_HAS_AWS_SDK
-  // TODO: Use AWS SDK ListObjectsV2
+    // TODO: Use AWS SDK ListObjectsV2
 #endif
 
   spdlog::debug("S3Backend: list prefix='{}'", prefix);
@@ -86,7 +85,7 @@ bool S3Backend::TestConnection() {
   if (!initialized_) return false;
 
 #ifdef LOONG_HAS_AWS_SDK
-  // TODO: Try HeadBucket
+    // TODO: Try HeadBucket
 #endif
 
   spdlog::info("S3Backend: connection test OK (bucket={})", config_.bucket);
@@ -104,8 +103,8 @@ std::string S3Backend::BuildEndpointUrl(const std::string& key) const {
 }
 
 std::string S3Backend::SignV4(const std::string& method,
-                               const std::string& path,
-                               const std::string& payload_hash) const {
+                              const std::string& path,
+                              const std::string& payload_hash) const {
   (void)method;
   (void)path;
   (void)payload_hash;

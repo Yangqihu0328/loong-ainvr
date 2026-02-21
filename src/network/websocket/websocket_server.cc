@@ -17,12 +17,10 @@
 
 namespace loong::network {
 
-WebSocketServer::WebSocketServer(std::string  host, int port)
+WebSocketServer::WebSocketServer(std::string host, int port)
     : host_(std::move(host)), port_(port) {}
 
-WebSocketServer::~WebSocketServer() {
-  Stop();
-}
+WebSocketServer::~WebSocketServer() { Stop(); }
 
 bool WebSocketServer::Start() {
   if (running_) {
@@ -106,8 +104,7 @@ void WebSocketServer::Broadcast(const std::string& topic,
     if (!conn->active) continue;
     // Check if subscribed (empty set = subscribed to everything).
     if (!conn->subscribed_topics.empty() &&
-        conn->subscribed_topics.find(topic) ==
-            conn->subscribed_topics.end()) {
+        conn->subscribed_topics.find(topic) == conn->subscribed_topics.end()) {
       continue;
     }
     SendFrame(conn, frame);
@@ -134,9 +131,9 @@ void WebSocketServer::AcceptLoop() {
 
     struct sockaddr_in client_addr {};
     socklen_t addr_len = sizeof(client_addr);
-    int client_fd = accept(listen_fd_,
-                           reinterpret_cast<struct sockaddr*>(&client_addr),
-                           &addr_len);
+    int client_fd =
+        accept(listen_fd_, reinterpret_cast<struct sockaddr*>(&client_addr),
+               &addr_len);
     if (client_fd < 0) continue;
 
     // Disable Nagle for low latency.

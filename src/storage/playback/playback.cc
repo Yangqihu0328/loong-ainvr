@@ -2,21 +2,19 @@
 
 #include "storage/playback/playback.h"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
 
 namespace loong::storage {
 
 Playback::Playback(std::shared_ptr<RecordIndex> index)
     : index_(std::move(index)) {}
 
-Playback::~Playback() {
-  Close();
-}
+Playback::~Playback() { Close(); }
 
 bool Playback::Open(int channel_id, int64_t start_time_ms,
-                     int64_t end_time_ms) {
+                    int64_t end_time_ms) {
   if (state_ != PlaybackState::kIdle) {
     Close();
   }
@@ -28,8 +26,8 @@ bool Playback::Open(int channel_id, int64_t start_time_ms,
   // Query segments covering the requested time range
   segments_ = index_->QuerySegments(channel_id, start_time_ms, end_time_ms);
   if (segments_.empty()) {
-    spdlog::warn("Playback: no segments found for ch{} in [{}, {}]",
-                 channel_id, start_time_ms, end_time_ms);
+    spdlog::warn("Playback: no segments found for ch{} in [{}, {}]", channel_id,
+                 start_time_ms, end_time_ms);
     state_ = PlaybackState::kError;
     return false;
   }
@@ -164,10 +162,10 @@ bool Playback::Seek(int64_t timestamp_ms) {
 
   AVStream* st = fmt_ctx_->streams[video_stream_idx_];
   int64_t seek_ts = av_rescale_q(relative_ms * 1000,  // ms to us
-                                  {1, 1000000}, st->time_base);
+                                 {1, 1000000}, st->time_base);
 
-  int ret = av_seek_frame(fmt_ctx_, video_stream_idx_, seek_ts,
-                          AVSEEK_FLAG_BACKWARD);
+  int ret =
+      av_seek_frame(fmt_ctx_, video_stream_idx_, seek_ts, AVSEEK_FLAG_BACKWARD);
   if (ret < 0) {
     spdlog::warn("Playback: seek failed for ts={}", timestamp_ms);
     state_ = prev_state;
@@ -191,8 +189,7 @@ int64_t Playback::GetDuration() const {
 }
 
 bool Playback::StepForward(PlaybackFrame* frame) {
-  if (state_ != PlaybackState::kPlaying &&
-      state_ != PlaybackState::kPaused) {
+  if (state_ != PlaybackState::kPlaying && state_ != PlaybackState::kPaused) {
     return false;
   }
 

@@ -2,9 +2,9 @@
 
 #include "core/config/config_manager.h"
 
-#include <fstream>
-
 #include "gtest/gtest.h"
+
+#include <fstream>
 
 namespace loong {
 namespace core {

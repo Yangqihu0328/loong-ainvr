@@ -3,10 +3,10 @@
 #ifndef LOONG_RULES_RULE_STAGE_RULE_STAGE_H_
 #define LOONG_RULES_RULE_STAGE_RULE_STAGE_H_
 
-#include <memory>
-
 #include "core/pipeline/pipeline_stage.h"
 #include "rules/rule_engine/rule_engine.h"
+
+#include <memory>
 
 namespace loong::rules {
 

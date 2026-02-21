@@ -2,10 +2,10 @@
 
 #include "rules/evaluators/region_intrusion_evaluator.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::rules {
 
@@ -13,9 +13,10 @@ bool RegionIntrusionEvaluator::Configure(const AnalysisRule& rule) {
   rule_ = rule;
 
   if (rule_.region.vertices.size() < 3) {
-    spdlog::warn("RegionIntrusionEvaluator: rule '{}' has < 3 vertices, "
-                 "region detection disabled",
-                 rule_.name);
+    spdlog::warn(
+        "RegionIntrusionEvaluator: rule '{}' has < 3 vertices, "
+        "region detection disabled",
+        rule_.name);
     return false;
   }
 
@@ -27,15 +28,15 @@ bool RegionIntrusionEvaluator::Configure(const AnalysisRule& rule) {
 
   was_inside_.clear();
 
-  spdlog::debug("RegionIntrusionEvaluator: configured rule '{}' with "
-                "{} vertices on channel {}",
-                rule_.name, rule_.region.vertices.size(), rule_.channel_id);
+  spdlog::debug(
+      "RegionIntrusionEvaluator: configured rule '{}' with "
+      "{} vertices on channel {}",
+      rule_.name, rule_.region.vertices.size(), rule_.channel_id);
   return true;
 }
 
 std::vector<RuleEvent> RegionIntrusionEvaluator::Evaluate(
-    const std::vector<Detection>& detections,
-    const FrameContext& context) {
+    const std::vector<Detection>& detections, const FrameContext& context) {
   std::vector<RuleEvent> events;
 
   if (rule_.region.vertices.size() < 3) return events;
@@ -143,8 +144,7 @@ std::vector<Detection> RegionIntrusionEvaluator::FilterDetections(
 
     if (!rule_.target_classes.empty()) {
       auto it = std::find(rule_.target_classes.begin(),
-                          rule_.target_classes.end(),
-                          det.class_name);
+                          rule_.target_classes.end(), det.class_name);
       if (it == rule_.target_classes.end()) continue;
     }
 

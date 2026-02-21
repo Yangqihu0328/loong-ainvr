@@ -2,19 +2,17 @@
 
 #include "ai_engine/scheduler/analysis_scheduler.h"
 
-#include <algorithm>
-#include <numeric>
-
 #include "core/event_bus/event_bus.h"
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
+#include <numeric>
 
 namespace loong::ai_engine {
 
 AnalysisScheduler::AnalysisScheduler() = default;
 
-AnalysisScheduler::~AnalysisScheduler() {
-  Stop();
-}
+AnalysisScheduler::~AnalysisScheduler() { Stop(); }
 
 // ========== Lifecycle ==========
 
@@ -40,8 +38,7 @@ bool AnalysisScheduler::AddTask(const AnalysisTask& task) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   if (tasks_.size() >= static_cast<size_t>(kMaxChannels)) {
-    spdlog::error("AnalysisScheduler: max tasks ({}) reached",
-                  kMaxChannels);
+    spdlog::error("AnalysisScheduler: max tasks ({}) reached", kMaxChannels);
     return false;
   }
 
@@ -57,17 +54,15 @@ bool AnalysisScheduler::AddTask(const AnalysisTask& task) {
 
   // Compute frame interval from target FPS.
   if (task.target_fps > 0) {
-    state.frame_interval = std::chrono::microseconds(
-        1000000 / task.target_fps);
+    state.frame_interval = std::chrono::microseconds(1000000 / task.target_fps);
   }
   state.effective_fps = task.target_fps;
 
   tasks_[task.channel_id] = state;
-  spdlog::info("AnalysisScheduler: added task for ch {} "
-               "(strategy={}, fps={})",
-               task.channel_id,
-               static_cast<int>(task.strategy),
-               task.target_fps);
+  spdlog::info(
+      "AnalysisScheduler: added task for ch {} "
+      "(strategy={}, fps={})",
+      task.channel_id, static_cast<int>(task.strategy), task.target_fps);
   return true;
 }
 
@@ -82,8 +77,7 @@ bool AnalysisScheduler::RemoveTask(int channel_id) {
   return true;
 }
 
-bool AnalysisScheduler::UpdateTask(int channel_id,
-                                    const AnalysisTask& task) {
+bool AnalysisScheduler::UpdateTask(int channel_id, const AnalysisTask& task) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it = tasks_.find(channel_id);
   if (it == tasks_.end()) {
@@ -95,12 +89,11 @@ bool AnalysisScheduler::UpdateTask(int channel_id,
   state.config.channel_id = channel_id;
 
   if (task.target_fps > 0) {
-    state.frame_interval = std::chrono::microseconds(
-        1000000 / task.target_fps);
+    state.frame_interval = std::chrono::microseconds(1000000 / task.target_fps);
   }
 
-  spdlog::info("AnalysisScheduler: updated task for ch {} (fps={})",
-               channel_id, task.target_fps);
+  spdlog::info("AnalysisScheduler: updated task for ch {} (fps={})", channel_id,
+               task.target_fps);
   return true;
 }
 
@@ -135,9 +128,10 @@ bool AnalysisScheduler::ShouldAnalyze(int channel_id) {
           now - state.last_analysis_time);
 
       // Use effective interval (may be stretched by throttling).
-      auto effective_interval = state.is_throttled
-          ? state.frame_interval * 2  // Double interval when throttled
-          : state.frame_interval;
+      auto effective_interval =
+          state.is_throttled
+              ? state.frame_interval * 2  // Double interval when throttled
+              : state.frame_interval;
 
       if (elapsed >= effective_interval) {
         state.last_analysis_time = now;
@@ -159,7 +153,7 @@ bool AnalysisScheduler::ShouldAnalyze(int channel_id) {
 // ========== Inference Reporting ==========
 
 void AnalysisScheduler::ReportInference(int channel_id,
-                                         int64_t inference_time_us) {
+                                        int64_t inference_time_us) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it = tasks_.find(channel_id);
   if (it == tasks_.end()) return;
@@ -199,10 +193,9 @@ AnalysisTaskStats AnalysisScheduler::GetTaskStats(int channel_id) const {
   }
 
   if (gpu_budget_us_ > 0) {
-    stats.gpu_time_share =
-        static_cast<double>(state.recent_inference_time_us *
-                            state.effective_fps) /
-        static_cast<double>(gpu_budget_us_);
+    stats.gpu_time_share = static_cast<double>(state.recent_inference_time_us *
+                                               state.effective_fps) /
+                           static_cast<double>(gpu_budget_us_);
   }
 
   return stats;
@@ -282,17 +275,18 @@ void AnalysisScheduler::RebalanceBudget() {
   for (const auto& [id, state] : tasks_) {
     if (!state.config.enabled) continue;
     // Estimated cost = avg inference time × target FPS.
-    int64_t avg_time = (state.total_inferences > 0)
-        ? (state.total_inference_time_us / state.total_inferences)
-        : 10000;  // Default 10ms if unknown
+    int64_t avg_time =
+        (state.total_inferences > 0)
+            ? (state.total_inference_time_us / state.total_inferences)
+            : 10000;  // Default 10ms if unknown
     estimated_total_us += avg_time * state.config.target_fps;
   }
 
   // GPU utilization: estimated vs budget.
   gpu_utilization_ = (gpu_budget_us_ > 0)
-      ? static_cast<double>(estimated_total_us) /
-        static_cast<double>(gpu_budget_us_)
-      : 0.0;
+                         ? static_cast<double>(estimated_total_us) /
+                               static_cast<double>(gpu_budget_us_)
+                         : 0.0;
 
   // Determine which tasks need throttling.
   if (estimated_total_us > gpu_budget_us_) {
@@ -307,9 +301,10 @@ void AnalysisScheduler::RebalanceBudget() {
       if (it == tasks_.end() || !it->second.config.enabled) continue;
 
       auto& state = it->second;
-      int64_t avg_time = (state.total_inferences > 0)
-          ? (state.total_inference_time_us / state.total_inferences)
-          : 10000;
+      int64_t avg_time =
+          (state.total_inferences > 0)
+              ? (state.total_inference_time_us / state.total_inferences)
+              : 10000;
 
       int64_t needed = avg_time * state.config.target_fps;
 
@@ -326,9 +321,10 @@ void AnalysisScheduler::RebalanceBudget() {
         state.effective_fps = achievable_fps;
         remaining_budget = 0;
 
-        spdlog::debug("AnalysisScheduler: ch {} throttled to {} fps "
-                      "(target={})",
-                      id, achievable_fps, state.config.target_fps);
+        spdlog::debug(
+            "AnalysisScheduler: ch {} throttled to {} fps "
+            "(target={})",
+            id, achievable_fps, state.config.target_fps);
       } else {
         // No budget left — heavily throttle.
         state.is_throttled = true;
@@ -337,8 +333,8 @@ void AnalysisScheduler::RebalanceBudget() {
 
       // Update frame interval for the effective FPS.
       if (state.effective_fps > 0) {
-        state.frame_interval = std::chrono::microseconds(
-            1000000 / state.effective_fps);
+        state.frame_interval =
+            std::chrono::microseconds(1000000 / state.effective_fps);
       }
     }
   } else {
@@ -347,8 +343,8 @@ void AnalysisScheduler::RebalanceBudget() {
       state.is_throttled = false;
       state.effective_fps = state.config.target_fps;
       if (state.config.target_fps > 0) {
-        state.frame_interval = std::chrono::microseconds(
-            1000000 / state.config.target_fps);
+        state.frame_interval =
+            std::chrono::microseconds(1000000 / state.config.target_fps);
       }
     }
   }

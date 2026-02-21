@@ -5,13 +5,13 @@
 #include "channel/channel_monitor/channel_monitor.h"
 #include "channel/channel_pipeline/channel_orchestrator.h"
 #include "channel/channel_store/channel_store.h"
-#include "pipeline_stages/input_stage/input_stage.h"
 #include "network/flv_stream/http_flv_service.h"
 #include "network/hls_stream/hls_service.h"
 #include "network/media_stream/ws_media_service.h"
-#include "network/webrtc/webrtc_service.h"
-#include "rules/rule_engine/rule_engine.h"
 #include "network/rtsp_server/rtsp_server.h"
+#include "network/webrtc/webrtc_service.h"
+#include "pipeline_stages/input_stage/input_stage.h"
+#include "rules/rule_engine/rule_engine.h"
 #include "spdlog/spdlog.h"
 
 namespace loong::channel {
@@ -32,8 +32,7 @@ int ChannelManager::CreateChannel(const ChannelConfig& config) {
   std::unique_lock lock(channels_mutex_);
 
   if (channels_.size() >= static_cast<size_t>(kMaxChannels)) {
-    spdlog::error("ChannelManager: max channels ({}) reached",
-                   kMaxChannels);
+    spdlog::error("ChannelManager: max channels ({}) reached", kMaxChannels);
     return -1;
   }
 
@@ -134,8 +133,8 @@ bool ChannelManager::StartChannel(int channel_id) {
   // Auto-detect stream parameters (resolution, codec, framerate) from the
   // actual source and update the stored config so the user doesn't have to
   // specify these values when creating the channel.
-  auto* input_stage = dynamic_cast<pipeline_stages::InputStage*>(
-      pipeline_copy->GetStage(0));
+  auto* input_stage =
+      dynamic_cast<pipeline_stages::InputStage*>(pipeline_copy->GetStage(0));
   if (input_stage) {
     auto info = input_stage->GetStreamInfo();
     if (info.width > 0 && info.height > 0) {
@@ -206,7 +205,7 @@ bool ChannelManager::StopChannel(int channel_id) {
 }
 
 bool ChannelManager::EditChannel(int channel_id,
-                                  const ChannelConfig& new_config) {
+                                 const ChannelConfig& new_config) {
   ChannelState prev_state;
   std::shared_ptr<core::ChannelPipeline> old_pipeline;
 
@@ -348,7 +347,7 @@ size_t ChannelManager::ChannelCount() const {
 }
 
 bool ChannelManager::GetChannelConfig(int channel_id,
-                                       ChannelConfig& out_config) const {
+                                      ChannelConfig& out_config) const {
   std::shared_lock lock(channels_mutex_);
   auto it = channels_.find(channel_id);
   if (it == channels_.end()) {
@@ -359,7 +358,7 @@ bool ChannelManager::GetChannelConfig(int channel_id,
 }
 
 bool ChannelManager::UpdateOverlayConfig(int channel_id,
-                                          const OverlayConfig& overlay) {
+                                         const OverlayConfig& overlay) {
   std::unique_lock lock(channels_mutex_);
   auto it = channels_.find(channel_id);
   if (it == channels_.end()) return false;
@@ -397,9 +396,7 @@ ChannelOrchestrator& ChannelManager::GetOrchestrator() {
   return *orchestrator_;
 }
 
-ChannelMonitor& ChannelManager::GetMonitor() {
-  return *monitor_;
-}
+ChannelMonitor& ChannelManager::GetMonitor() { return *monitor_; }
 
 std::shared_ptr<core::ChannelPipeline> ChannelManager::BuildPipeline(
     const ChannelConfig& config) {
@@ -448,17 +445,14 @@ void ChannelManager::SetStreamingServices(
   svc.webrtc_service = webrtc_service_;
   orchestrator_->SetStreamingServices(svc);
 
-  spdlog::info("ChannelManager: streaming services configured "
-               "(FLV={}, HLS={}, RTSP={}, WS={}, WebRTC={})",
-               flv_service_ != nullptr,
-               hls_service_ != nullptr,
-               rtsp_server_ != nullptr,
-               ws_media_service_ != nullptr,
-               webrtc_service_ != nullptr);
+  spdlog::info(
+      "ChannelManager: streaming services configured "
+      "(FLV={}, HLS={}, RTSP={}, WS={}, WebRTC={})",
+      flv_service_ != nullptr, hls_service_ != nullptr, rtsp_server_ != nullptr,
+      ws_media_service_ != nullptr, webrtc_service_ != nullptr);
 }
 
-void ChannelManager::SetRuleEngine(
-    std::shared_ptr<rules::RuleEngine> engine) {
+void ChannelManager::SetRuleEngine(std::shared_ptr<rules::RuleEngine> engine) {
   orchestrator_->SetRuleEngine(std::move(engine));
   spdlog::info("ChannelManager: rule engine configured for pipeline wiring");
 }
@@ -472,16 +466,13 @@ void ChannelManager::RegisterWithStreamingServices(
     hls_service_->RegisterChannel(config.id);
   }
   if (rtsp_server_) {
-    rtsp_server_->RegisterChannel(config.id, config.codec,
-                                  config.width, config.height,
-                                  config.framerate);
+    rtsp_server_->RegisterChannel(config.id, config.codec, config.width,
+                                  config.height, config.framerate);
   }
   if (ws_media_service_) {
     ws_media_service_->RegisterChannel(
-        config.id, config.codec,
-        static_cast<uint16_t>(config.width),
-        static_cast<uint16_t>(config.height),
-        config.framerate);
+        config.id, config.codec, static_cast<uint16_t>(config.width),
+        static_cast<uint16_t>(config.height), config.framerate);
   }
   spdlog::debug("ChannelManager: ch {} registered with streaming services",
                 config.id);
@@ -539,8 +530,9 @@ int ChannelManager::LoadChannels() {
     entry->pipeline = BuildPipeline(cfg);
 
     if (!entry->pipeline) {
-      spdlog::warn("ChannelManager: failed to build pipeline for persisted ch {}",
-                    cfg.id);
+      spdlog::warn(
+          "ChannelManager: failed to build pipeline for persisted ch {}",
+          cfg.id);
       continue;
     }
 
@@ -556,7 +548,8 @@ int ChannelManager::LoadChannels() {
 
     if (StartChannel(id)) {
       ++loaded;
-      spdlog::info("ChannelManager: restored ch {} '{}' from store", id, cfg.name);
+      spdlog::info("ChannelManager: restored ch {} '{}' from store", id,
+                   cfg.name);
     }
   }
 

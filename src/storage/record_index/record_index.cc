@@ -8,15 +8,13 @@ namespace loong::storage {
 
 RecordIndex::RecordIndex() = default;
 
-RecordIndex::~RecordIndex() {
-  Close();
-}
+RecordIndex::~RecordIndex() { Close(); }
 
 bool RecordIndex::Open(const std::string& db_path) {
   int rc = sqlite3_open(db_path.c_str(), &db_);
   if (rc != SQLITE_OK) {
     spdlog::error("RecordIndex: failed to open db '{}': {}", db_path,
-                   sqlite3_errmsg(db_));
+                  sqlite3_errmsg(db_));
     sqlite3_close(db_);
     db_ = nullptr;
     return false;
@@ -76,7 +74,7 @@ int64_t RecordIndex::InsertSegment(const SegmentInfo& info) {
 }
 
 bool RecordIndex::UpdateSegmentEnd(int64_t segment_id, int64_t end_time,
-                                    int64_t file_size) {
+                                   int64_t file_size) {
   const char* sql =
       "UPDATE recording_segments SET end_time=?, file_size=? WHERE id=?;";
 
@@ -119,8 +117,8 @@ int64_t RecordIndex::InsertEvent(const EventInfo& event) {
 }
 
 std::vector<SegmentInfo> RecordIndex::QuerySegments(int channel_id,
-                                                     int64_t start_time,
-                                                     int64_t end_time) {
+                                                    int64_t start_time,
+                                                    int64_t end_time) {
   const char* sql =
       "SELECT id, channel_id, start_time, end_time, file_path, file_size, "
       "codec, resolution, has_ai_overlay "
@@ -144,12 +142,15 @@ std::vector<SegmentInfo> RecordIndex::QuerySegments(int channel_id,
     info.channel_id = sqlite3_column_int(stmt, 1);
     info.start_time = sqlite3_column_int64(stmt, 2);
     info.end_time = sqlite3_column_int64(stmt, 3);
-    const auto* fp = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+    const auto* fp =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
     info.file_path = fp ? fp : "";
     info.file_size = sqlite3_column_int64(stmt, 5);
-    const auto* cd = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    const auto* cd =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     info.codec = cd ? cd : "";
-    const auto* rs = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+    const auto* rs =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     info.resolution = rs ? rs : "";
     info.has_ai_overlay = sqlite3_column_int(stmt, 8) != 0;
     results.push_back(info);
@@ -160,8 +161,8 @@ std::vector<SegmentInfo> RecordIndex::QuerySegments(int channel_id,
 }
 
 std::vector<EventInfo> RecordIndex::QueryEvents(int channel_id,
-                                                 int64_t start_time,
-                                                 int64_t end_time) {
+                                                int64_t start_time,
+                                                int64_t end_time) {
   const char* sql =
       "SELECT id, segment_id, channel_id, event_type, event_time, "
       "confidence, metadata "
@@ -184,11 +185,13 @@ std::vector<EventInfo> RecordIndex::QueryEvents(int channel_id,
     e.id = sqlite3_column_int64(stmt, 0);
     e.segment_id = sqlite3_column_int64(stmt, 1);
     e.channel_id = sqlite3_column_int(stmt, 2);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
     e.event_type = et ? et : "";
     e.event_time = sqlite3_column_int64(stmt, 4);
     e.confidence = static_cast<float>(sqlite3_column_double(stmt, 5));
-    const auto* md = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    const auto* md =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     e.metadata = md ? md : "";
     results.push_back(e);
   }
@@ -217,7 +220,7 @@ int64_t RecordIndex::GetChannelTotalSize(int channel_id) {
 }
 
 std::vector<SegmentInfo> RecordIndex::GetOldestSegments(int channel_id,
-                                                         int count) {
+                                                        int count) {
   const char* sql =
       "SELECT id, channel_id, start_time, end_time, file_path, file_size, "
       "codec, resolution, has_ai_overlay "
@@ -239,7 +242,8 @@ std::vector<SegmentInfo> RecordIndex::GetOldestSegments(int channel_id,
     info.channel_id = sqlite3_column_int(stmt, 1);
     info.start_time = sqlite3_column_int64(stmt, 2);
     info.end_time = sqlite3_column_int64(stmt, 3);
-    const auto* fp = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+    const auto* fp =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
     info.file_path = fp ? fp : "";
     info.file_size = sqlite3_column_int64(stmt, 5);
     results.push_back(info);
@@ -259,15 +263,15 @@ std::string RecordIndex::DeleteSegment(int64_t segment_id) {
   if (sqlite3_prepare_v2(db_, select_sql, -1, &stmt, nullptr) == SQLITE_OK) {
     sqlite3_bind_int64(stmt, 1, segment_id);
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-      const auto* fp = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      const auto* fp =
+          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
       path = fp ? fp : "";
     }
     sqlite3_finalize(stmt);
   }
 
   // Delete events for this segment
-  const char* del_events =
-      "DELETE FROM recording_events WHERE segment_id=?;";
+  const char* del_events = "DELETE FROM recording_events WHERE segment_id=?;";
   stmt = nullptr;
   if (sqlite3_prepare_v2(db_, del_events, -1, &stmt, nullptr) == SQLITE_OK) {
     sqlite3_bind_int64(stmt, 1, segment_id);
@@ -406,7 +410,7 @@ bool RecordIndex::CreateTables() {
   int rc = sqlite3_exec(db_, schema, nullptr, nullptr, &err_msg);
   if (rc != SQLITE_OK) {
     spdlog::error("RecordIndex: create tables failed: {}",
-                   err_msg ? err_msg : "unknown");
+                  err_msg ? err_msg : "unknown");
     sqlite3_free(err_msg);
     return false;
   }

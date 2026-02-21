@@ -2,9 +2,9 @@
 
 #include "core/config/config_manager.h"
 
-#include <fstream>
-
 #include "spdlog/spdlog.h"
+
+#include <fstream>
 
 namespace loong::core {
 
@@ -30,8 +30,6 @@ bool ConfigManager::LoadFromFile(const std::string& file_path) {
   }
 }
 
-const nlohmann::json& ConfigManager::GetConfig() const {
-  return config_;
-}
+const nlohmann::json& ConfigManager::GetConfig() const { return config_; }
 
 }  // namespace loong::core

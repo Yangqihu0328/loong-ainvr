@@ -1,16 +1,15 @@
 // Copyright 2026 Loong AI NVR Project
 // Benchmark: Pipeline throughput (single/multi-channel FPS)
 
-#include <benchmark/benchmark.h>
-
-#include <atomic>
-#include <memory>
-#include <vector>
-
 #include "core/common/types.h"
 #include "core/pipeline/channel_pipeline.h"
 #include "core/pipeline/pipeline_stage.h"
 #include "core/pipeline/stage_queue.h"
+
+#include <atomic>
+#include <benchmark/benchmark.h>
+#include <memory>
+#include <vector>
 
 namespace loong::benchmark {
 namespace {
@@ -138,8 +137,8 @@ void BM_PipelineNoOpStages(::benchmark::State& state) {
     pipeline.Stop();
     state.ResumeTiming();
   }
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations()) * num_frames);
+  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) *
+                          num_frames);
   state.counters["frames"] = num_frames;
   state.counters["stages"] = static_cast<double>(state.range(0));
 }
@@ -167,8 +166,8 @@ void BM_PipelineWithAiLatency(::benchmark::State& state) {
     StageConfig ai_cfg;
     ai_cfg.name = "ai_sim";
     ai_cfg.queue_capacity = 256;
-    pipeline.AddStage(
-        std::make_unique<SimulatedAiStage>(ai_latency_us), ai_cfg);
+    pipeline.AddStage(std::make_unique<SimulatedAiStage>(ai_latency_us),
+                      ai_cfg);
 
     StageConfig counter_cfg;
     counter_cfg.name = "counter";
@@ -193,8 +192,8 @@ void BM_PipelineWithAiLatency(::benchmark::State& state) {
   }
 
   double expected_fps = 1e6 / ai_latency_us;
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations()) * num_frames);
+  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) *
+                          num_frames);
   state.counters["ai_latency_us"] = ai_latency_us;
   state.counters["theoretical_fps"] = expected_fps;
 }
@@ -246,8 +245,7 @@ void BM_MultiChannelPipeline(::benchmark::State& state) {
     while (!all_done) {
       all_done = true;
       for (int ch = 0; ch < num_channels; ++ch) {
-        if (counters[static_cast<size_t>(ch)]->Count() <
-            frames_per_channel) {
+        if (counters[static_cast<size_t>(ch)]->Count() < frames_per_channel) {
           all_done = false;
           break;
         }
@@ -263,8 +261,7 @@ void BM_MultiChannelPipeline(::benchmark::State& state) {
   }
 
   int total = num_channels * frames_per_channel;
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations()) * total);
+  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) * total);
   state.counters["channels"] = num_channels;
   state.counters["total_frames"] = total;
 }

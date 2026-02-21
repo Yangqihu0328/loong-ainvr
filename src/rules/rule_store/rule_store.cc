@@ -2,10 +2,11 @@
 
 #include "rules/rule_store/rule_store.h"
 
+#include "spdlog/spdlog.h"
+
 #include <chrono>
 
 #include "nlohmann/json.hpp"
-#include "spdlog/spdlog.h"
 
 namespace loong::rules {
 
@@ -134,15 +135,13 @@ int64_t RuleStore::CreateRule(const AnalysisRule& rule) {
   sqlite3_finalize(stmt);
 
   if (rc != SQLITE_DONE) {
-    spdlog::error("RuleStore: CreateRule step failed: {}",
-                  sqlite3_errmsg(db_));
+    spdlog::error("RuleStore: CreateRule step failed: {}", sqlite3_errmsg(db_));
     return -1;
   }
 
   int64_t new_id = sqlite3_last_insert_rowid(db_);
-  spdlog::info("RuleStore: created rule id={} name='{}' type={} ch={}",
-               new_id, rule.name, RuleTypeToString(rule.type),
-               rule.channel_id);
+  spdlog::info("RuleStore: created rule id={} name='{}' type={} ch={}", new_id,
+               rule.name, RuleTypeToString(rule.type), rule.channel_id);
   return new_id;
 }
 
@@ -332,8 +331,7 @@ std::vector<AnalysisRule> RuleStore::ListRulesByChannel(int channel_id) {
   return result;
 }
 
-std::vector<AnalysisRule> RuleStore::ListEnabledRulesByChannel(
-    int channel_id) {
+std::vector<AnalysisRule> RuleStore::ListEnabledRulesByChannel(int channel_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<AnalysisRule> result;
   if (db_ == nullptr) return result;
@@ -427,8 +425,7 @@ int64_t RuleStore::LogEvent(const RuleEvent& event) {
   return sqlite3_last_insert_rowid(db_);
 }
 
-std::vector<RuleEvent> RuleStore::QueryEvents(int channel_id,
-                                              int64_t start_ms,
+std::vector<RuleEvent> RuleStore::QueryEvents(int channel_id, int64_t start_ms,
                                               int64_t end_ms, int limit) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<RuleEvent> result;
@@ -463,8 +460,7 @@ std::vector<RuleEvent> RuleStore::QueryEvents(int channel_id,
     ev.channel_id = sqlite3_column_int(stmt, 3);
     ev.timestamp = sqlite3_column_int64(stmt, 4);
 
-    auto sev_str =
-        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+    auto sev_str = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
     if (std::string(sev_str) == "warning") {
       ev.severity = RuleEventSeverity::kWarning;
     } else if (std::string(sev_str) == "info") {
@@ -485,7 +481,8 @@ std::vector<RuleEvent> RuleStore::QueryEvents(int channel_id,
         ev.trigger_detection.confidence = tj.value("confidence", 0.0F);
         ev.trigger_detection.class_id = tj.value("class_id", 0);
         ev.trigger_detection.class_name = tj.value("class_name", "");
-      } catch (...) {}
+      } catch (...) {
+      }
     }
 
     ev.count_value = sqlite3_column_int(stmt, 7);
@@ -535,8 +532,7 @@ std::string RuleStore::SerializeParams(const AnalysisRule& rule) {
   return j.dump();
 }
 
-void RuleStore::DeserializeParams(const std::string& json,
-                                  AnalysisRule& rule) {
+void RuleStore::DeserializeParams(const std::string& json, AnalysisRule& rule) {
   try {
     auto j = nlohmann::json::parse(json);
 
@@ -556,14 +552,12 @@ void RuleStore::DeserializeParams(const std::string& json,
     if (j.contains("region") && j["region"].contains("vertices")) {
       rule.region.vertices.clear();
       for (const auto& v : j["region"]["vertices"]) {
-        rule.region.vertices.push_back(
-            {v.value("x", 0.0), v.value("y", 0.0)});
+        rule.region.vertices.push_back({v.value("x", 0.0), v.value("y", 0.0)});
       }
     }
 
     if (j.contains("target_classes")) {
-      rule.target_classes =
-          j["target_classes"].get<std::vector<std::string>>();
+      rule.target_classes = j["target_classes"].get<std::vector<std::string>>();
     }
 
     if (j.contains("schedule")) {

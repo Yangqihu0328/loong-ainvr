@@ -2,13 +2,13 @@
 
 #include "core/config/config_watcher.h"
 
+#include "spdlog/spdlog.h"
+
 #include <sys/inotify.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::core {
 
@@ -35,9 +35,8 @@ bool ConfigWatcher::Watch(const std::string& file_path) {
   }
 
   // Watch for modifications, close-after-write, and move-to (editor save)
-  watch_fd_ = inotify_add_watch(
-      inotify_fd_, file_path.c_str(),
-      IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO);
+  watch_fd_ = inotify_add_watch(inotify_fd_, file_path.c_str(),
+                                IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO);
   if (watch_fd_ < 0) {
     spdlog::error("ConfigWatcher: inotify_add_watch failed for '{}': {}",
                   file_path, std::strerror(errno));
@@ -85,8 +84,7 @@ void ConfigWatcher::WatchLoop() {
     ssize_t len = read(inotify_fd_, buf, sizeof(buf));
     if (len < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(kPollIntervalMs));
+        std::this_thread::sleep_for(std::chrono::milliseconds(kPollIntervalMs));
         continue;
       }
       spdlog::error("ConfigWatcher: read error: {}", std::strerror(errno));

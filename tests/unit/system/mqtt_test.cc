@@ -1,9 +1,9 @@
 // Copyright 2026 Loong AI NVR Project
 // Unit tests for MQTT Channel (FEAT-6.2)
 
-#include <gtest/gtest.h>
-
 #include "system/notification/mqtt_channel.h"
+
+#include <gtest/gtest.h>
 
 namespace loong::system {
 namespace {
@@ -33,16 +33,12 @@ TEST(MqttConfigTest, Defaults) {
 
 class MqttChannelTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    channel_ = std::make_unique<MqttChannel>();
-  }
+  void SetUp() override { channel_ = std::make_unique<MqttChannel>(); }
 
   std::unique_ptr<MqttChannel> channel_;
 };
 
-TEST_F(MqttChannelTest, TypeIsMqtt) {
-  EXPECT_EQ(channel_->Type(), "mqtt");
-}
+TEST_F(MqttChannelTest, TypeIsMqtt) { EXPECT_EQ(channel_->Type(), "mqtt"); }
 
 TEST_F(MqttChannelTest, NotConfiguredByDefault) {
   EXPECT_FALSE(channel_->IsConfigured());
@@ -165,9 +161,7 @@ TEST_F(MqttChannelTest, SubscribeCommands) {
 
   bool callback_called = false;
   bool ok = channel_->SubscribeCommands(
-      [&](const std::string&, const std::string&) {
-        callback_called = true;
-      });
+      [&](const std::string&, const std::string&) { callback_called = true; });
   EXPECT_TRUE(ok);
 }
 

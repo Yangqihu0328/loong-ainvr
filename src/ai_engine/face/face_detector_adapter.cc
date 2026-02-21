@@ -2,20 +2,19 @@
 
 #include "ai_engine/face/face_detector_adapter.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::ai_engine {
 
 FaceDetectorAdapter::FaceDetectorAdapter(int input_size)
     : input_size_(input_size) {}
 
-bool FaceDetectorAdapter::PreProcess(const uint8_t* image_data,
-                                     int width, int height,
-                                     std::vector<float>& input_data,
+bool FaceDetectorAdapter::PreProcess(const uint8_t* image_data, int width,
+                                     int height, std::vector<float>& input_data,
                                      TensorShape& input_shape) {
   if (!image_data || width <= 0 || height <= 0) return false;
 
@@ -25,12 +24,12 @@ bool FaceDetectorAdapter::PreProcess(const uint8_t* image_data,
   return true;
 }
 
-bool FaceDetectorAdapter::PostProcess(
-    const std::vector<float>& output_data,
-    const TensorShape& output_shape,
-    int original_width, int original_height,
-    float confidence_threshold, float nms_threshold,
-    std::vector<Detection>& detections) {
+bool FaceDetectorAdapter::PostProcess(const std::vector<float>& output_data,
+                                      const TensorShape& output_shape,
+                                      int original_width, int original_height,
+                                      float confidence_threshold,
+                                      float nms_threshold,
+                                      std::vector<Detection>& detections) {
   last_faces_.clear();
 
   // SCRFD output: [N, 15] where 15 = 4(bbox) + 1(score) + 10(5 landmarks×2)
@@ -92,14 +91,14 @@ bool FaceDetectorAdapter::PostProcess(
   return true;
 }
 
-void FaceDetectorAdapter::LetterboxResize(const uint8_t* src,
-                                          int src_w, int src_h,
-                                          std::vector<float>& dst) {
+void FaceDetectorAdapter::LetterboxResize(const uint8_t* src, int src_w,
+                                          int src_h, std::vector<float>& dst) {
   auto is = static_cast<size_t>(input_size_);
   dst.assign(3 * is * is, 0.5F);
 
-  float scale = std::min(static_cast<float>(input_size_) / static_cast<float>(src_w),
-                         static_cast<float>(input_size_) / static_cast<float>(src_h));
+  float scale =
+      std::min(static_cast<float>(input_size_) / static_cast<float>(src_w),
+               static_cast<float>(input_size_) / static_cast<float>(src_h));
   int new_w = static_cast<int>(static_cast<float>(src_w) * scale);
   int new_h = static_cast<int>(static_cast<float>(src_h) * scale);
   pad_x_ = (input_size_ - new_w) / 2;

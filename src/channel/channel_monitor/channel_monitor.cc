@@ -8,12 +8,9 @@
 
 namespace loong::channel {
 
-ChannelMonitor::ChannelMonitor(ChannelManager& manager)
-    : manager_(manager) {}
+ChannelMonitor::ChannelMonitor(ChannelManager& manager) : manager_(manager) {}
 
-ChannelMonitor::~ChannelMonitor() {
-  Stop();
-}
+ChannelMonitor::~ChannelMonitor() { Stop(); }
 
 void ChannelMonitor::Start(int interval_seconds) {
   if (running_) return;
@@ -120,9 +117,9 @@ void ChannelMonitor::MonitorLoop() {
         // Compute throughput FPS from frame count deltas.
         int64_t frames_delta =
             status.frames_processed - tracker.prev_frames_processed;
-        metrics.fps_in = ComputeFps(
-            status.frames_processed, tracker.prev_frames_processed,
-            interval_seconds_);
+        metrics.fps_in =
+            ComputeFps(status.frames_processed, tracker.prev_frames_processed,
+                       interval_seconds_);
 
         // Use status-provided FPS values when available.
         metrics.fps_decode = status.fps_decode;
@@ -151,8 +148,7 @@ void ChannelMonitor::MonitorLoop() {
           auto since_progress =
               std::chrono::duration_cast<std::chrono::seconds>(
                   now - tracker.last_progress_time);
-          is_stalled =
-              (since_progress.count() > stall_timeout_seconds_);
+          is_stalled = (since_progress.count() > stall_timeout_seconds_);
         }
 
         if (is_error) {
@@ -172,8 +168,7 @@ void ChannelMonitor::MonitorLoop() {
 
         // Collect recovery candidates.
         if (auto_recovery_ && (is_error || is_stalled)) {
-          if (tracker.consecutive_errors >= error_threshold_ ||
-              is_stalled) {
+          if (tracker.consecutive_errors >= error_threshold_ || is_stalled) {
             recovery_candidates.push_back(id);
           }
         }
@@ -196,7 +191,7 @@ void ChannelMonitor::MonitorLoop() {
 }
 
 int ChannelMonitor::ComputeFps(int64_t current, int64_t previous,
-                                int interval_seconds) const {
+                               int interval_seconds) const {
   if (interval_seconds <= 0) return 0;
   int64_t delta = current - previous;
   if (delta < 0) delta = 0;
@@ -223,8 +218,7 @@ void ChannelMonitor::AttemptRecovery(int channel_id) {
     }
   }
 
-  spdlog::warn("ChannelMonitor: attempting recovery for ch {}",
-               channel_id);
+  spdlog::warn("ChannelMonitor: attempting recovery for ch {}", channel_id);
 
   // Stop then restart the channel with a brief delay.
   manager_.StopChannel(channel_id);
@@ -232,8 +226,7 @@ void ChannelMonitor::AttemptRecovery(int channel_id) {
   bool ok = manager_.StartChannel(channel_id);
 
   if (ok) {
-    spdlog::info("ChannelMonitor: ch {} recovered successfully",
-                 channel_id);
+    spdlog::info("ChannelMonitor: ch {} recovered successfully", channel_id);
     core::EventBus::Instance().Publish("channel.recovered",
                                        std::any(channel_id));
   } else {

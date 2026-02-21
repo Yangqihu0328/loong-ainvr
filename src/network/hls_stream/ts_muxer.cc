@@ -197,14 +197,11 @@ std::vector<uint8_t> TsMuxer::BuildPesHeader(int64_t pts_90khz) {
   // PTS encoding (5 bytes):
   // '0010' + PTS[32..30] + marker_bit
   auto pts = static_cast<uint64_t>(pts_90khz);
-  header[9] = static_cast<uint8_t>(
-      0x21 | ((pts >> 29) & 0x0E));
+  header[9] = static_cast<uint8_t>(0x21 | ((pts >> 29) & 0x0E));
   header[10] = static_cast<uint8_t>((pts >> 22) & 0xFF);
-  header[11] = static_cast<uint8_t>(
-      0x01 | ((pts >> 14) & 0xFE));
+  header[11] = static_cast<uint8_t>(0x01 | ((pts >> 14) & 0xFE));
   header[12] = static_cast<uint8_t>((pts >> 7) & 0xFF);
-  header[13] = static_cast<uint8_t>(
-      0x01 | ((pts << 1) & 0xFE));
+  header[13] = static_cast<uint8_t>(0x01 | ((pts << 1) & 0xFE));
 
   return header;
 }
@@ -226,8 +223,7 @@ void TsMuxer::PacketizePayload(std::vector<uint8_t>& output, uint16_t pid,
     pkt[0] = kSyncByte;
 
     bool pusi = first_packet && payload_start;
-    pkt[1] = static_cast<uint8_t>(
-        (pusi ? 0x40 : 0x00) | ((pid >> 8) & 0x1F));
+    pkt[1] = static_cast<uint8_t>((pusi ? 0x40 : 0x00) | ((pid >> 8) & 0x1F));
     pkt[2] = static_cast<uint8_t>(pid & 0xFF);
 
     // Determine if we need an adaptation field
@@ -257,7 +253,7 @@ void TsMuxer::PacketizePayload(std::vector<uint8_t>& output, uint16_t pid,
 
       uint8_t flags = 0;
       if (pcr_90khz >= 0) flags |= 0x10;  // PCR flag
-      if (random_access) flags |= 0x40;    // random_access_indicator
+      if (random_access) flags |= 0x40;   // random_access_indicator
       pkt[5] = flags;
 
       int adapt_offset = 6;
@@ -304,8 +300,7 @@ void TsMuxer::PacketizePayload(std::vector<uint8_t>& output, uint16_t pid,
           pkt[4] = static_cast<uint8_t>(stuff - 1);
           pkt[5] = 0x00;  // flags = 0
           if (stuff > 2) {
-            std::memset(&pkt[6], kStuffingByte,
-                        static_cast<size_t>(stuff - 2));
+            std::memset(&pkt[6], kStuffingByte, static_cast<size_t>(stuff - 2));
           }
           std::memcpy(&pkt[4 + stuff], payload + offset, copy_len);
         }
@@ -321,10 +316,9 @@ void TsMuxer::PacketizePayload(std::vector<uint8_t>& output, uint16_t pid,
   }
 }
 
-std::vector<uint8_t> TsMuxer::WriteAccessUnit(const uint8_t* data,
-                                               size_t size,
-                                               int64_t pts_us,
-                                               bool is_keyframe) {
+std::vector<uint8_t> TsMuxer::WriteAccessUnit(const uint8_t* data, size_t size,
+                                              int64_t pts_us,
+                                              bool is_keyframe) {
   if (data == nullptr || size == 0) return {};
 
   // Convert microseconds to 90kHz clock

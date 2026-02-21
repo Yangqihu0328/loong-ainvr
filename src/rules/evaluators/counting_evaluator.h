@@ -3,11 +3,11 @@
 #ifndef LOONG_RULES_EVALUATORS_COUNTING_EVALUATOR_H_
 #define LOONG_RULES_EVALUATORS_COUNTING_EVALUATOR_H_
 
-#include <unordered_map>
-#include <vector>
-
 #include "rules/evaluators/iou_tracker.h"
 #include "rules/evaluators/rule_evaluator.h"
+
+#include <unordered_map>
+#include <vector>
 
 namespace loong::rules {
 
@@ -25,9 +25,8 @@ class CountingEvaluator : public RuleEvaluator {
   CountingEvaluator() = default;
 
   bool Configure(const AnalysisRule& rule) override;
-  std::vector<RuleEvent> Evaluate(
-      const std::vector<Detection>& detections,
-      const FrameContext& context) override;
+  std::vector<RuleEvent> Evaluate(const std::vector<Detection>& detections,
+                                  const FrameContext& context) override;
   void Reset() override;
   RuleType GetType() const override { return RuleType::kObjectCounting; }
 
@@ -37,8 +36,7 @@ class CountingEvaluator : public RuleEvaluator {
   int GetTotalCrossings() const { return count_a_to_b_ + count_b_to_a_; }
 
  private:
-  static double CrossProduct(const Point2D& line_start,
-                             const Point2D& line_end,
+  static double CrossProduct(const Point2D& line_start, const Point2D& line_end,
                              const Point2D& point);
 
   std::vector<Detection> FilterDetections(

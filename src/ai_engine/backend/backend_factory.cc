@@ -45,8 +45,7 @@ std::unique_ptr<InferenceBackend> BackendFactory::Create(
   }
 #endif
 
-  spdlog::warn("BackendFactory: unknown backend '{}', using opencv_dnn",
-               name);
+  spdlog::warn("BackendFactory: unknown backend '{}', using opencv_dnn", name);
   return std::make_unique<OpenCVDnnBackend>();
 }
 

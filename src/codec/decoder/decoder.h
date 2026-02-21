@@ -3,10 +3,10 @@
 #ifndef LOONG_CODEC_DECODER_DECODER_H_
 #define LOONG_CODEC_DECODER_DECODER_H_
 
+#include "core/common/types.h"
+
 #include <functional>
 #include <memory>
-
-#include "core/common/types.h"
 
 namespace loong::codec {
 
@@ -22,8 +22,8 @@ class Decoder {
   virtual bool Initialize(CodecType codec, int width, int height) = 0;
 
   /// Decode an encoded packet. Decoded frames are delivered via callback.
-  virtual bool Decode(const uint8_t* data, size_t size,
-                      int64_t pts, int64_t dts, bool is_keyframe) = 0;
+  virtual bool Decode(const uint8_t* data, size_t size, int64_t pts,
+                      int64_t dts, bool is_keyframe) = 0;
 
   /// Flush any buffered frames.
   virtual void Flush() = 0;

@@ -2,11 +2,10 @@
 
 #include "pipeline_stages/overlay_stage/overlay_stage.h"
 
-#include <fstream>
-
-#include <nlohmann/json.hpp>
-
 #include "spdlog/spdlog.h"
+
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 namespace loong::pipeline_stages {
 
@@ -45,7 +44,8 @@ bool OverlayStage::Initialize(const StageConfig& config) {
   try {
     auto params = nlohmann::json::parse(config.params);
     font_path = params.value("font_path", "");
-  } catch (...) {}
+  } catch (...) {
+  }
 
   if (font_path.empty()) {
     // Search common font locations
@@ -68,11 +68,11 @@ bool OverlayStage::Initialize(const StageConfig& config) {
     renderer_.LoadFont(font_path, px_size);
   }
 
-  spdlog::info("OverlayStage: initialized (ch={}, name='{}', enabled={}, "
-               "thickness={}, timestamp={}, trajectory={})",
-               channel_id, channel_name, ov_config.enabled,
-               ov_config.line_thickness, ov_config.show_timestamp,
-               ov_config.show_trajectory);
+  spdlog::info(
+      "OverlayStage: initialized (ch={}, name='{}', enabled={}, "
+      "thickness={}, timestamp={}, trajectory={})",
+      channel_id, channel_name, ov_config.enabled, ov_config.line_thickness,
+      ov_config.show_timestamp, ov_config.show_trajectory);
   return true;
 }
 
@@ -88,8 +88,6 @@ bool OverlayStage::ProcessFrame(std::shared_ptr<Frame> frame) {
   return PassToNext(std::move(frame));
 }
 
-void OverlayStage::Shutdown() {
-  renderer_.ResetTrajectories();
-}
+void OverlayStage::Shutdown() { renderer_.ResetTrajectories(); }
 
 }  // namespace loong::pipeline_stages

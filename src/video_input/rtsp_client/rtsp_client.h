@@ -3,6 +3,8 @@
 #ifndef LOONG_VIDEO_INPUT_RTSP_CLIENT_RTSP_CLIENT_H_
 #define LOONG_VIDEO_INPUT_RTSP_CLIENT_RTSP_CLIENT_H_
 
+#include "core/common/types.h"
+
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -10,8 +12,6 @@
 #include <mutex>
 #include <string>
 #include <thread>
-
-#include "core/common/types.h"
 
 // Forward-declare FFmpeg types to avoid leaking the C header.
 struct AVFormatContext;
@@ -21,8 +21,8 @@ namespace loong::video_input {
 
 /// RTSP transport mode.
 enum class RtspTransport {
-  kTcp,   // Interleaved TCP (default, more reliable)
-  kUdp,   // UDP (lower latency, may lose packets)
+  kTcp,  // Interleaved TCP (default, more reliable)
+  kUdp,  // UDP (lower latency, may lose packets)
 };
 
 /// Connection state of an RTSP client.
@@ -37,11 +37,16 @@ enum class RtspConnectionState {
 /// Convert RtspConnectionState to a human-readable string.
 inline const char* RtspConnectionStateToString(RtspConnectionState s) {
   switch (s) {
-    case RtspConnectionState::kDisconnected: return "Disconnected";
-    case RtspConnectionState::kConnecting:   return "Connecting";
-    case RtspConnectionState::kConnected:    return "Connected";
-    case RtspConnectionState::kReconnecting: return "Reconnecting";
-    case RtspConnectionState::kError:        return "Error";
+    case RtspConnectionState::kDisconnected:
+      return "Disconnected";
+    case RtspConnectionState::kConnecting:
+      return "Connecting";
+    case RtspConnectionState::kConnected:
+      return "Connected";
+    case RtspConnectionState::kReconnecting:
+      return "Reconnecting";
+    case RtspConnectionState::kError:
+      return "Error";
   }
   return "Unknown";
 }
@@ -56,27 +61,25 @@ struct RtspStreamInfo {
 
 /// Configuration for an RTSP client instance.
 struct RtspClientConfig {
-  std::string url;                   // RTSP URL (e.g., rtsp://user:pass@ip/stream)
+  std::string url;  // RTSP URL (e.g., rtsp://user:pass@ip/stream)
   RtspTransport transport = RtspTransport::kTcp;
-  int connect_timeout_ms = 5000;     // Connection timeout in milliseconds
-  bool auto_reconnect = true;        // Enable automatic reconnection
-  int max_reconnect_attempts = 0;    // 0 = unlimited
-  int reconnect_delay_ms = 3000;     // Initial delay between reconnection attempts
-  int reconnect_max_delay_ms = 30000; // Maximum backoff delay
+  int connect_timeout_ms = 5000;   // Connection timeout in milliseconds
+  bool auto_reconnect = true;      // Enable automatic reconnection
+  int max_reconnect_attempts = 0;  // 0 = unlimited
+  int reconnect_delay_ms = 3000;  // Initial delay between reconnection attempts
+  int reconnect_max_delay_ms = 30000;  // Maximum backoff delay
 };
 
 /// Callback invoked for each received video packet.
-/// Parameters: channel_id, packet data, packet size, pts, dts, is_keyframe, codec.
-using PacketCallback = std::function<void(
-    int channel_id,
-    const uint8_t* data, size_t size,
-    int64_t pts, int64_t dts,
-    bool is_keyframe, CodecType codec)>;
+/// Parameters: channel_id, packet data, packet size, pts, dts, is_keyframe,
+/// codec.
+using PacketCallback = std::function<void(int channel_id, const uint8_t* data,
+                                          size_t size, int64_t pts, int64_t dts,
+                                          bool is_keyframe, CodecType codec)>;
 
 /// Callback invoked when connection state changes.
 using StateCallback = std::function<void(
-    int channel_id, RtspConnectionState new_state,
-    const std::string& message)>;
+    int channel_id, RtspConnectionState new_state, const std::string& message)>;
 
 /// A reusable RTSP client that pulls video packets from a camera/stream.
 ///
@@ -157,9 +160,10 @@ class RtspClient {
 
   // FFmpeg state
   AVFormatContext* fmt_ctx_ = nullptr;
-  AVBSFContext* bsf_ctx_ = nullptr;  // h264/hevc_mp4toannexb for container files
+  AVBSFContext* bsf_ctx_ =
+      nullptr;  // h264/hevc_mp4toannexb for container files
   int video_stream_index_ = -1;
-  bool is_file_source_ = false;      // true for local file inputs (MP4/MKV/etc.)
+  bool is_file_source_ = false;  // true for local file inputs (MP4/MKV/etc.)
   RtspStreamInfo stream_info_;
 
   // Threading

@@ -3,15 +3,14 @@
 #include "network/websocket/websocket_frame.h"
 #include "network/websocket/websocket_server.h"
 
-#include <gtest/gtest.h>
-
-#include <cstring>
-#include <string>
-#include <thread>
-
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <arpa/inet.h>
+#include <cstring>
+#include <gtest/gtest.h>
+#include <string>
+#include <thread>
 
 namespace loong {
 namespace network {

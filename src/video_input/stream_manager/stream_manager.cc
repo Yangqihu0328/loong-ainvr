@@ -9,12 +9,9 @@ namespace video_input {
 
 StreamManager::StreamManager() = default;
 
-StreamManager::~StreamManager() {
-  StopAll();
-}
+StreamManager::~StreamManager() { StopAll(); }
 
-bool StreamManager::AddStream(int channel_id,
-                               const RtspClientConfig& config) {
+bool StreamManager::AddStream(int channel_id, const RtspClientConfig& config) {
   std::unique_lock lock(streams_mutex_);
 
   if (streams_.size() >= static_cast<size_t>(kMaxStreams)) {
@@ -102,8 +99,8 @@ bool StreamManager::StopStream(int channel_id) {
 }
 
 bool StreamManager::UpdateStream(int channel_id,
-                                  const RtspClientConfig& new_config,
-                                  bool restart) {
+                                 const RtspClientConfig& new_config,
+                                 bool restart) {
   std::unique_lock lock(streams_mutex_);
   auto it = streams_.find(channel_id);
   if (it == streams_.end()) {
@@ -233,10 +230,8 @@ void StreamManager::SetStateCallback(StreamStateCallback callback) {
 // ---------- Private helpers ----------
 
 PacketCallback StreamManager::MakePacketCallback() {
-  return [this](int channel_id,
-                const uint8_t* data, size_t size,
-                int64_t pts, int64_t dts,
-                bool is_keyframe, CodecType codec) {
+  return [this](int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                int64_t dts, bool is_keyframe, CodecType codec) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     if (packet_callback_) {
       packet_callback_(channel_id, data, size, pts, dts, is_keyframe, codec);

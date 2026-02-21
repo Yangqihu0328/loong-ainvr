@@ -12,7 +12,7 @@ namespace loong::system {
 struct NotificationMessage {
   std::string title;
   std::string body;
-  std::string severity;    // "info", "warning", "critical"
+  std::string severity;  // "info", "warning", "critical"
   int channel_id = -1;
   std::string event_type;
   float confidence = 0.0F;

@@ -2,9 +2,9 @@
 
 #include "rules/evaluators/loitering_evaluator.h"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
 
 namespace loong::rules {
 
@@ -25,16 +25,16 @@ bool LoiteringEvaluator::Configure(const AnalysisRule& rule) {
 
   track_states_.clear();
 
-  spdlog::debug("LoiteringEvaluator: configured rule '{}' threshold={}s "
-                "cooldown={}s vertices={} ch={}",
-                rule_.name, rule_.loiter_time_sec, rule_.cooldown_sec,
-                rule_.region.vertices.size(), rule_.channel_id);
+  spdlog::debug(
+      "LoiteringEvaluator: configured rule '{}' threshold={}s "
+      "cooldown={}s vertices={} ch={}",
+      rule_.name, rule_.loiter_time_sec, rule_.cooldown_sec,
+      rule_.region.vertices.size(), rule_.channel_id);
   return true;
 }
 
 std::vector<RuleEvent> LoiteringEvaluator::Evaluate(
-    const std::vector<Detection>& detections,
-    const FrameContext& context) {
+    const std::vector<Detection>& detections, const FrameContext& context) {
   std::vector<RuleEvent> events;
 
   if (rule_.region.vertices.size() < 3) return events;
@@ -44,8 +44,7 @@ std::vector<RuleEvent> LoiteringEvaluator::Evaluate(
 
   const int64_t threshold_ms =
       static_cast<int64_t>(rule_.loiter_time_sec) * 1000;
-  const int64_t cooldown_ms =
-      static_cast<int64_t>(rule_.cooldown_sec) * 1000;
+  const int64_t cooldown_ms = static_cast<int64_t>(rule_.cooldown_sec) * 1000;
 
   for (const auto& track : tracker_.GetTracks()) {
     if (!track.active || track.trajectory.empty()) continue;
@@ -53,8 +52,8 @@ std::vector<RuleEvent> LoiteringEvaluator::Evaluate(
     auto center = IouTracker::NormalizePoint(
         track.trajectory.back(), context.frame_width, context.frame_height);
 
-    bool inside = RegionIntrusionEvaluator::PointInPolygon(
-        center, rule_.region.vertices);
+    bool inside =
+        RegionIntrusionEvaluator::PointInPolygon(center, rule_.region.vertices);
 
     auto& state = track_states_[track.track_id];
 
@@ -74,8 +73,8 @@ std::vector<RuleEvent> LoiteringEvaluator::Evaluate(
 
         if (!state.alerted) {
           should_alert = true;
-        } else if (cooldown_ms > 0 &&
-                   (context.timestamp_ms - state.last_alert_ms) >= cooldown_ms) {
+        } else if (cooldown_ms > 0 && (context.timestamp_ms -
+                                       state.last_alert_ms) >= cooldown_ms) {
           should_alert = true;
         }
 

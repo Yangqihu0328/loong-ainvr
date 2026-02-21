@@ -2,17 +2,15 @@
 
 #include "codec/decoder/ffmpeg_decoder.h"
 
-#include <cstring>
-
 #include "spdlog/spdlog.h"
+
+#include <cstring>
 
 namespace loong::codec {
 
 FFmpegDecoder::FFmpegDecoder() = default;
 
-FFmpegDecoder::~FFmpegDecoder() {
-  Shutdown();
-}
+FFmpegDecoder::~FFmpegDecoder() { Shutdown(); }
 
 bool FFmpegDecoder::Initialize(CodecType codec, int width, int height) {
   codec_type_ = codec;
@@ -25,7 +23,7 @@ bool FFmpegDecoder::Initialize(CodecType codec, int width, int height) {
   const AVCodec* av_codec = avcodec_find_decoder(codec_id);
   if (!av_codec) {
     spdlog::error("FFmpegDecoder: codec {} not found",
-                   (codec == CodecType::kH264) ? "H.264" : "H.265");
+                  (codec == CodecType::kH264) ? "H.264" : "H.265");
     return false;
   }
 
@@ -55,13 +53,12 @@ bool FFmpegDecoder::Initialize(CodecType codec, int width, int height) {
 
   initialized_ = true;
   spdlog::info("FFmpegDecoder: initialized {} ({}x{})",
-               (codec == CodecType::kH264) ? "H.264" : "H.265",
-               width, height);
+               (codec == CodecType::kH264) ? "H.264" : "H.265", width, height);
   return true;
 }
 
-bool FFmpegDecoder::Decode(const uint8_t* data, size_t size,
-                           int64_t pts, int64_t dts, bool is_keyframe) {
+bool FFmpegDecoder::Decode(const uint8_t* data, size_t size, int64_t pts,
+                           int64_t dts, bool is_keyframe) {
   if (!initialized_) return false;
 
   // Detect PTS discontinuity (e.g. file looped back to start) and flush the
@@ -143,9 +140,7 @@ void FFmpegDecoder::Shutdown() {
   initialized_ = false;
 }
 
-std::string FFmpegDecoder::Name() const {
-  return "FFmpegDecoder";
-}
+std::string FFmpegDecoder::Name() const { return "FFmpegDecoder"; }
 
 bool FFmpegDecoder::ConvertAndDeliver(AVFrame* av_frame, int64_t pts) {
   if (!frame_callback_) return true;
@@ -155,11 +150,10 @@ bool FFmpegDecoder::ConvertAndDeliver(AVFrame* av_frame, int64_t pts) {
 
   // Convert to BGR24 for OpenCV / AI processing
   if (!sws_ctx_) {
-    sws_ctx_ = sws_getContext(
-        dst_width, dst_height,
-        static_cast<AVPixelFormat>(av_frame->format),
-        dst_width, dst_height, AV_PIX_FMT_BGR24,
-        SWS_BILINEAR, nullptr, nullptr, nullptr);
+    sws_ctx_ = sws_getContext(dst_width, dst_height,
+                              static_cast<AVPixelFormat>(av_frame->format),
+                              dst_width, dst_height, AV_PIX_FMT_BGR24,
+                              SWS_BILINEAR, nullptr, nullptr, nullptr);
     if (!sws_ctx_) {
       spdlog::error("FFmpegDecoder: failed to create sws context");
       return false;
@@ -180,8 +174,8 @@ bool FFmpegDecoder::ConvertAndDeliver(AVFrame* av_frame, int64_t pts) {
   uint8_t* dst_data[1] = {out_frame->data.get()};
   int dst_linesize[1] = {dst_width * 3};
 
-  sws_scale(sws_ctx_, av_frame->data, av_frame->linesize,
-            0, dst_height, dst_data, dst_linesize);
+  sws_scale(sws_ctx_, av_frame->data, av_frame->linesize, 0, dst_height,
+            dst_data, dst_linesize);
 
   frame_callback_(std::move(out_frame));
   return true;

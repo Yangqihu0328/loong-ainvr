@@ -14,17 +14,17 @@ namespace loong::overlay {
 
 /// Grid layout presets for multi-channel composition.
 enum class GridLayout {
-  k1x1 = 1,    // Single view
-  k2x2 = 4,    // 4-channel grid
-  k3x3 = 9,    // 9-channel grid
-  k4x4 = 16,   // 16-channel grid
-  k8x8 = 64,   // 64-channel grid (maximum)
+  k1x1 = 1,   // Single view
+  k2x2 = 4,   // 4-channel grid
+  k3x3 = 9,   // 9-channel grid
+  k4x4 = 16,  // 16-channel grid
+  k8x8 = 64,  // 64-channel grid (maximum)
 };
 
 /// Information about a single channel's frame for compositing.
 struct CompositorInput {
   int channel_id = -1;
-  uint8_t* data = nullptr;   // BGR24 frame data
+  uint8_t* data = nullptr;  // BGR24 frame data
   int width = 0;
   int height = 0;
   int stride = 0;
@@ -102,14 +102,12 @@ class ChannelCompositor {
     bool valid = false;
   };
 
-  void DrawNoSignal(uint8_t* output, int out_stride,
-                    int cell_x, int cell_y, int cell_w, int cell_h) const;
-  void DrawChannelCell(uint8_t* output, int out_stride,
-                       int cell_x, int cell_y, int cell_w, int cell_h,
-                       const ChannelFrame& frame);
-  void DrawCellLabel(uint8_t* output, int out_stride,
-                     int cell_x, int cell_y, int cell_w, int cell_h,
-                     int channel_id) const;
+  void DrawNoSignal(uint8_t* output, int out_stride, int cell_x, int cell_y,
+                    int cell_w, int cell_h) const;
+  void DrawChannelCell(uint8_t* output, int out_stride, int cell_x, int cell_y,
+                       int cell_w, int cell_h, const ChannelFrame& frame);
+  void DrawCellLabel(uint8_t* output, int out_stride, int cell_x, int cell_y,
+                     int cell_w, int cell_h, int channel_id) const;
   std::vector<int> GetCellChannelOrder() const;
 
   mutable std::mutex mutex_;

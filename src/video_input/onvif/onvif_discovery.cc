@@ -2,18 +2,17 @@
 
 #include "video_input/onvif/onvif_discovery.h"
 
-#include <cstring>
-#include <functional>
-#include <sstream>
+#include "spdlog/spdlog.h"
 
-#include <arpa/inet.h>
-#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <arpa/inet.h>
+#include <cstring>
+#include <functional>
+#include <poll.h>
 #include <pugixml.hpp>
-
-#include "spdlog/spdlog.h"
+#include <sstream>
 
 namespace loong::video_input {
 
@@ -60,9 +59,9 @@ std::vector<OnvifDeviceInfo> OnvifDiscovery::Discover(int timeout_ms) {
   inet_pton(AF_INET, kMulticastAddr, &dest.sin_addr);
 
   std::string probe = BuildProbeMessage();
-  ssize_t sent = sendto(fd, probe.c_str(), probe.size(), 0,
-                        reinterpret_cast<struct sockaddr*>(&dest),
-                        sizeof(dest));
+  ssize_t sent =
+      sendto(fd, probe.c_str(), probe.size(), 0,
+             reinterpret_cast<struct sockaddr*>(&dest), sizeof(dest));
   if (sent < 0) {
     spdlog::error("OnvifDiscovery: sendto() failed");
     close(fd);
@@ -90,9 +89,9 @@ std::vector<OnvifDeviceInfo> OnvifDiscovery::Discover(int timeout_ms) {
 
     struct sockaddr_in sender {};
     socklen_t sender_len = sizeof(sender);
-    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0,
-                         reinterpret_cast<struct sockaddr*>(&sender),
-                         &sender_len);
+    ssize_t n =
+        recvfrom(fd, buf, sizeof(buf) - 1, 0,
+                 reinterpret_cast<struct sockaddr*>(&sender), &sender_len);
     if (n <= 0) continue;
     buf[n] = '\0';
 
@@ -133,7 +132,8 @@ std::string OnvifDiscovery::BuildProbeMessage() {
      << " xmlns:d=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\""
      << " xmlns:dn=\"http://www.onvif.org/ver10/network/wsdl\">"
      << "<s:Header>"
-     << "<a:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</a:Action>"
+     << "<a:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</"
+        "a:Action>"
      << "<a:MessageID>urn:uuid:loong-ainvr-probe-001</a:MessageID>"
      << "<a:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</a:To>"
      << "</s:Header>"
@@ -150,8 +150,7 @@ std::vector<std::string> OnvifDiscovery::ParseProbeResponse(
     const std::string& xml_response) {
   std::vector<std::string> xaddrs;
   pugi::xml_document doc;
-  pugi::xml_parse_result result =
-      doc.load_string(xml_response.c_str());
+  pugi::xml_parse_result result = doc.load_string(xml_response.c_str());
   if (!result) return xaddrs;
 
   // Recursively search for XAddrs elements in the ProbeMatch response.

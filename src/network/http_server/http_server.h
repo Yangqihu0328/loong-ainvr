@@ -57,8 +57,7 @@ struct LoginAttemptEntry {
 ///   - JSON response helper utilities
 class HttpServer {
  public:
-  HttpServer(std::string host, int port,
-             const TlsConfig& tls = TlsConfig{});
+  HttpServer(std::string host, int port, const TlsConfig& tls = TlsConfig{});
   ~HttpServer();
 
   /// Access the underlying httplib server for route registration.

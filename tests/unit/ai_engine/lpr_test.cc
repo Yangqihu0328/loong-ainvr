@@ -1,17 +1,16 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "ai_engine/lpr/lpr_detector_adapter.h"
+#include "ai_engine/lpr/lpr_ocr_adapter.h"
+#include "ai_engine/lpr/plate_store.h"
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+#include "gtest/gtest.h"
+
 #include <cmath>
 #include <cstdio>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gtest/gtest.h"
-
-#include "ai_engine/lpr/lpr_detector_adapter.h"
-#include "ai_engine/lpr/lpr_ocr_adapter.h"
-#include "ai_engine/lpr/plate_store.h"
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 
 namespace loong::ai_engine {
 namespace {
@@ -49,17 +48,17 @@ TEST(LprOcr, InputShape) {
   auto shape = adapter.InputShape();
   ASSERT_EQ(shape.size(), 4U);
   EXPECT_EQ(shape[0], 1);
-  EXPECT_EQ(shape[1], 1);   // grayscale
-  EXPECT_EQ(shape[2], 32);  // height
-  EXPECT_EQ(shape[3], 100); // width
+  EXPECT_EQ(shape[1], 1);    // grayscale
+  EXPECT_EQ(shape[2], 32);   // height
+  EXPECT_EQ(shape[3], 100);  // width
 }
 
 TEST(LprOcr, DefaultChineseCharset) {
   auto charset = LprOcrAdapter::DefaultChineseCharset();
   EXPECT_GT(charset.size(), 60U);
-  EXPECT_EQ(charset[0], "");      // blank
+  EXPECT_EQ(charset[0], "");  // blank
   EXPECT_EQ(charset[1], "京");
-  EXPECT_EQ(charset[31], "宁");   // last province
+  EXPECT_EQ(charset[31], "宁");  // last province
   // Digits start at index 32
   EXPECT_EQ(charset[32], "0");
   EXPECT_EQ(charset[41], "9");
@@ -95,21 +94,41 @@ TEST(LprOcr, CtcGreedyDecodeSimple) {
   // Each row is logits for one time step
   // We want to decode: A B C (with blanks between)
   std::vector<float> logits = {
-    // t=0: A is highest
-    -1.0F, 5.0F, 0.0F, 0.0F, 0.0F,
-    // t=1: blank is highest
-    5.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    // t=2: B is highest
-    0.0F, 0.0F, 5.0F, 0.0F, 0.0F,
-    // t=3: blank is highest
-    5.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    // t=4: C is highest
-    0.0F, 0.0F, 0.0F, 5.0F, 0.0F,
+      // t=0: A is highest
+      -1.0F,
+      5.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      // t=1: blank is highest
+      5.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      // t=2: B is highest
+      0.0F,
+      0.0F,
+      5.0F,
+      0.0F,
+      0.0F,
+      // t=3: blank is highest
+      5.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      // t=4: C is highest
+      0.0F,
+      0.0F,
+      0.0F,
+      5.0F,
+      0.0F,
   };
 
   float avg_conf = 0.0F;
-  auto text = LprOcrAdapter::CtcGreedyDecode(logits, kT, kC, charset,
-                                             &avg_conf);
+  auto text =
+      LprOcrAdapter::CtcGreedyDecode(logits, kT, kC, charset, &avg_conf);
 
   EXPECT_EQ(text, "ABC");
   EXPECT_GT(avg_conf, 0.9F);
@@ -121,10 +140,10 @@ TEST(LprOcr, CtcGreedyDecodeCollapsesRepeats) {
 
   // A, A, B, B → should decode to "AB" (collapse repeats)
   std::vector<float> logits = {
-    -1.0F, 5.0F, 0.0F,  // A
-    -1.0F, 5.0F, 0.0F,  // A (repeat → skip)
-    -1.0F, 0.0F, 5.0F,  // B
-    -1.0F, 0.0F, 5.0F,  // B (repeat → skip)
+      -1.0F, 5.0F, 0.0F,  // A
+      -1.0F, 5.0F, 0.0F,  // A (repeat → skip)
+      -1.0F, 0.0F, 5.0F,  // B
+      -1.0F, 0.0F, 5.0F,  // B (repeat → skip)
   };
 
   auto text = LprOcrAdapter::CtcGreedyDecode(logits, kT, kC, charset);
@@ -136,14 +155,12 @@ TEST(LprOcr, CtcGreedyDecodeAllBlanks) {
   constexpr int kT = 3, kC = 2;
 
   std::vector<float> logits = {
-    5.0F, 0.0F,
-    5.0F, 0.0F,
-    5.0F, 0.0F,
+      5.0F, 0.0F, 5.0F, 0.0F, 5.0F, 0.0F,
   };
 
   float avg_conf = 0.0F;
-  auto text = LprOcrAdapter::CtcGreedyDecode(logits, kT, kC, charset,
-                                             &avg_conf);
+  auto text =
+      LprOcrAdapter::CtcGreedyDecode(logits, kT, kC, charset, &avg_conf);
   EXPECT_TRUE(text.empty());
   EXPECT_FLOAT_EQ(avg_conf, 0.0F);
 }
@@ -196,9 +213,7 @@ TEST(LprOcr, PostProcessBelowThreshold) {
 
 class PlateStoreTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    store_.Open(":memory:");
-  }
+  void SetUp() override { store_.Open(":memory:"); }
   PlateStore store_;
 };
 

@@ -3,13 +3,13 @@
 #ifndef LOONG_CHANNEL_CHANNEL_PIPELINE_CHANNEL_ORCHESTRATOR_H_
 #define LOONG_CHANNEL_CHANNEL_PIPELINE_CHANNEL_ORCHESTRATOR_H_
 
+#include "core/common/types.h"
+#include "core/pipeline/channel_pipeline.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
-
-#include "core/common/types.h"
-#include "core/pipeline/channel_pipeline.h"
 
 namespace loong::network {
 class HttpFlvService;
@@ -84,7 +84,8 @@ class ChannelOrchestrator {
   /// Enable cascade inference on each pipeline's AiStage.
   /// Steps define the multi-model chain (e.g., YOLO → LPR detector → OCR).
   void SetCascadeEnabled(bool enabled);
-  void SetCascadeSteps(const std::vector<std::pair<std::string, std::string>>& steps);
+  void SetCascadeSteps(
+      const std::vector<std::pair<std::string, std::string>>& steps);
 
   /// Build a complete pipeline for the given channel configuration.
   /// Returns nullptr on failure.

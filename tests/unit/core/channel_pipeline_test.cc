@@ -2,9 +2,9 @@
 
 #include "core/pipeline/channel_pipeline.h"
 
-#include <atomic>
-
 #include "gtest/gtest.h"
+
+#include <atomic>
 
 namespace loong {
 namespace core {

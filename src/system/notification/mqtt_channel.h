@@ -3,12 +3,12 @@
 #ifndef LOONG_SYSTEM_NOTIFICATION_MQTT_CHANNEL_H_
 #define LOONG_SYSTEM_NOTIFICATION_MQTT_CHANNEL_H_
 
+#include "system/notification/notification_channel.h"
+
 #include <atomic>
 #include <functional>
 #include <mutex>
 #include <string>
-
-#include "system/notification/notification_channel.h"
 
 namespace loong::system {
 

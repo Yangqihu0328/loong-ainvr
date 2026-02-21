@@ -3,14 +3,14 @@
 #ifndef LOONG_OVERLAY_OSD_RENDERER_OSD_RENDERER_H_
 #define LOONG_OVERLAY_OSD_RENDERER_OSD_RENDERER_H_
 
+#include "core/common/types.h"
+#include "overlay/ft_text_renderer/ft_text_renderer.h"
+
 #include <array>
 #include <deque>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "core/common/types.h"
-#include "overlay/ft_text_renderer/ft_text_renderer.h"
 
 namespace loong::overlay {
 
@@ -99,8 +99,8 @@ class OsdRenderer {
 
   /// Draw text using FreeType if available, cv::putText otherwise.
   void DrawText(uint8_t* data, int width, int height, int stride,
-                const std::string& text, int x, int y,
-                double font_scale, uint8_t r, uint8_t g, uint8_t b) const;
+                const std::string& text, int x, int y, double font_scale,
+                uint8_t r, uint8_t g, uint8_t b) const;
 
   OverlayConfig config_;
   std::string channel_name_;

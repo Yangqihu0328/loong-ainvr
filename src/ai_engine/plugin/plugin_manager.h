@@ -3,13 +3,13 @@
 #ifndef LOONG_AI_ENGINE_PLUGIN_PLUGIN_MANAGER_H_
 #define LOONG_AI_ENGINE_PLUGIN_PLUGIN_MANAGER_H_
 
+#include "ai_engine/plugin/model_plugin.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "ai_engine/plugin/model_plugin.h"
 
 namespace loong::ai_engine {
 

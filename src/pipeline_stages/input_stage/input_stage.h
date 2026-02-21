@@ -3,13 +3,13 @@
 #ifndef LOONG_PIPELINE_STAGES_INPUT_STAGE_INPUT_STAGE_H_
 #define LOONG_PIPELINE_STAGES_INPUT_STAGE_INPUT_STAGE_H_
 
-#include <atomic>
-#include <memory>
-#include <string>
-
 #include "core/common/types.h"
 #include "core/pipeline/pipeline_stage.h"
 #include "video_input/rtsp_client/rtsp_client.h"
+
+#include <atomic>
+#include <memory>
+#include <string>
 
 namespace loong::pipeline_stages {
 
@@ -41,10 +41,8 @@ class InputStage : public core::PipelineStage {
 
  private:
   /// Callback wired to RtspClient for incoming video packets.
-  void OnPacket(int channel_id,
-                const uint8_t* data, size_t size,
-                int64_t pts, int64_t dts,
-                bool is_keyframe, CodecType codec);
+  void OnPacket(int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                int64_t dts, bool is_keyframe, CodecType codec);
 
   video_input::RtspClientConfig rtsp_config_;
   std::unique_ptr<video_input::RtspClient> client_;

@@ -3,12 +3,12 @@
 #ifndef LOONG_PIPELINE_STAGES_OVERLAY_STAGE_OVERLAY_STAGE_H_
 #define LOONG_PIPELINE_STAGES_OVERLAY_STAGE_OVERLAY_STAGE_H_
 
-#include <memory>
-#include <string>
-
 #include "core/common/types.h"
 #include "core/pipeline/pipeline_stage.h"
 #include "overlay/osd_renderer/osd_renderer.h"
+
+#include <memory>
+#include <string>
 
 namespace loong::pipeline_stages {
 

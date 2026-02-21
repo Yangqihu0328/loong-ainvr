@@ -3,15 +3,15 @@
 #ifndef LOONG_PIPELINE_STAGES_AI_STAGE_AI_STAGE_H_
 #define LOONG_PIPELINE_STAGES_AI_STAGE_AI_STAGE_H_
 
-#include <atomic>
-#include <condition_variable>
-#include <memory>
-#include <thread>
-
 #include "ai_engine/cascade/model_cascade.h"
 #include "ai_engine/inference/inference_engine.h"
 #include "core/common/types.h"
 #include "core/pipeline/pipeline_stage.h"
+
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <thread>
 
 namespace loong::pipeline_stages {
 
@@ -36,12 +36,11 @@ class AiStage : public core::PipelineStage {
   std::string Name() const override { return "AiStage"; }
 
   /// Set the inference engine (single-model mode, dependency injection).
-  void SetInferenceEngine(
-      std::shared_ptr<ai_engine::InferenceEngine> engine);
+  void SetInferenceEngine(std::shared_ptr<ai_engine::InferenceEngine> engine);
 
-  /// Set the model cascade (multi-model mode). Takes priority over single engine.
-  void SetModelCascade(
-      std::shared_ptr<ai_engine::ModelCascade> cascade);
+  /// Set the model cascade (multi-model mode). Takes priority over single
+  /// engine.
+  void SetModelCascade(std::shared_ptr<ai_engine::ModelCascade> cascade);
 
  private:
   /// Run single-frame inference on one frame (single engine path).

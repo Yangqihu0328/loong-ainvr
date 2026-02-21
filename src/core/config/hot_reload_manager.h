@@ -3,15 +3,14 @@
 #ifndef LOONG_CORE_CONFIG_HOT_RELOAD_MANAGER_H_
 #define LOONG_CORE_CONFIG_HOT_RELOAD_MANAGER_H_
 
+#include "core/config/config_watcher.h"
+
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-
-#include <nlohmann/json.hpp>
-
-#include "core/config/config_watcher.h"
 
 namespace loong::core {
 
@@ -21,12 +20,12 @@ namespace loong::core {
 class HotReloadManager {
  public:
   /// Handler receives the section name and new config JSON for that section.
-  using SectionHandler =
-      std::function<void(const std::string& section, const nlohmann::json& cfg)>;
+  using SectionHandler = std::function<void(const std::string& section,
+                                            const nlohmann::json& cfg)>;
 
   /// Callback for broadcasting config changes (e.g., via WebSocket).
-  using BroadcastCallback =
-      std::function<void(const std::string& section, const nlohmann::json& cfg)>;
+  using BroadcastCallback = std::function<void(const std::string& section,
+                                               const nlohmann::json& cfg)>;
 
   HotReloadManager();
   ~HotReloadManager();

@@ -2,20 +2,18 @@
 
 #include "analytics/analytics_store.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "spdlog/spdlog.h"
-
 namespace loong::analytics {
 
 AnalyticsStore::AnalyticsStore() = default;
 
-AnalyticsStore::~AnalyticsStore() {
-  Close();
-}
+AnalyticsStore::~AnalyticsStore() { Close(); }
 
 bool AnalyticsStore::Open(const std::string& db_path) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -108,8 +106,8 @@ bool AnalyticsStore::UpsertHourly(const HourlyAggregate& agg) {
 }
 
 std::vector<HourlyAggregate> AnalyticsStore::QueryHourly(
-    int channel_id, const std::string& rule_type,
-    int64_t start_ms, int64_t end_ms) {
+    int channel_id, const std::string& rule_type, int64_t start_ms,
+    int64_t end_ms) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<HourlyAggregate> results;
   if (!db_) return results;
@@ -140,7 +138,8 @@ std::vector<HourlyAggregate> AnalyticsStore::QueryHourly(
     HourlyAggregate h;
     h.hour_start = sqlite3_column_int64(stmt, 0);
     h.channel_id = sqlite3_column_int(stmt, 1);
-    const char* rt = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+    const char* rt =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     h.rule_type = rt ? rt : "";
     h.event_count = sqlite3_column_int(stmt, 3);
     h.count_sum = sqlite3_column_int(stmt, 4);
@@ -177,20 +176,23 @@ AnalyticsSummary AnalyticsStore::GetSummary(int64_t start_ms, int64_t end_ms,
   if (channel_id >= 0) sqlite3_bind_int(stmt, p, channel_id);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    const char* rt = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    const char* rt =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
     std::string type = rt ? rt : "";
     int count = sqlite3_column_int(stmt, 1);
     int count_sum = sqlite3_column_int(stmt, 2);
 
     s.total_events += count;
 
-    if (type == "cross_line")         s.cross_line_events = count;
-    else if (type == "region_intrusion") s.region_intrusion_events = count;
+    if (type == "cross_line")
+      s.cross_line_events = count;
+    else if (type == "region_intrusion")
+      s.region_intrusion_events = count;
     else if (type == "object_counting") {
       s.object_counting_events = count;
       s.total_count_value += count_sum;
-    }
-    else if (type == "loitering")     s.loitering_events = count;
+    } else if (type == "loitering")
+      s.loitering_events = count;
   }
   sqlite3_finalize(stmt);
 
@@ -200,7 +202,8 @@ AnalyticsSummary AnalyticsStore::GetSummary(int64_t start_ms, int64_t end_ms,
       "WHERE hour_start >= ? AND hour_start <= ?";
   if (channel_id >= 0) ch_sql += " AND channel_id = ?";
 
-  if (sqlite3_prepare_v2(db_, ch_sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+  if (sqlite3_prepare_v2(db_, ch_sql.c_str(), -1, &stmt, nullptr) ==
+      SQLITE_OK) {
     p = 1;
     sqlite3_bind_int64(stmt, p++, start_ms);
     sqlite3_bind_int64(stmt, p++, end_ms);
@@ -215,10 +218,8 @@ AnalyticsSummary AnalyticsStore::GetSummary(int64_t start_ms, int64_t end_ms,
 }
 
 std::vector<TrendBucket> AnalyticsStore::GetTrends(
-    int64_t start_ms, int64_t end_ms,
-    TimeGranularity granularity,
-    int channel_id,
-    const std::string& rule_type) {
+    int64_t start_ms, int64_t end_ms, TimeGranularity granularity,
+    int channel_id, const std::string& rule_type) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<TrendBucket> results;
   if (!db_) return results;
@@ -226,10 +227,18 @@ std::vector<TrendBucket> AnalyticsStore::GetTrends(
   // Determine bucket size in milliseconds
   int64_t bucket_ms = 0;
   switch (granularity) {
-    case TimeGranularity::kHourly:  bucket_ms = 3600LL * 1000;       break;
-    case TimeGranularity::kDaily:   bucket_ms = 86400LL * 1000;      break;
-    case TimeGranularity::kWeekly:  bucket_ms = 7LL * 86400 * 1000;  break;
-    case TimeGranularity::kMonthly: bucket_ms = 30LL * 86400 * 1000; break;
+    case TimeGranularity::kHourly:
+      bucket_ms = 3600LL * 1000;
+      break;
+    case TimeGranularity::kDaily:
+      bucket_ms = 86400LL * 1000;
+      break;
+    case TimeGranularity::kWeekly:
+      bucket_ms = 7LL * 86400 * 1000;
+      break;
+    case TimeGranularity::kMonthly:
+      bucket_ms = 30LL * 86400 * 1000;
+      break;
   }
 
   // Query from hourly table and bucket
@@ -283,10 +292,8 @@ std::vector<TrendBucket> AnalyticsStore::GetTrends(
 }
 
 std::vector<HeatmapCell> AnalyticsStore::GetHeatmap(
-    int64_t start_ms, int64_t end_ms,
-    int channel_id,
-    int grid_cols, int grid_rows,
-    int image_width, int image_height) {
+    int64_t start_ms, int64_t end_ms, int channel_id, int grid_cols,
+    int grid_rows, int image_width, int image_height) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<HeatmapCell> results;
   if (!db_ || grid_cols <= 0 || grid_rows <= 0) return results;
@@ -306,11 +313,14 @@ std::vector<HeatmapCell> AnalyticsStore::GetHeatmap(
   sqlite3_bind_int64(stmt, p++, end_ms);
   if (channel_id >= 0) sqlite3_bind_int(stmt, p, channel_id);
 
-  float cell_w = static_cast<float>(image_width) / static_cast<float>(grid_cols);
-  float cell_h = static_cast<float>(image_height) / static_cast<float>(grid_rows);
+  float cell_w =
+      static_cast<float>(image_width) / static_cast<float>(grid_cols);
+  float cell_h =
+      static_cast<float>(image_height) / static_cast<float>(grid_rows);
 
   // grid_cols × grid_rows flat grid
-  auto grid_size = static_cast<size_t>(grid_cols) * static_cast<size_t>(grid_rows);
+  auto grid_size =
+      static_cast<size_t>(grid_cols) * static_cast<size_t>(grid_rows);
   std::vector<int> grid(grid_size, 0);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -342,15 +352,16 @@ std::vector<HeatmapCell> AnalyticsStore::GetHeatmap(
   return results;
 }
 
-std::vector<PeakHourEntry> AnalyticsStore::GetPeakHours(
-    int64_t start_ms, int64_t end_ms,
-    int channel_id) {
+std::vector<PeakHourEntry> AnalyticsStore::GetPeakHours(int64_t start_ms,
+                                                        int64_t end_ms,
+                                                        int channel_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<PeakHourEntry> results;
   if (!db_) return results;
 
   // Extract hour-of-day from hour_start and sum event counts
-  // hour_start is in milliseconds; (hour_start / 3600000) % 24 gives hour-of-day (UTC)
+  // hour_start is in milliseconds; (hour_start / 3600000) % 24 gives
+  // hour-of-day (UTC)
   std::string sql =
       "SELECT (hour_start / 3600000) % 24 AS hod, SUM(event_count) "
       "FROM analytics_hourly WHERE hour_start >= ? AND hour_start <= ?";
@@ -379,9 +390,10 @@ std::vector<PeakHourEntry> AnalyticsStore::GetPeakHours(
 
   results.reserve(raw.size());
   for (auto& [hour, count] : raw) {
-    float pct = (total > 0) ? (static_cast<float>(count) /
-                               static_cast<float>(total) * 100.0F)
-                            : 0.0F;
+    float pct =
+        (total > 0)
+            ? (static_cast<float>(count) / static_cast<float>(total) * 100.0F)
+            : 0.0F;
     results.push_back({hour, count, pct});
   }
 

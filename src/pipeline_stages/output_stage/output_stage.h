@@ -3,12 +3,12 @@
 #ifndef LOONG_PIPELINE_STAGES_OUTPUT_STAGE_OUTPUT_STAGE_H_
 #define LOONG_PIPELINE_STAGES_OUTPUT_STAGE_OUTPUT_STAGE_H_
 
-#include <functional>
-#include <memory>
-
 #include "codec/encoder/encoder.h"
 #include "core/common/types.h"
 #include "core/pipeline/pipeline_stage.h"
+
+#include <functional>
+#include <memory>
 
 namespace loong::pipeline_stages {
 

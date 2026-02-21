@@ -18,8 +18,8 @@ void RtpPacketizer::Packetize(const uint8_t* data, size_t size, int64_t pts,
 
   for (size_t i = 0; i < nals.size(); ++i) {
     bool last_nal = (i == nals.size() - 1);
-    PacketizeH264Nal(nals[i].first, nals[i].second, timestamp,
-                     last_nal, callback);
+    PacketizeH264Nal(nals[i].first, nals[i].second, timestamp, last_nal,
+                     callback);
   }
 }
 
@@ -42,14 +42,14 @@ void RtpPacketizer::PacketizeH264Nal(const uint8_t* nal, size_t nal_size,
     bool first = true;
 
     while (remaining > 0) {
-      size_t chunk = std::min(remaining,
-                              static_cast<size_t>(kMaxRtpPayload - 2));
+      size_t chunk =
+          std::min(remaining, static_cast<size_t>(kMaxRtpPayload - 2));
       bool last = (chunk == remaining);
 
       uint8_t fu_indicator = nri | 28;  // FU-A type = 28
       uint8_t fu_header = nal_type;
-      if (first) fu_header |= 0x80;   // Start bit
-      if (last) fu_header |= 0x40;    // End bit
+      if (first) fu_header |= 0x80;  // Start bit
+      if (last) fu_header |= 0x40;   // End bit
 
       std::vector<uint8_t> payload;
       payload.reserve(2 + chunk);
@@ -57,8 +57,8 @@ void RtpPacketizer::PacketizeH264Nal(const uint8_t* nal, size_t nal_size,
       payload.push_back(fu_header);
       payload.insert(payload.end(), frag_ptr, frag_ptr + chunk);
 
-      EmitPacket(payload.data(), payload.size(), timestamp,
-                 last && marker, callback);
+      EmitPacket(payload.data(), payload.size(), timestamp, last && marker,
+                 callback);
 
       frag_ptr += chunk;
       remaining -= chunk;
@@ -73,7 +73,7 @@ void RtpPacketizer::EmitPacket(const uint8_t* payload, size_t payload_size,
   // Build RTP header (12 bytes).
   uint8_t rtp_header[12];
   rtp_header[0] = static_cast<uint8_t>((kRtpVersion << 6));  // V=2
-  rtp_header[1] = 96;  // PT=96 (dynamic)
+  rtp_header[1] = 96;                                        // PT=96 (dynamic)
   if (marker) rtp_header[1] |= 0x80;
   rtp_header[2] = static_cast<uint8_t>((seq_ >> 8) & 0xFF);
   rtp_header[3] = static_cast<uint8_t>(seq_ & 0xFF);

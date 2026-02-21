@@ -2,12 +2,11 @@
 
 #include "pipeline_stages/ai_stage/ai_stage.h"
 
-#include <chrono>
-
-#include <nlohmann/json.hpp>
-
 #include "core/event_bus/event_bus.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
+#include <nlohmann/json.hpp>
 
 namespace loong::pipeline_stages {
 
@@ -20,12 +19,14 @@ bool AiStage::Initialize(const StageConfig& config) {
     skip_frames_ = params.value("skip_frames", 0);
     if (skip_frames_ < 0) skip_frames_ = 0;
   } catch (const std::exception& e) {
-    spdlog::debug("AiStage: failed to parse config, using defaults: {}", e.what());
+    spdlog::debug("AiStage: failed to parse config, using defaults: {}",
+                  e.what());
   }
 
   initialized_ = true;
-  spdlog::info("AiStage: initialized (threshold={}, batch_size={}, skip_frames={})",
-               confidence_threshold_, batch_size_, skip_frames_);
+  spdlog::info(
+      "AiStage: initialized (threshold={}, batch_size={}, skip_frames={})",
+      confidence_threshold_, batch_size_, skip_frames_);
   return true;
 }
 
@@ -50,7 +51,8 @@ void AiStage::InferWorker() {
     bool ok = engine_->Infer(frame->data.get(), frame->info.width,
                              frame->info.height, confidence_threshold_, dets);
     auto t1 = std::chrono::steady_clock::now();
-    auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    auto us =
+        std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
 
     if (ok && !dets.empty()) {
       AnalysisResult result;
@@ -79,8 +81,8 @@ void AiStage::InferWorker() {
         det_event["event_type"] =
             top_class.empty() ? "object_detected" : top_class;
         det_event["max_confidence"] = max_conf;
-        loong::core::EventBus::Instance().Publish(
-            "ai.detection", det_event.dump());
+        loong::core::EventBus::Instance().Publish("ai.detection",
+                                                  det_event.dump());
       } catch (...) {
       }
     }
@@ -134,17 +136,21 @@ bool AiStage::ProcessFrame(std::shared_ptr<Frame> frame) {
   // Periodic stats.
   ++pass_count_;
   auto now = std::chrono::steady_clock::now();
-  auto sec = std::chrono::duration_cast<std::chrono::seconds>(
-                 now - stats_start_).count();
+  auto sec =
+      std::chrono::duration_cast<std::chrono::seconds>(now - stats_start_)
+          .count();
   if (sec >= 10) {
     int64_t ic = infer_count_.exchange(0);
     int64_t ius = total_infer_us_.exchange(0);
     if (ic > 0) {
       double ifps = static_cast<double>(ic) / static_cast<double>(sec);
-      double avg_ms = static_cast<double>(ius) / static_cast<double>(ic) / 1000.0;
+      double avg_ms =
+          static_cast<double>(ius) / static_cast<double>(ic) / 1000.0;
       double pfps = static_cast<double>(pass_count_) / static_cast<double>(sec);
-      spdlog::info("AiStage: infer {:.1f} fps, avg {:.1f} ms/frame, "
-                   "throughput {:.1f} fps", ifps, avg_ms, pfps);
+      spdlog::info(
+          "AiStage: infer {:.1f} fps, avg {:.1f} ms/frame, "
+          "throughput {:.1f} fps",
+          ifps, avg_ms, pfps);
     }
     pass_count_ = 0;
     stats_start_ = now;
@@ -195,19 +201,22 @@ bool AiStage::ProcessBatch(std::vector<std::shared_ptr<Frame>>& frames) {
 
   // Periodic stats.
   auto now = std::chrono::steady_clock::now();
-  auto sec = std::chrono::duration_cast<std::chrono::seconds>(
-                 now - stats_start_)
-                 .count();
+  auto sec =
+      std::chrono::duration_cast<std::chrono::seconds>(now - stats_start_)
+          .count();
   if (sec >= 10) {
     int64_t ic = infer_count_.exchange(0);
     int64_t ius = total_infer_us_.exchange(0);
     if (ic > 0) {
       double infer_fps = static_cast<double>(ic) / static_cast<double>(sec);
-      double avg_ms = static_cast<double>(ius) / static_cast<double>(ic) / 1000.0;
-      double pass_fps = static_cast<double>(pass_count_) / static_cast<double>(sec);
-      spdlog::info("AiStage: infer {:.1f} fps, avg {:.1f} ms/frame, "
-                   "throughput {:.1f} fps",
-                   infer_fps, avg_ms, pass_fps);
+      double avg_ms =
+          static_cast<double>(ius) / static_cast<double>(ic) / 1000.0;
+      double pass_fps =
+          static_cast<double>(pass_count_) / static_cast<double>(sec);
+      spdlog::info(
+          "AiStage: infer {:.1f} fps, avg {:.1f} ms/frame, "
+          "throughput {:.1f} fps",
+          infer_fps, avg_ms, pass_fps);
     }
     pass_count_ = 0;
     stats_start_ = now;
@@ -228,14 +237,14 @@ bool AiStage::InferSingle(std::shared_ptr<Frame>& frame) {
   auto start = std::chrono::steady_clock::now();
 
   std::vector<Detection> detections;
-  bool ok = engine_->Infer(frame->data.get(),
-                           frame->info.width, frame->info.height,
-                           confidence_threshold_, detections);
+  bool ok =
+      engine_->Infer(frame->data.get(), frame->info.width, frame->info.height,
+                     confidence_threshold_, detections);
 
   auto end = std::chrono::steady_clock::now();
-  auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                        end - start)
-                        .count();
+  auto elapsed_us =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count();
 
   if (ok && !detections.empty()) {
     frame->analysis.has_result = true;
@@ -253,9 +262,8 @@ bool AiStage::InferSingle(std::shared_ptr<Frame>& frame) {
 
 bool AiStage::InferCascade(std::shared_ptr<Frame>& frame) {
   AnalysisResult result;
-  bool ok = cascade_->Run(frame->data.get(),
-                          frame->info.width, frame->info.height,
-                          result);
+  bool ok = cascade_->Run(frame->data.get(), frame->info.width,
+                          frame->info.height, result);
   if (ok) {
     frame->analysis = std::move(result);
 
@@ -273,7 +281,8 @@ bool AiStage::InferCascade(std::shared_ptr<Frame>& frame) {
         det_event["channel_id"] = frame->channel_id;
         det_event["detection_count"] =
             static_cast<int>(frame->analysis.detections.size());
-        det_event["event_type"] = top_class.empty() ? "object_detected" : top_class;
+        det_event["event_type"] =
+            top_class.empty() ? "object_detected" : top_class;
         det_event["max_confidence"] = max_conf;
 
         if (!frame->analysis.secondary_results.empty()) {
@@ -294,8 +303,8 @@ bool AiStage::InferCascade(std::shared_ptr<Frame>& frame) {
           det_event["secondary_results"] = secondaries;
         }
 
-        loong::core::EventBus::Instance().Publish(
-            "ai.detection", det_event.dump());
+        loong::core::EventBus::Instance().Publish("ai.detection",
+                                                  det_event.dump());
       } catch (const std::exception& e) {
         spdlog::debug("AiStage: cascade event publish failed: {}", e.what());
       }

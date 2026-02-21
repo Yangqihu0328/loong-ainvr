@@ -3,14 +3,14 @@
 #ifndef LOONG_CHANNEL_CHANNEL_MONITOR_CHANNEL_MONITOR_H_
 #define LOONG_CHANNEL_CHANNEL_MONITOR_CHANNEL_MONITOR_H_
 
+#include "core/common/types.h"
+
 #include <atomic>
 #include <chrono>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "core/common/types.h"
 
 namespace loong::channel {
 
@@ -96,8 +96,7 @@ class ChannelMonitor {
   void MonitorLoop();
 
   /// Compute FPS as delta of frame counts between two polling cycles.
-  int ComputeFps(int64_t current, int64_t previous,
-                 int interval_seconds) const;
+  int ComputeFps(int64_t current, int64_t previous, int interval_seconds) const;
 
   /// Attempt to recover a channel that is in error/stalled state.
   void AttemptRecovery(int channel_id);

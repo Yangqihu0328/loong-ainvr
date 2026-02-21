@@ -11,7 +11,7 @@ namespace loong::video_input {
 
 /// Information about a discovered ONVIF device.
 struct OnvifDeviceInfo {
-  std::string xaddr;        // Device service endpoint URL
+  std::string xaddr;  // Device service endpoint URL
   std::string ip_address;
   std::string manufacturer;
   std::string model;

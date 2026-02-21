@@ -2,11 +2,9 @@
 
 #include "ai_engine/plugin/plugin_manager.h"
 
-#include <dlfcn.h>
-#include <dirent.h>
-
 #include <algorithm>
-
+#include <dirent.h>
+#include <dlfcn.h>
 #include <spdlog/spdlog.h>
 
 namespace loong::ai_engine {
@@ -50,8 +48,7 @@ int PluginManager::ScanAndLoad() {
   struct dirent* entry = nullptr;
   while ((entry = readdir(dp)) != nullptr) {
     std::string filename = entry->d_name;
-    if (filename.size() > 3 &&
-        filename.substr(filename.size() - 3) == ".so") {
+    if (filename.size() > 3 && filename.substr(filename.size() - 3) == ".so") {
       std::string full_path = dir + "/" + filename;
       if (LoadPlugin(full_path)) {
         loaded++;
@@ -74,8 +71,8 @@ bool PluginManager::LoadPlugin(const std::string& so_path) {
 
   dlerror();  // Clear errors
 
-  auto create_fn = reinterpret_cast<CreatePluginFn>(
-      dlsym(handle, "loong_create_plugin"));
+  auto create_fn =
+      reinterpret_cast<CreatePluginFn>(dlsym(handle, "loong_create_plugin"));
   if (!create_fn) {
     spdlog::error("PluginManager: loong_create_plugin not found in '{}'",
                   so_path);
@@ -83,8 +80,8 @@ bool PluginManager::LoadPlugin(const std::string& so_path) {
     return false;
   }
 
-  auto destroy_fn = reinterpret_cast<DestroyPluginFn>(
-      dlsym(handle, "loong_destroy_plugin"));
+  auto destroy_fn =
+      reinterpret_cast<DestroyPluginFn>(dlsym(handle, "loong_destroy_plugin"));
 
   ModelPlugin* instance = create_fn();
   if (!instance) {
@@ -96,9 +93,8 @@ bool PluginManager::LoadPlugin(const std::string& so_path) {
 
   PluginInfo info = instance->GetInfo();
   if (info.api_version != kPluginApiVersion) {
-    spdlog::error(
-        "PluginManager: plugin '{}' API version {} != expected {}",
-        info.name, info.api_version, kPluginApiVersion);
+    spdlog::error("PluginManager: plugin '{}' API version {} != expected {}",
+                  info.name, info.api_version, kPluginApiVersion);
     if (destroy_fn) {
       destroy_fn(instance);
     }
@@ -125,8 +121,8 @@ bool PluginManager::LoadPlugin(const std::string& so_path) {
   lp.active = true;
   plugins_[info.name] = lp;
 
-  spdlog::info("PluginManager: loaded '{}' v{} (family: {})",
-               info.name, info.version, info.model_family);
+  spdlog::info("PluginManager: loaded '{}' v{} (family: {})", info.name,
+               info.version, info.model_family);
   return true;
 }
 
@@ -159,8 +155,7 @@ ModelPlugin* PluginManager::GetPlugin(const std::string& name) const {
   return nullptr;
 }
 
-ModelPlugin* PluginManager::GetPluginByFamily(
-    const std::string& family) const {
+ModelPlugin* PluginManager::GetPluginByFamily(const std::string& family) const {
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& [_, p] : plugins_) {
     if (p.active && p.info.model_family == family) {

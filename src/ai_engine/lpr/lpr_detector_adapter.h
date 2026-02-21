@@ -10,8 +10,9 @@ namespace loong::ai_engine {
 /// License plate detection adapter.
 ///
 /// Wraps a YOLOv8-format model trained on plate detection.
-/// Output detections have class_name set to plate color (blue/green/yellow/white)
-/// based on class_id mapping. Compatible with ModelCascade kCrop mode.
+/// Output detections have class_name set to plate color
+/// (blue/green/yellow/white) based on class_id mapping. Compatible with
+/// ModelCascade kCrop mode.
 class LprDetectorAdapter : public YoloV8Adapter {
  public:
   explicit LprDetectorAdapter(int input_size = 640);
@@ -20,9 +21,9 @@ class LprDetectorAdapter : public YoloV8Adapter {
 
   /// Remap class IDs to plate color names after standard YOLO post-processing.
   bool PostProcess(const std::vector<float>& output_data,
-                   const TensorShape& output_shape,
-                   int original_width, int original_height,
-                   float confidence_threshold, float nms_threshold,
+                   const TensorShape& output_shape, int original_width,
+                   int original_height, float confidence_threshold,
+                   float nms_threshold,
                    std::vector<Detection>& detections) override;
 
   /// Set plate color class names (default: blue, green, yellow, white).

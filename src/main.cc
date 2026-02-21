@@ -1,24 +1,11 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include <atomic>
-#include <chrono>
-#include <csignal>
-#include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <vector>
-
-#include <signal.h>  // POSIX sigaction
-
-#include <nlohmann/json.hpp>
-#include "spdlog/spdlog.h"
-
 #include "ai_engine/face/face_store.h"
 #include "ai_engine/lpr/plate_store.h"
+#include "ai_engine/model_manager/model_manager.h"
 #include "ai_engine/plugin/plugin_manager.h"
 #include "analytics/analytics_aggregator.h"
 #include "analytics/analytics_store.h"
-#include "ai_engine/model_manager/model_manager.h"
 #include "channel/channel_manager/channel_manager.h"
 #include "channel/channel_pipeline/channel_orchestrator.h"
 #include "channel/channel_store/channel_store.h"
@@ -37,6 +24,7 @@
 #include "network/websocket/websocket_server.h"
 #include "rules/rule_engine/rule_engine.h"
 #include "rules/rule_store/rule_store.h"
+#include "spdlog/spdlog.h"
 #include "storage/cloud_backup/cloud_backup_service.h"
 #include "storage/record_index/record_index.h"
 #include "storage/storage_cleaner/storage_cleaner.h"
@@ -46,6 +34,17 @@
 #include "system/auth/user_store.h"
 #include "system/monitor/system_monitor.h"
 #include "system/notification/notification_manager.h"
+
+#include <signal.h>  // POSIX sigaction
+
+#include <atomic>
+#include <chrono>
+#include <csignal>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <vector>
 
 namespace {
 
@@ -70,11 +69,12 @@ void PrintBanner() {
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  // Ignore SIGPIPE — writing to disconnected sockets must not crash the process.
+  // Ignore SIGPIPE — writing to disconnected sockets must not crash the
+  // process.
   signal(SIGPIPE, SIG_IGN);
 
   // Register signal handlers via sigaction for reliable behavior.
-  struct sigaction sa{};
+  struct sigaction sa {};
   sa.sa_handler = SignalHandler;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
@@ -112,11 +112,11 @@ int main(int argc, char* argv[]) {
   // Step 2: Initialize Storage Engine
   // ========================================
   auto record_index = std::make_shared<loong::storage::RecordIndex>();
-  auto db_path = config.Get<std::string>("storage.index_db",
-                                                 "/recordings/index.db");
+  auto db_path =
+      config.Get<std::string>("storage.index_db", "/recordings/index.db");
   if (!record_index->Open(db_path)) {
     spdlog::warn("RecordIndex: failed to open '{}', recording index disabled",
-                  db_path);
+                 db_path);
   } else {
     spdlog::info("RecordIndex: opened '{}'", db_path);
   }
@@ -130,11 +130,9 @@ int main(int argc, char* argv[]) {
   // Step 3: Initialize User Auth System
   // ========================================
   auto user_store = std::make_shared<loong::system::UserStore>();
-  auto user_db_path = config.Get<std::string>("auth.user_db",
-                                                      "users.db");
+  auto user_db_path = config.Get<std::string>("auth.user_db", "users.db");
   if (!user_store->Open(user_db_path)) {
-    spdlog::warn("UserStore: failed to open '{}', auth disabled",
-                 user_db_path);
+    spdlog::warn("UserStore: failed to open '{}', auth disabled", user_db_path);
   } else {
     spdlog::info("UserStore: opened '{}'", user_db_path);
   }
@@ -149,25 +147,25 @@ int main(int argc, char* argv[]) {
     jwt_secret = config.Get<std::string>(
         "auth.jwt_secret", "loong-ainvr-default-secret-change-me");
     if (jwt_secret == "loong-ainvr-default-secret-change-me") {
-      spdlog::warn("JwtHelper: using DEFAULT secret — set LOONG_JWT_SECRET "
-                    "env var or auth.jwt_secret in config for production!");
+      spdlog::warn(
+          "JwtHelper: using DEFAULT secret — set LOONG_JWT_SECRET "
+          "env var or auth.jwt_secret in config for production!");
     }
   }
   auto jwt_expiry = config.Get<int64_t>("auth.jwt_expiry_seconds", 86400);
-  auto jwt_helper = std::make_shared<loong::system::JwtHelper>(
-      jwt_secret, jwt_expiry);
+  auto jwt_helper =
+      std::make_shared<loong::system::JwtHelper>(jwt_secret, jwt_expiry);
   spdlog::info("JwtHelper: configured (expiry={}s)", jwt_expiry);
 
-  auto auth_middleware = std::make_shared<loong::system::AuthMiddleware>(
-      jwt_helper, user_store);
+  auto auth_middleware =
+      std::make_shared<loong::system::AuthMiddleware>(jwt_helper, user_store);
   spdlog::info("AuthMiddleware: initialized");
 
   // ========================================
   // Step 4: Initialize System Monitor
   // ========================================
   auto system_monitor = std::make_shared<loong::system::SystemMonitor>();
-  auto rec_path = config.Get<std::string>("storage.base_path",
-                                                  "/recordings");
+  auto rec_path = config.Get<std::string>("storage.base_path", "/recordings");
   system_monitor->AddDiskPath(rec_path);
   int monitor_interval = config.Get<int>("monitor.interval_seconds", 5);
   system_monitor->Start(monitor_interval);
@@ -182,11 +180,9 @@ int main(int argc, char* argv[]) {
   // Load notification config if present
   loong::system::SmtpConfig smtp_config;
   smtp_config.enabled = config.Get<bool>("notifications.smtp.enabled", false);
-  smtp_config.host =
-      config.Get<std::string>("notifications.smtp.host", "");
+  smtp_config.host = config.Get<std::string>("notifications.smtp.host", "");
   smtp_config.port = config.Get<int>("notifications.smtp.port", 587);
-  smtp_config.use_tls =
-      config.Get<bool>("notifications.smtp.use_tls", true);
+  smtp_config.use_tls = config.Get<bool>("notifications.smtp.use_tls", true);
   smtp_config.username =
       config.Get<std::string>("notifications.smtp.username", "");
   smtp_config.password =
@@ -198,8 +194,7 @@ int main(int argc, char* argv[]) {
   loong::system::WebhookConfig webhook_config;
   webhook_config.enabled =
       config.Get<bool>("notifications.webhook.enabled", false);
-  webhook_config.url =
-      config.Get<std::string>("notifications.webhook.url", "");
+  webhook_config.url = config.Get<std::string>("notifications.webhook.url", "");
   webhook_config.secret =
       config.Get<std::string>("notifications.webhook.secret", "");
   notification_mgr->ConfigureWebhook(webhook_config);
@@ -219,15 +214,16 @@ int main(int argc, char* argv[]) {
   notification_mgr->ConfigureMqtt(mqtt_config);
 
   notification_mgr->Start();
-  spdlog::info("NotificationManager: initialized (smtp={}, webhook={}, mqtt={})",
-               smtp_config.enabled, webhook_config.enabled, mqtt_config.enabled);
+  spdlog::info(
+      "NotificationManager: initialized (smtp={}, webhook={}, mqtt={})",
+      smtp_config.enabled, webhook_config.enabled, mqtt_config.enabled);
 
   // ========================================
   // Step 4c: Initialize Rule Engine
   // ========================================
   auto rule_store = std::make_shared<loong::rules::RuleStore>();
-  auto rules_db_path = config.Get<std::string>("rules.db_path",
-                                                       "/recordings/rules.db");
+  auto rules_db_path =
+      config.Get<std::string>("rules.db_path", "/recordings/rules.db");
   bool rules_enabled = config.Get<bool>("rules.enabled", true);
 
   if (rules_enabled && rule_store->Open(rules_db_path)) {
@@ -249,8 +245,8 @@ int main(int argc, char* argv[]) {
   // Step 4d: Initialize Alarm Manager
   // ========================================
   auto alarm_mgr = std::make_shared<loong::system::AlarmManager>();
-  auto alarm_db_path = config.Get<std::string>("alarm.db_path",
-                                                       "/recordings/alarms.db");
+  auto alarm_db_path =
+      config.Get<std::string>("alarm.db_path", "/recordings/alarms.db");
   if (alarm_mgr->Open(alarm_db_path)) {
     alarm_mgr->Start();
     spdlog::info("AlarmManager: opened '{}' and started", alarm_db_path);
@@ -263,8 +259,8 @@ int main(int argc, char* argv[]) {
   // Step 4e: Initialize Plate Store (LPR)
   // ========================================
   auto plate_store = std::make_shared<loong::ai_engine::PlateStore>();
-  auto plates_db_path = config.Get<std::string>("lpr.db_path",
-                                                        "/recordings/plates.db");
+  auto plates_db_path =
+      config.Get<std::string>("lpr.db_path", "/recordings/plates.db");
   if (plate_store->Open(plates_db_path)) {
     spdlog::info("PlateStore: opened '{}'", plates_db_path);
   } else {
@@ -276,8 +272,8 @@ int main(int argc, char* argv[]) {
   // Step 4f: Initialize Face Store
   // ========================================
   auto face_store = std::make_shared<loong::ai_engine::FaceStore>();
-  auto faces_db_path = config.Get<std::string>("face.db_path",
-                                                       "/recordings/faces.db");
+  auto faces_db_path =
+      config.Get<std::string>("face.db_path", "/recordings/faces.db");
   if (face_store->Open(faces_db_path)) {
     spdlog::info("FaceStore: opened '{}'", faces_db_path);
   } else {
@@ -289,8 +285,8 @@ int main(int argc, char* argv[]) {
   // Step 4g: Initialize Analytics Aggregator
   // ========================================
   auto analytics_store = std::make_shared<loong::analytics::AnalyticsStore>();
-  auto analytics_db_path = config.Get<std::string>(
-      "analytics.db_path", "/recordings/analytics.db");
+  auto analytics_db_path =
+      config.Get<std::string>("analytics.db_path", "/recordings/analytics.db");
   if (analytics_store->Open(analytics_db_path)) {
     spdlog::info("AnalyticsStore: opened '{}'", analytics_db_path);
   } else {
@@ -315,8 +311,8 @@ int main(int argc, char* argv[]) {
   auto plugin_dir = config.Get<std::string>("plugins.dir", "plugins/");
   plugin_mgr->SetPluginDir(plugin_dir);
   int plugins_loaded = plugin_mgr->ScanAndLoad();
-  spdlog::info("PluginManager: scanned '{}', loaded {} plugins",
-               plugin_dir, plugins_loaded);
+  spdlog::info("PluginManager: scanned '{}', loaded {} plugins", plugin_dir,
+               plugins_loaded);
 
   // ========================================
   // Step 4i: Initialize Cloud Backup Service
@@ -345,7 +341,7 @@ int main(int argc, char* argv[]) {
     cloud_backup->SetPolicy(policy);
 
     auto snapshots_dir = config.Get<std::string>("storage.snapshots_path",
-                                                         "/recordings/snapshots");
+                                                 "/recordings/snapshots");
     cloud_backup->Start(rec_path, snapshots_dir);
     spdlog::info("CloudBackupService: started (policy={})", policy_str);
   } else {
@@ -371,8 +367,7 @@ int main(int argc, char* argv[]) {
   // ========================================
   // Step 6: Initialize Channel Manager + Streaming Services
   // ========================================
-  auto http_host = config.Get<std::string>("network.http_host",
-                                                    "0.0.0.0");
+  auto http_host = config.Get<std::string>("network.http_host", "0.0.0.0");
 
   int ws_media_port = config.Get<int>("network.ws_media_port", 8082);
   auto ws_media_service = std::make_shared<loong::network::WsMediaService>(
@@ -380,8 +375,8 @@ int main(int argc, char* argv[]) {
   spdlog::info("WsMediaService: initialized");
 
   int rtsp_port = config.Get<int>("network.rtsp_port", 554);
-  auto rtsp_server = std::make_shared<loong::network::RtspServer>(
-      http_host, rtsp_port);
+  auto rtsp_server =
+      std::make_shared<loong::network::RtspServer>(http_host, rtsp_port);
   spdlog::info("RtspServer: initialized");
 
   // Initialize WebRTC before wiring to ChannelManager.
@@ -422,9 +417,8 @@ int main(int argc, char* argv[]) {
       try {
         auto j = nlohmann::json::parse(steps_cfg);
         for (const auto& step : j) {
-          cascade_steps.emplace_back(
-              step.value("model_name", ""),
-              step.value("mode", "crop"));
+          cascade_steps.emplace_back(step.value("model_name", ""),
+                                     step.value("mode", "crop"));
         }
       } catch (const std::exception& e) {
         spdlog::warn("Failed to parse ai.cascade.steps: {}", e.what());
@@ -442,8 +436,10 @@ int main(int argc, char* argv[]) {
   if (model_count > 0) {
     spdlog::info("ModelManager: {} model(s) available", model_count);
   } else {
-    spdlog::info("ModelManager: no models found in '{}' — AI analysis "
-                 "disabled (place .onnx files in this directory)", models_dir);
+    spdlog::info(
+        "ModelManager: no models found in '{}' — AI analysis "
+        "disabled (place .onnx files in this directory)",
+        models_dir);
   }
   channel_mgr->GetOrchestrator().SetModelManager(model_manager);
 
@@ -458,10 +454,11 @@ int main(int argc, char* argv[]) {
                  channels_db_path);
   }
 
-  spdlog::info("ChannelManager: initialized (max {} channels, "
-               "streaming={}, rules={}, cascade={})", kMaxChannels,
-               "FLV+HLS+RTSP+WS+WebRTC", rules_enabled ? "ON" : "OFF",
-               cascade_enabled ? "ON" : "OFF");
+  spdlog::info(
+      "ChannelManager: initialized (max {} channels, "
+      "streaming={}, rules={}, cascade={})",
+      kMaxChannels, "FLV+HLS+RTSP+WS+WebRTC", rules_enabled ? "ON" : "OFF",
+      cascade_enabled ? "ON" : "OFF");
 
   // ========================================
   // Step 7: Initialize HTTP Server + API Routes
@@ -524,15 +521,14 @@ int main(int argc, char* argv[]) {
     spdlog::info("WsMedia server: listening on ws://{}:{}", http_host,
                  ws_media_port);
   } else {
-    spdlog::warn("WsMedia server: failed to start on port {}",
-                 ws_media_port);
+    spdlog::warn("WsMedia server: failed to start on port {}", ws_media_port);
   }
 
   if (http_server->Start()) {
     spdlog::info("HTTP server: listening on {}:{}", http_host, http_port);
   } else {
-    spdlog::error("HTTP server: FATAL — failed to start on {}:{}",
-                  http_host, http_port);
+    spdlog::error("HTTP server: FATAL — failed to start on {}:{}", http_host,
+                  http_port);
     return EXIT_FAILURE;
   }
 
@@ -540,8 +536,8 @@ int main(int argc, char* argv[]) {
   // Step 8: Initialize WebSocket Server
   // ========================================
   int ws_port = config.Get<int>("network.ws_port", 8081);
-  auto ws_server = std::make_unique<loong::network::WebSocketServer>(
-      http_host, ws_port);
+  auto ws_server =
+      std::make_unique<loong::network::WebSocketServer>(http_host, ws_port);
 
   if (ws_server->Start()) {
     spdlog::info("WebSocket server: listening on ws://{}:{}", http_host,
@@ -553,119 +549,123 @@ int main(int argc, char* argv[]) {
   // Bridge EventBus events to WebSocket broadcast.
   // Keep subscription IDs for cleanup during shutdown.
   auto& event_bus = loong::core::EventBus::Instance();
-  auto *ws_ptr = ws_server.get();
+  auto* ws_ptr = ws_server.get();
   std::vector<uint64_t> event_sub_ids;
 
-  event_sub_ids.push_back(
-  event_bus.Subscribe("system.metrics",
-      [ws_ptr, system_monitor](const std::any&) {
-    if (!system_monitor) return;
-    auto m = system_monitor->GetLatest();
-    nlohmann::json data = {
-        {"cpu_usage_percent", m.cpu_usage_percent},
-        {"memory_usage_percent", m.memory_usage_percent},
-        {"memory_used_mb", m.memory_used_mb},
-        {"memory_total_mb", m.memory_total_mb},
-        {"uptime_seconds", m.uptime_seconds},
-        {"process_threads", m.process_threads},
-    };
-    ws_ptr->Broadcast("system_status", data);
-  }));
+  event_sub_ids.push_back(event_bus.Subscribe(
+      "system.metrics", [ws_ptr, system_monitor](const std::any&) {
+        if (!system_monitor) return;
+        auto m = system_monitor->GetLatest();
+        nlohmann::json data = {
+            {"cpu_usage_percent", m.cpu_usage_percent},
+            {"memory_usage_percent", m.memory_usage_percent},
+            {"memory_used_mb", m.memory_used_mb},
+            {"memory_total_mb", m.memory_total_mb},
+            {"uptime_seconds", m.uptime_seconds},
+            {"process_threads", m.process_threads},
+        };
+        ws_ptr->Broadcast("system_status", data);
+      }));
 
-  event_sub_ids.push_back(
-  event_bus.Subscribe("ai.detection",
-      [plate_store, face_store](const std::any& data) {
-    try {
-      auto json_str = std::any_cast<std::string>(data);
-      auto j = nlohmann::json::parse(json_str);
-      if (!j.contains("secondary_results")) return;
-      int channel_id = j.value("channel_id", -1);
+  event_sub_ids.push_back(event_bus.Subscribe(
+      "ai.detection", [plate_store, face_store](const std::any& data) {
+        try {
+          auto json_str = std::any_cast<std::string>(data);
+          auto j = nlohmann::json::parse(json_str);
+          if (!j.contains("secondary_results")) return;
+          int channel_id = j.value("channel_id", -1);
 
-      for (const auto& sr : j["secondary_results"]) {
-        std::string model = sr.value("model_name", "");
+          for (const auto& sr : j["secondary_results"]) {
+            std::string model = sr.value("model_name", "");
 
-        if ((model == "lpr_ocr" || model == "plate_ocr" || model == "crnn") &&
-            plate_store) {
-          loong::ai_engine::PlateRecord plate;
-          plate.plate_number = sr.value("plate_text", "");
-          plate.plate_color = sr.value("class_name", "");
-          plate.confidence = sr.value("confidence", 0.0F);
-          plate.channel_id = channel_id;
-          plate.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch()).count();
-          if (!plate.plate_number.empty()) {
-            plate_store->Insert(plate);
+            if ((model == "lpr_ocr" || model == "plate_ocr" ||
+                 model == "crnn") &&
+                plate_store) {
+              loong::ai_engine::PlateRecord plate;
+              plate.plate_number = sr.value("plate_text", "");
+              plate.plate_color = sr.value("class_name", "");
+              plate.confidence = sr.value("confidence", 0.0F);
+              plate.channel_id = channel_id;
+              plate.timestamp =
+                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+              if (!plate.plate_number.empty()) {
+                plate_store->Insert(plate);
+              }
+            }
+
+            if ((model == "face_attribute" || model == "arcface" ||
+                 model == "insightface") &&
+                face_store) {
+              loong::ai_engine::FaceRecord face;
+              face.channel_id = channel_id;
+              face.gender = sr.value("gender", "");
+              face.age = sr.value("age", 0);
+              face.confidence = sr.value("confidence", 0.0F);
+              face.timestamp =
+                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+              face_store->Insert(face);
+            }
           }
+        } catch (const std::exception& e) {
+          spdlog::debug("ai.detection cascade handler: {}", e.what());
         }
-
-        if ((model == "face_attribute" || model == "arcface" ||
-             model == "insightface") && face_store) {
-          loong::ai_engine::FaceRecord face;
-          face.channel_id = channel_id;
-          face.gender = sr.value("gender", "");
-          face.age = sr.value("age", 0);
-          face.confidence = sr.value("confidence", 0.0F);
-          face.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch()).count();
-          face_store->Insert(face);
-        }
-      }
-    } catch (const std::exception& e) {
-      spdlog::debug("ai.detection cascade handler: {}", e.what());
-    }
-  }));
+      }));
 
   event_sub_ids.push_back(
-  event_bus.Subscribe("alarm.triggered", [ws_ptr](const std::any& data) {
-    try {
-      auto record = std::any_cast<loong::system::AlarmRecord>(data);
-      nlohmann::json alarm_data = {
-          {"event", "alarm"},
-          {"alarm_id", record.id},
-          {"rule_id", record.rule_id},
-          {"channel_id", record.channel_id},
-          {"event_type", record.event_type},
-          {"confidence", record.confidence},
-          {"severity", loong::system::AlarmSeverityToString(record.severity)},
-          {"triggered_at", record.triggered_at},
-      };
-      ws_ptr->Broadcast("alarm", alarm_data);
-    } catch (const std::exception& e) {
-      spdlog::debug("alarm.triggered handler: {}", e.what());
-    }
-  }));
-
-  event_sub_ids.push_back(
-  event_bus.Subscribe("rule.triggered",
-      [ws_ptr, analytics_aggregator](const std::any& data) {
-    try {
-      auto json_str = std::any_cast<std::string>(data);
-      auto rule_data = nlohmann::json::parse(json_str);
-      ws_ptr->Broadcast("rule_event", rule_data);
-
-      if (analytics_aggregator) {
-        loong::rules::RuleEvent ev;
-        ev.rule_id = rule_data.value("rule_id", 0);
-        ev.rule_name = rule_data.value("rule_name", "");
-        ev.channel_id = rule_data.value("channel_id", 0);
-        ev.timestamp = rule_data.value("timestamp",
-            static_cast<int64_t>(0));
-        auto type_str = rule_data.value("rule_type", "");
-        if (type_str == "cross_line") {
-          ev.rule_type = loong::rules::RuleType::kCrossLine;
-        } else if (type_str == "region_intrusion") {
-          ev.rule_type = loong::rules::RuleType::kRegionIntrusion;
-        } else if (type_str == "object_counting") {
-          ev.rule_type = loong::rules::RuleType::kObjectCounting;
-        } else if (type_str == "loitering") {
-          ev.rule_type = loong::rules::RuleType::kLoitering;
+      event_bus.Subscribe("alarm.triggered", [ws_ptr](const std::any& data) {
+        try {
+          auto record = std::any_cast<loong::system::AlarmRecord>(data);
+          nlohmann::json alarm_data = {
+              {"event", "alarm"},
+              {"alarm_id", record.id},
+              {"rule_id", record.rule_id},
+              {"channel_id", record.channel_id},
+              {"event_type", record.event_type},
+              {"confidence", record.confidence},
+              {"severity",
+               loong::system::AlarmSeverityToString(record.severity)},
+              {"triggered_at", record.triggered_at},
+          };
+          ws_ptr->Broadcast("alarm", alarm_data);
+        } catch (const std::exception& e) {
+          spdlog::debug("alarm.triggered handler: {}", e.what());
         }
-        analytics_aggregator->IngestEvent(ev);
-      }
-    } catch (const std::exception& e) {
-      spdlog::debug("rule.triggered handler: {}", e.what());
-    }
-  }));
+      }));
+
+  event_sub_ids.push_back(event_bus.Subscribe(
+      "rule.triggered", [ws_ptr, analytics_aggregator](const std::any& data) {
+        try {
+          auto json_str = std::any_cast<std::string>(data);
+          auto rule_data = nlohmann::json::parse(json_str);
+          ws_ptr->Broadcast("rule_event", rule_data);
+
+          if (analytics_aggregator) {
+            loong::rules::RuleEvent ev;
+            ev.rule_id = rule_data.value("rule_id", 0);
+            ev.rule_name = rule_data.value("rule_name", "");
+            ev.channel_id = rule_data.value("channel_id", 0);
+            ev.timestamp =
+                rule_data.value("timestamp", static_cast<int64_t>(0));
+            auto type_str = rule_data.value("rule_type", "");
+            if (type_str == "cross_line") {
+              ev.rule_type = loong::rules::RuleType::kCrossLine;
+            } else if (type_str == "region_intrusion") {
+              ev.rule_type = loong::rules::RuleType::kRegionIntrusion;
+            } else if (type_str == "object_counting") {
+              ev.rule_type = loong::rules::RuleType::kObjectCounting;
+            } else if (type_str == "loitering") {
+              ev.rule_type = loong::rules::RuleType::kLoitering;
+            }
+            analytics_aggregator->IngestEvent(ev);
+          }
+        } catch (const std::exception& e) {
+          spdlog::debug("rule.triggered handler: {}", e.what());
+        }
+      }));
 
   // Wire config hot-reload: broadcast changes via WebSocket
   hot_reload_mgr->SetBroadcastCallback(
@@ -676,8 +676,8 @@ int main(int argc, char* argv[]) {
 
   // Register section handlers for runtime-reloadable config
   hot_reload_mgr->RegisterSection(
-      "hls", [hls_service](const std::string& /*section*/,
-                           const nlohmann::json& cfg) {
+      "hls",
+      [hls_service](const std::string& /*section*/, const nlohmann::json& cfg) {
         loong::network::HlsConfig hls_cfg;
         hls_cfg.segment_duration_ms = cfg.value("segment_duration_ms", 2000);
         hls_cfg.max_segments = cfg.value("max_segments", 5);
@@ -688,9 +688,8 @@ int main(int argc, char* argv[]) {
       });
 
   hot_reload_mgr->RegisterSection(
-      "notifications",
-      [notification_mgr](const std::string& /*section*/,
-                          const nlohmann::json& cfg) {
+      "notifications", [notification_mgr](const std::string& /*section*/,
+                                          const nlohmann::json& cfg) {
         if (cfg.contains("smtp")) {
           loong::system::SmtpConfig smtp;
           const auto& s = cfg["smtp"];
@@ -736,8 +735,8 @@ int main(int argc, char* argv[]) {
                rtsp_port);
   spdlog::info("  FLV Live:   {}://{}:{}/live/ch{{id}}.flv", http_proto,
                http_host, http_port);
-  spdlog::info("  HLS Live:   {}://{}:{}/live/ch{{id}}/index.m3u8",
-               http_proto, http_host, http_port);
+  spdlog::info("  HLS Live:   {}://{}:{}/live/ch{{id}}/index.m3u8", http_proto,
+               http_host, http_port);
   spdlog::info("  WS fMP4:    ws://{}:{}/ws/live/ch{{id}}", http_host,
                ws_media_port);
   spdlog::info("  WebRTC:     {}://{}:{}/api/webrtc/offer", http_proto,

@@ -63,7 +63,7 @@ std::vector<uint8_t> FlvMuxer::MakeFlvHeader() {
 }
 
 std::vector<FlvMuxer::NalUnit> FlvMuxer::ParseAnnexB(const uint8_t* data,
-                                                       size_t size) {
+                                                     size_t size) {
   std::vector<NalUnit> units;
   if (size < 4) return units;
 
@@ -76,8 +76,7 @@ std::vector<FlvMuxer::NalUnit> FlvMuxer::ParseAnnexB(const uint8_t* data,
     bool is_start_code = false;
     size_t start_code_len = 0;
 
-    if (i + 2 < size && data[i] == 0 && data[i + 1] == 0 &&
-        data[i + 2] == 1) {
+    if (i + 2 < size && data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
       is_start_code = true;
       start_code_len = 3;
     } else if (i + 3 < size && data[i] == 0 && data[i + 1] == 0 &&
@@ -120,8 +119,8 @@ std::vector<FlvMuxer::NalUnit> FlvMuxer::ParseAnnexB(const uint8_t* data,
 }
 
 bool FlvMuxer::ExtractSpsPps(const uint8_t* data, size_t size,
-                              std::vector<uint8_t>& sps,
-                              std::vector<uint8_t>& pps) {
+                             std::vector<uint8_t>& sps,
+                             std::vector<uint8_t>& pps) {
   auto units = ParseAnnexB(data, size);
 
   bool found_sps = false;
@@ -141,8 +140,7 @@ bool FlvMuxer::ExtractSpsPps(const uint8_t* data, size_t size,
   return found_sps && found_pps;
 }
 
-std::vector<uint8_t> FlvMuxer::AnnexBToAvcc(const uint8_t* data,
-                                              size_t size) {
+std::vector<uint8_t> FlvMuxer::AnnexBToAvcc(const uint8_t* data, size_t size) {
   auto units = ParseAnnexB(data, size);
   std::vector<uint8_t> avcc;
   avcc.reserve(size);
@@ -162,8 +160,8 @@ std::vector<uint8_t> FlvMuxer::AnnexBToAvcc(const uint8_t* data,
 }
 
 std::vector<uint8_t> FlvMuxer::BuildFlvTag(uint8_t tag_type,
-                                            const std::vector<uint8_t>& data,
-                                            int64_t timestamp_ms) {
+                                           const std::vector<uint8_t>& data,
+                                           int64_t timestamp_ms) {
   auto data_size = static_cast<uint32_t>(data.size());
   auto ts = static_cast<uint32_t>(timestamp_ms & 0xFFFFFFFF);
 
@@ -211,11 +209,11 @@ std::vector<uint8_t> FlvMuxer::MakeSequenceHeaderTag(
   WriteUint24Be(body, 0);
 
   // AVCDecoderConfigurationRecord
-  body.push_back(0x01);     // configurationVersion
-  body.push_back(sps[1]);   // AVCProfileIndication
-  body.push_back(sps[2]);   // profile_compatibility
-  body.push_back(sps[3]);   // AVCLevelIndication
-  body.push_back(0xFF);     // lengthSizeMinusOne = 3 (4 bytes)
+  body.push_back(0x01);    // configurationVersion
+  body.push_back(sps[1]);  // AVCProfileIndication
+  body.push_back(sps[2]);  // profile_compatibility
+  body.push_back(sps[3]);  // AVCLevelIndication
+  body.push_back(0xFF);    // lengthSizeMinusOne = 3 (4 bytes)
 
   // Number of SPS: 1
   body.push_back(0xE1);
@@ -235,8 +233,8 @@ std::vector<uint8_t> FlvMuxer::MakeSequenceHeaderTag(
 }
 
 std::vector<uint8_t> FlvMuxer::MakeVideoTag(const uint8_t* data, size_t size,
-                                              int64_t timestamp_ms,
-                                              bool is_keyframe) {
+                                            int64_t timestamp_ms,
+                                            bool is_keyframe) {
   // Convert Annex B to AVCC format (skip SPS/PPS)
   auto avcc_data = AnnexBToAvcc(data, size);
   if (avcc_data.empty()) {

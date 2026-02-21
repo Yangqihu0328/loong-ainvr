@@ -3,12 +3,12 @@
 #ifndef LOONG_RULES_EVALUATORS_LOITERING_EVALUATOR_H_
 #define LOONG_RULES_EVALUATORS_LOITERING_EVALUATOR_H_
 
-#include <unordered_map>
-#include <vector>
-
 #include "rules/evaluators/iou_tracker.h"
 #include "rules/evaluators/region_intrusion_evaluator.h"
 #include "rules/evaluators/rule_evaluator.h"
+
+#include <unordered_map>
+#include <vector>
 
 namespace loong::rules {
 
@@ -27,18 +27,17 @@ class LoiteringEvaluator : public RuleEvaluator {
   LoiteringEvaluator() = default;
 
   bool Configure(const AnalysisRule& rule) override;
-  std::vector<RuleEvent> Evaluate(
-      const std::vector<Detection>& detections,
-      const FrameContext& context) override;
+  std::vector<RuleEvent> Evaluate(const std::vector<Detection>& detections,
+                                  const FrameContext& context) override;
   void Reset() override;
   RuleType GetType() const override { return RuleType::kLoitering; }
 
  private:
   struct TrackState {
-    int64_t enter_timestamp_ms = 0;   // When the track first entered region
-    int64_t last_alert_ms = 0;        // Timestamp of last alert for cooldown
-    bool inside = false;              // Currently inside region
-    bool alerted = false;             // Has been alerted at least once
+    int64_t enter_timestamp_ms = 0;  // When the track first entered region
+    int64_t last_alert_ms = 0;       // Timestamp of last alert for cooldown
+    bool inside = false;             // Currently inside region
+    bool alerted = false;            // Has been alerted at least once
   };
 
   std::vector<Detection> FilterDetections(

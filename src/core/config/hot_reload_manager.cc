@@ -2,10 +2,10 @@
 
 #include "core/config/hot_reload_manager.h"
 
-#include <fstream>
-
 #include "core/config/config_manager.h"
 #include "spdlog/spdlog.h"
+
+#include <fstream>
 
 namespace loong::core {
 
@@ -26,8 +26,7 @@ bool HotReloadManager::Start(const std::string& file_path) {
     current_config_ = ConfigManager::Instance().GetConfig();
   }
 
-  watcher_.OnChange(
-      [this](const std::string& path) { OnFileChanged(path); });
+  watcher_.OnChange([this](const std::string& path) { OnFileChanged(path); });
 
   if (!watcher_.Watch(file_path)) {
     spdlog::warn("HotReloadManager: failed to watch '{}'", file_path);
@@ -138,8 +137,7 @@ void HotReloadManager::DiffAndNotify(const nlohmann::json& old_config,
   }
 
   spdlog::info("HotReloadManager: {} section(s) changed: [{}]",
-               changed_sections.size(),
-               [&]() {
+               changed_sections.size(), [&]() {
                  std::string s;
                  for (size_t i = 0; i < changed_sections.size(); ++i) {
                    if (i > 0) s += ", ";
@@ -158,8 +156,8 @@ void HotReloadManager::DiffAndNotify(const nlohmann::json& old_config,
         try {
           entry.handler(section, section_cfg);
         } catch (const std::exception& e) {
-          spdlog::error("HotReloadManager: handler error for '{}': {}",
-                        section, e.what());
+          spdlog::error("HotReloadManager: handler error for '{}': {}", section,
+                        e.what());
         }
       }
     }

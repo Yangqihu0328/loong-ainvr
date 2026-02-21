@@ -2,14 +2,14 @@
 
 #include "ai_engine/model_manager/model_manager.h"
 
+#include "ai_engine/backend/backend_factory.h"
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <thread>
-
-#include "ai_engine/backend/backend_factory.h"
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
-#include "spdlog/spdlog.h"
 
 namespace fs = std::filesystem;
 
@@ -59,8 +59,7 @@ int ModelManager::ScanDirectory(const std::string& directory_path) {
 
     std::string ext = entry.path().extension().string();
     // Only consider known model file extensions.
-    if (ext != ".onnx" && ext != ".engine" && ext != ".trt" &&
-        ext != ".xml") {
+    if (ext != ".onnx" && ext != ".engine" && ext != ".trt" && ext != ".xml") {
       continue;
     }
 
@@ -82,8 +81,7 @@ int ModelManager::ScanDirectory(const std::string& directory_path) {
     info.input_shape = {1, 3, 640, 640};  // Default YOLO input
 
     if (info.family.empty()) {
-      spdlog::debug("ModelManager: skipping '{}' — unknown family",
-                    filename);
+      spdlog::debug("ModelManager: skipping '{}' — unknown family", filename);
       continue;
     }
 
@@ -160,8 +158,8 @@ std::shared_ptr<InferenceEngine> ModelManager::CreateEngine(
     return nullptr;
   }
 
-  auto engine = std::make_shared<InferenceEngine>(
-      std::move(backend), std::move(adapter));
+  auto engine =
+      std::make_shared<InferenceEngine>(std::move(backend), std::move(adapter));
 
   // Mark as loaded.
   {
@@ -172,9 +170,10 @@ std::shared_ptr<InferenceEngine> ModelManager::CreateEngine(
     }
   }
 
-  spdlog::info("ModelManager: created engine for model '{}' "
-               "(family={}, backend={})",
-               info.name, info.family, effective_backend);
+  spdlog::info(
+      "ModelManager: created engine for model '{}' "
+      "(family={}, backend={})",
+      info.name, info.family, effective_backend);
   return engine;
 }
 
@@ -215,8 +214,7 @@ std::vector<std::string> ModelManager::LoadClassNames(
   std::vector<std::string> names;
   std::ifstream f(file_path);
   if (!f.is_open()) {
-    spdlog::warn("ModelManager: cannot open class names file '{}'",
-                 file_path);
+    spdlog::warn("ModelManager: cannot open class names file '{}'", file_path);
     return names;
   }
 
@@ -231,8 +229,8 @@ std::vector<std::string> ModelManager::LoadClassNames(
     }
   }
 
-  spdlog::info("ModelManager: loaded {} class names from '{}'",
-               names.size(), file_path);
+  spdlog::info("ModelManager: loaded {} class names from '{}'", names.size(),
+               file_path);
   return names;
 }
 

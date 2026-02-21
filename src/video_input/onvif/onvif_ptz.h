@@ -14,12 +14,10 @@ class OnvifPtz {
  public:
   /// @param ptz_service_url  The ONVIF PTZ service URL.
   /// @param profile_token    The media profile to control.
-  OnvifPtz(std::string  ptz_service_url,
-           std::string  profile_token);
+  OnvifPtz(std::string ptz_service_url, std::string profile_token);
 
   /// Set authentication credentials.
-  void SetCredentials(const std::string& username,
-                      const std::string& password);
+  void SetCredentials(const std::string& username, const std::string& password);
 
   /// Continuous move: pan/tilt/zoom speeds in [-1.0, 1.0].
   bool ContinuousMove(float pan_speed, float tilt_speed, float zoom_speed);

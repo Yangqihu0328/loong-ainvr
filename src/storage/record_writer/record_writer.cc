@@ -14,16 +14,13 @@
 
 namespace loong::storage {
 
-RecordWriter::RecordWriter(int channel_id, RecordConfig  config)
+RecordWriter::RecordWriter(int channel_id, RecordConfig config)
     : channel_id_(channel_id), config_(std::move(config)) {}
 
-RecordWriter::~RecordWriter() {
-  Close();
-}
+RecordWriter::~RecordWriter() { Close(); }
 
-bool RecordWriter::WriteFrame(const uint8_t* data, size_t size,
-                               int64_t pts, int64_t dts,
-                               bool is_keyframe) {
+bool RecordWriter::WriteFrame(const uint8_t* data, size_t size, int64_t pts,
+                              int64_t dts, bool is_keyframe) {
   std::lock_guard<std::mutex> lock(mutex_);
   // Open segment on first keyframe
   if (!is_open_) {
@@ -96,19 +93,17 @@ bool RecordWriter::OpenSegment() {
   std::filesystem::path dir(current_segment_path_);
   std::filesystem::create_directories(dir.parent_path());
 
-  int ret = avformat_alloc_output_context2(&fmt_ctx_, nullptr,
-                                            "mp4",
-                                            current_segment_path_.c_str());
+  int ret = avformat_alloc_output_context2(&fmt_ctx_, nullptr, "mp4",
+                                           current_segment_path_.c_str());
   if (ret < 0 || !fmt_ctx_) {
     spdlog::error("RecordWriter ch{}: failed to create output context",
-                   channel_id_);
+                  channel_id_);
     return false;
   }
 
   // Add video stream
-  AVCodecID codec_id = (config_.codec == CodecType::kH264)
-                           ? AV_CODEC_ID_H264
-                           : AV_CODEC_ID_HEVC;
+  AVCodecID codec_id =
+      (config_.codec == CodecType::kH264) ? AV_CODEC_ID_H264 : AV_CODEC_ID_HEVC;
   const AVCodec* codec = avcodec_find_encoder(codec_id);
   video_stream_ = avformat_new_stream(fmt_ctx_, codec);
   if (!video_stream_) {
@@ -131,8 +126,8 @@ bool RecordWriter::OpenSegment() {
     ret = avio_open(&fmt_ctx_->pb, current_segment_path_.c_str(),
                     AVIO_FLAG_WRITE);
     if (ret < 0) {
-      spdlog::error("RecordWriter ch{}: failed to open '{}'",
-                     channel_id_, current_segment_path_);
+      spdlog::error("RecordWriter ch{}: failed to open '{}'", channel_id_,
+                    current_segment_path_);
       avformat_free_context(fmt_ctx_);
       fmt_ctx_ = nullptr;
       return false;
@@ -155,8 +150,8 @@ bool RecordWriter::OpenSegment() {
   }
 
   is_open_ = true;
-  spdlog::info("RecordWriter ch{}: opened segment '{}'",
-               channel_id_, current_segment_path_);
+  spdlog::info("RecordWriter ch{}: opened segment '{}'", channel_id_,
+               current_segment_path_);
   return true;
 }
 
@@ -185,17 +180,13 @@ std::string RecordWriter::GenerateSegmentPath() const {
   localtime_r(&time_t, &tm);
 
   std::ostringstream ss;
-  ss << config_.base_path << "/ch"
-     << std::setfill('0') << std::setw(2) << channel_id_
-     << "/seg_"
-     << std::setfill('0') << std::setw(4) << (tm.tm_year + 1900)
-     << std::setfill('0') << std::setw(2) << (tm.tm_mon + 1)
-     << std::setfill('0') << std::setw(2) << tm.tm_mday
-     << "_"
-     << std::setfill('0') << std::setw(2) << tm.tm_hour
-     << std::setfill('0') << std::setw(2) << tm.tm_min
-     << std::setfill('0') << std::setw(2) << tm.tm_sec
-     << ".mp4";
+  ss << config_.base_path << "/ch" << std::setfill('0') << std::setw(2)
+     << channel_id_ << "/seg_" << std::setfill('0') << std::setw(4)
+     << (tm.tm_year + 1900) << std::setfill('0') << std::setw(2)
+     << (tm.tm_mon + 1) << std::setfill('0') << std::setw(2) << tm.tm_mday
+     << "_" << std::setfill('0') << std::setw(2) << tm.tm_hour
+     << std::setfill('0') << std::setw(2) << tm.tm_min << std::setfill('0')
+     << std::setw(2) << tm.tm_sec << ".mp4";
   return ss.str();
 }
 

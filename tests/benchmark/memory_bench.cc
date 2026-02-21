@@ -1,14 +1,13 @@
 // Copyright 2026 Loong AI NVR Project
 // Benchmark: Memory pool allocation / Frame creation overhead
 
-#include <benchmark/benchmark.h>
+#include "core/common/types.h"
+#include "core/memory_pool/frame_buffer_pool.h"
 
+#include <benchmark/benchmark.h>
 #include <cstring>
 #include <memory>
 #include <vector>
-
-#include "core/common/types.h"
-#include "core/memory_pool/frame_buffer_pool.h"
 
 namespace loong::benchmark {
 namespace {
@@ -24,9 +23,8 @@ void BM_FrameBufferPoolAcquireRelease(::benchmark::State& state) {
     ::benchmark::DoNotOptimize(buf);
     buf.reset();
   }
-  state.SetBytesProcessed(
-      static_cast<int64_t>(state.iterations()) *
-      static_cast<int64_t>(buffer_size));
+  state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) *
+                          static_cast<int64_t>(buffer_size));
 }
 BENCHMARK(BM_FrameBufferPoolAcquireRelease)
     ->Arg(640 * 480 * 3)
@@ -50,9 +48,8 @@ void BM_FrameBufferPoolWithWrite(::benchmark::State& state) {
     ::benchmark::DoNotOptimize(buf);
     buf.reset();
   }
-  state.SetBytesProcessed(
-      static_cast<int64_t>(state.iterations()) *
-      static_cast<int64_t>(buffer_size));
+  state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) *
+                          static_cast<int64_t>(buffer_size));
 }
 BENCHMARK(BM_FrameBufferPoolWithWrite)
     ->Arg(640 * 480 * 3)
@@ -66,9 +63,8 @@ void BM_RawAllocation(::benchmark::State& state) {
     auto ptr = std::make_unique<uint8_t[]>(buffer_size);
     ::benchmark::DoNotOptimize(ptr.get());
   }
-  state.SetBytesProcessed(
-      static_cast<int64_t>(state.iterations()) *
-      static_cast<int64_t>(buffer_size));
+  state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) *
+                          static_cast<int64_t>(buffer_size));
 }
 BENCHMARK(BM_RawAllocation)
     ->Arg(640 * 480 * 3)
@@ -118,15 +114,13 @@ void BM_FrameCreation(::benchmark::State& state) {
     frame->info.height = height;
     frame->info.stride = width * 3;
 
-    size_t size = static_cast<size_t>(width) *
-                  static_cast<size_t>(height) * 3;
+    size_t size = static_cast<size_t>(width) * static_cast<size_t>(height) * 3;
     frame->data = std::shared_ptr<uint8_t[]>(new uint8_t[size]);
     frame->data_size = size;
     ::benchmark::DoNotOptimize(frame);
   }
-  state.SetBytesProcessed(
-      static_cast<int64_t>(state.iterations()) *
-      static_cast<int64_t>(width) * height * 3);
+  state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) *
+                          static_cast<int64_t>(width) * height * 3);
 }
 BENCHMARK(BM_FrameCreation)
     ->Arg(640)
@@ -144,9 +138,8 @@ void BM_MemoryScaling(::benchmark::State& state) {
     std::vector<std::unique_ptr<core::FrameBufferPool>> pools;
     pools.reserve(static_cast<size_t>(num_channels));
     for (int i = 0; i < num_channels; ++i) {
-      pools.push_back(
-          std::make_unique<core::FrameBufferPool>(
-              buffers_per_channel, buffer_size));
+      pools.push_back(std::make_unique<core::FrameBufferPool>(
+          buffers_per_channel, buffer_size));
     }
 
     std::vector<std::shared_ptr<core::FrameBuffer>> buffers;

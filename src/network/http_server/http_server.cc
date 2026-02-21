@@ -2,10 +2,10 @@
 
 #include "network/http_server/http_server.h"
 
+#include "spdlog/spdlog.h"
+
 #include <nlohmann/json.hpp>
 #include <utility>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::network {
 
@@ -44,8 +44,8 @@ bool HttpServer::SetStaticDir(const std::string& mount_point,
   if (!server_) return false;
   auto ret = server_->set_mount_point(mount_point, dir_path);
   if (ret) {
-    spdlog::info("HttpServer: serving static files from '{}' at '{}'",
-                 dir_path, mount_point);
+    spdlog::info("HttpServer: serving static files from '{}' at '{}'", dir_path,
+                 mount_point);
   } else {
     spdlog::warn("HttpServer: failed to mount '{}' at '{}'", dir_path,
                  mount_point);
@@ -59,9 +59,7 @@ bool HttpServer::Start() {
     return true;
   }
 
-  server_->new_task_queue = [] {
-    return new httplib::ThreadPool(128);
-  };
+  server_->new_task_queue = [] { return new httplib::ThreadPool(128); };
 
   SetupCors();
   SetupSecurityHeaders();
@@ -114,8 +112,7 @@ void HttpServer::SetCorsHeaders(httplib::Response& res) {
   res.set_header("Access-Control-Allow-Origin", "*");
   res.set_header("Access-Control-Allow-Methods",
                  "GET, POST, PUT, DELETE, OPTIONS");
-  res.set_header("Access-Control-Allow-Headers",
-                 "Content-Type, Authorization");
+  res.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
 void HttpServer::SetSecurityHeaders(httplib::Response& res) {
@@ -143,8 +140,8 @@ void HttpServer::JsonResponse(httplib::Response& res, int code,
   res.status = code;
 }
 
-bool HttpServer::CheckAuth(const httplib::Request& req,
-                           httplib::Response& res, system::AuthContext& ctx) {
+bool HttpServer::CheckAuth(const httplib::Request& req, httplib::Response& res,
+                           system::AuthContext& ctx) {
   if (!auth_middleware_) {
     ctx.authenticated = true;
     return true;
@@ -206,8 +203,8 @@ bool HttpServer::CheckRateLimit(const httplib::Request& req,
 
   ++entry.request_count;
   if (entry.request_count > kRateLimitMaxRequests) {
-    int retry_after = kRateLimitWindowSeconds -
-                      static_cast<int>(elapsed.count());
+    int retry_after =
+        kRateLimitWindowSeconds - static_cast<int>(elapsed.count());
     res.set_header("Retry-After", std::to_string(retry_after));
     JsonError(res, 429, "rate limit exceeded");
     return false;
@@ -235,11 +232,11 @@ void HttpServer::RecordLoginFailure(const std::string& ip) {
   ++entry.failed_count;
 
   if (entry.failed_count >= kMaxLoginAttempts) {
-    entry.locked_until =
-        now + std::chrono::minutes(kLoginLockoutMinutes);
-    spdlog::warn("HttpServer: IP {} locked for {} minutes after {} failed "
-                 "login attempts",
-                 ip, kLoginLockoutMinutes, entry.failed_count);
+    entry.locked_until = now + std::chrono::minutes(kLoginLockoutMinutes);
+    spdlog::warn(
+        "HttpServer: IP {} locked for {} minutes after {} failed "
+        "login attempts",
+        ip, kLoginLockoutMinutes, entry.failed_count);
   }
 }
 
@@ -259,7 +256,8 @@ bool HttpServer::IsLoginLocked(const std::string& ip) {
     return true;
   }
 
-  if (now >= it->second.locked_until && it->second.failed_count >= kMaxLoginAttempts) {
+  if (now >= it->second.locked_until &&
+      it->second.failed_count >= kMaxLoginAttempts) {
     login_attempts_.erase(it);
   }
 

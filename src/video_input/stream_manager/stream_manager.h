@@ -3,14 +3,14 @@
 #ifndef LOONG_VIDEO_INPUT_STREAM_MANAGER_STREAM_MANAGER_H_
 #define LOONG_VIDEO_INPUT_STREAM_MANAGER_STREAM_MANAGER_H_
 
+#include "video_input/rtsp_client/rtsp_client.h"
+
 #include <functional>
 #include <memory>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "video_input/rtsp_client/rtsp_client.h"
 
 namespace loong::video_input {
 
@@ -26,8 +26,7 @@ struct StreamStats {
 
 /// Callback invoked when a stream's connection state changes.
 using StreamStateCallback = std::function<void(
-    int channel_id, RtspConnectionState new_state,
-    const std::string& message)>;
+    int channel_id, RtspConnectionState new_state, const std::string& message)>;
 
 /// Manages the lifecycle of multiple RTSP client streams.
 ///

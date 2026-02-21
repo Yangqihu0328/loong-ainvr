@@ -2,13 +2,12 @@
 
 #include "system/auth/user_store.h"
 
-#include <chrono>
-#include <random>
+#include "spdlog/spdlog.h"
 
+#include <chrono>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-
-#include "spdlog/spdlog.h"
+#include <random>
 
 namespace loong::system {
 
@@ -133,15 +132,15 @@ void UserStore::CreateDefaultAdmin() {
   sqlite3_bind_int64(stmt, 6, now);
 
   if (sqlite3_step(stmt) == SQLITE_DONE) {
-    spdlog::info("UserStore: created default admin account (user: {}, pass: {})",
-                 kDefaultAdminUser, kDefaultAdminPass);
+    spdlog::info(
+        "UserStore: created default admin account (user: {}, pass: {})",
+        kDefaultAdminUser, kDefaultAdminPass);
   }
   sqlite3_finalize(stmt);
 }
 
 bool UserStore::Authenticate(const std::string& username,
-                             const std::string& password,
-                             UserInfo& user_info) {
+                             const std::string& password, UserInfo& user_info) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!db_) return false;
 
@@ -177,8 +176,7 @@ bool UserStore::Authenticate(const std::string& username,
       // Update last_login
       sqlite3_finalize(stmt);
       int64_t now = Now();
-      const char* update_sql =
-          "UPDATE users SET last_login = ? WHERE id = ?;";
+      const char* update_sql = "UPDATE users SET last_login = ? WHERE id = ?;";
       sqlite3_prepare_v2(db_, update_sql, -1, &stmt, nullptr);
       sqlite3_bind_int64(stmt, 1, now);
       sqlite3_bind_int64(stmt, 2, user_info.id);
@@ -284,8 +282,7 @@ bool UserStore::DeleteUser(int64_t user_id) {
   // Check: cannot delete the last admin
   UserInfo info;
   {
-    const char* sql =
-        "SELECT role FROM users WHERE id = ?;";
+    const char* sql = "SELECT role FROM users WHERE id = ?;";
     sqlite3_stmt* stmt = nullptr;
     sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     sqlite3_bind_int64(stmt, 1, user_id);
@@ -297,8 +294,7 @@ bool UserStore::DeleteUser(int64_t user_id) {
   }
 
   if (info.role == UserRole::kAdmin) {
-    const char* count_sql =
-        "SELECT COUNT(*) FROM users WHERE role = 'admin';";
+    const char* count_sql = "SELECT COUNT(*) FROM users WHERE role = 'admin';";
     sqlite3_stmt* stmt = nullptr;
     sqlite3_prepare_v2(db_, count_sql, -1, &stmt, nullptr);
     int admin_count = 0;
@@ -403,8 +399,7 @@ std::vector<UserInfo> UserStore::ListUsers() {
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     UserInfo info;
     info.id = sqlite3_column_int64(stmt, 0);
-    info.username =
-        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    info.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
     info.display_name =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     info.role = ParseUserRole(
@@ -478,8 +473,7 @@ bool UserStore::MustChangePassword(int64_t user_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!db_) return false;
 
-  const char* sql =
-      "SELECT must_change_password FROM users WHERE id = ?;";
+  const char* sql = "SELECT must_change_password FROM users WHERE id = ?;";
   sqlite3_stmt* stmt = nullptr;
   sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
   sqlite3_bind_int64(stmt, 1, user_id);

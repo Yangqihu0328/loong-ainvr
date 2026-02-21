@@ -1,13 +1,12 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include <gtest/gtest.h>
-
-#include <cstring>
-#include <string>
-#include <vector>
-
 #include "network/hls_stream/hls_service.h"
 #include "network/hls_stream/ts_muxer.h"
+
+#include <cstring>
+#include <gtest/gtest.h>
+#include <string>
+#include <vector>
 
 namespace loong::network {
 
@@ -87,8 +86,7 @@ TEST_F(TsMuxerTest, PatHasCorrectPid) {
 
 TEST_F(TsMuxerTest, PmtHasCorrectPid) {
   auto psi = muxer.WritePsiTables();
-  uint16_t pid =
-      static_cast<uint16_t>(((psi[189] & 0x1F) << 8) | psi[190]);
+  uint16_t pid = static_cast<uint16_t>(((psi[189] & 0x1F) << 8) | psi[190]);
   EXPECT_EQ(pid, TsMuxer::kPmtPid);
 }
 

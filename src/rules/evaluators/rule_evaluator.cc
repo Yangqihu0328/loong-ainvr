@@ -19,9 +19,8 @@ class PlaceholderEvaluator : public RuleEvaluator {
 
   bool Configure(const AnalysisRule& /*rule*/) override { return true; }
 
-  std::vector<RuleEvent> Evaluate(
-      const std::vector<Detection>& /*detections*/,
-      const FrameContext& /*context*/) override {
+  std::vector<RuleEvent> Evaluate(const std::vector<Detection>& /*detections*/,
+                                  const FrameContext& /*context*/) override {
     return {};
   }
 

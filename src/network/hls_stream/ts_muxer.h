@@ -54,8 +54,8 @@ class TsMuxer {
   /// random_access_indicator (keyframe).
   void PacketizePayload(std::vector<uint8_t>& output, uint16_t pid,
                         const uint8_t* payload, size_t payload_size,
-                        uint8_t& cc, bool payload_start,
-                        int64_t pcr_90khz, bool random_access);
+                        uint8_t& cc, bool payload_start, int64_t pcr_90khz,
+                        bool random_access);
 
   /// Compute CRC-32/MPEG-2 for PSI tables.
   static uint32_t Crc32Mpeg2(const uint8_t* data, size_t len);

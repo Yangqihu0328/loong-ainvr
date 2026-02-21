@@ -3,11 +3,11 @@
 #ifndef LOONG_CODEC_CODEC_FACTORY_CODEC_FACTORY_H_
 #define LOONG_CODEC_CODEC_FACTORY_CODEC_FACTORY_H_
 
-#include <memory>
-
 #include "codec/decoder/decoder.h"
 #include "codec/encoder/encoder.h"
 #include "core/common/types.h"
+
+#include <memory>
 
 namespace loong::codec {
 

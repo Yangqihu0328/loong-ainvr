@@ -1,18 +1,18 @@
 // Copyright 2026 Loong AI NVR Project
 
 #include "network/rtsp_server/rtsp_server.h"
+
 #include "network/rtsp_server/rtp_packetizer.h"
 
-#include <gtest/gtest.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
+#include <arpa/inet.h>
 #include <cstring>
+#include <gtest/gtest.h>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 namespace loong {
 namespace network {
@@ -94,7 +94,7 @@ TEST(RtpPacketizerTest, MultipleNalUnits) {
 
   // Only the last packet should have the marker bit.
   uint8_t last_rtp_byte1 = packets.back()[5];  // Byte 1 of RTP header
-  EXPECT_NE(last_rtp_byte1 & 0x80, 0);  // Marker set
+  EXPECT_NE(last_rtp_byte1 & 0x80, 0);         // Marker set
 }
 
 // ============================================================

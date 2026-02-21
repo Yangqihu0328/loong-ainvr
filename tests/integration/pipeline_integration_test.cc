@@ -4,16 +4,6 @@
 // Tests the complete frame flow: Source → Decode → AI → Overlay → Output
 // using mock/stub components that don't require real RTSP streams.
 
-#include <atomic>
-#include <chrono>
-#include <cstring>
-#include <memory>
-#include <thread>
-#include <vector>
-
-#include "gtest/gtest.h"
-#include "spdlog/spdlog.h"
-
 #include "ai_engine/backend/backend_factory.h"
 #include "ai_engine/backend/opencv_dnn_backend.h"
 #include "ai_engine/inference/inference_engine.h"
@@ -22,9 +12,18 @@
 #include "core/pipeline/channel_pipeline.h"
 #include "core/pipeline/pipeline_stage.h"
 #include "core/pipeline/stage_queue.h"
+#include "gtest/gtest.h"
 #include "pipeline_stages/ai_stage/ai_stage.h"
 #include "pipeline_stages/overlay_stage/overlay_stage.h"
+#include "spdlog/spdlog.h"
 #include "storage/record_index/record_index.h"
+
+#include <atomic>
+#include <chrono>
+#include <cstring>
+#include <memory>
+#include <thread>
+#include <vector>
 
 namespace loong {
 namespace integration {
@@ -60,9 +59,9 @@ std::shared_ptr<Frame> MakeTestFrame(int channel_id, int width, int height,
       auto idx = static_cast<ptrdiff_t>((y * width + x) * 3);
       auto ux = static_cast<uint8_t>((x * 255) / (width > 1 ? width - 1 : 1));
       auto uy = static_cast<uint8_t>((y * 255) / (height > 1 ? height - 1 : 1));
-      frame->data[idx] = ux;                            // B
-      frame->data[idx + 1] = uy;                        // G
-      frame->data[idx + 2] = static_cast<uint8_t>(128); // R
+      frame->data[idx] = ux;                             // B
+      frame->data[idx + 1] = uy;                         // G
+      frame->data[idx + 2] = static_cast<uint8_t>(128);  // R
     }
   }
 
@@ -88,7 +87,7 @@ class MockSourceStage : public core::PipelineStage {
   void GenerateFrames(std::shared_ptr<core::StageQueue> output_queue) {
     for (int i = 0; i < total_frames_; ++i) {
       auto pts = static_cast<int64_t>(i) * 40000;  // 25fps: 40ms interval
-      bool keyframe = (i % 25 == 0);  // Keyframe every 25 frames
+      bool keyframe = (i % 25 == 0);               // Keyframe every 25 frames
       auto frame = MakeTestFrame(1, width_, height_, pts, keyframe);
       output_queue->Push(frame);
     }
@@ -180,7 +179,8 @@ class MockInferenceBackend : public ai_engine::InferenceBackend {
     ++inference_count_;
 
     // Determine batch size from input shape.
-    int batch = (input_shape.size() >= 1) ? static_cast<int>(input_shape[0]) : 1;
+    int batch =
+        (input_shape.size() >= 1) ? static_cast<int>(input_shape[0]) : 1;
 
     // Generate YOLOv8-style output: [batch, 84, 8400]
     int num_features = 84;  // 4 box + 80 classes
@@ -305,10 +305,11 @@ TEST(PipelineIntegration, FrameFlowThroughAllStages) {
   }
   EXPECT_GT(frames_with_detections, 0);
 
-  spdlog::info("PipelineIntegration: {} frames processed, {} with AI results, "
-               "{} with detections",
-               output_ptr->ReceivedCount(), output_ptr->AiResultCount(),
-               frames_with_detections);
+  spdlog::info(
+      "PipelineIntegration: {} frames processed, {} with AI results, "
+      "{} with detections",
+      output_ptr->ReceivedCount(), output_ptr->AiResultCount(),
+      frames_with_detections);
 }
 
 // ============================================================
@@ -667,17 +668,16 @@ TEST(PipelineIntegration, YoloAdapterBatchPreProcess) {
   std::vector<int> heights = {240, 480, 120, 360};
 
   for (size_t i = 0; i < widths.size(); ++i) {
-    images.emplace_back(
-        static_cast<size_t>(widths[i] * heights[i] * 3),
-        static_cast<uint8_t>(64 + i * 32));
+    images.emplace_back(static_cast<size_t>(widths[i] * heights[i] * 3),
+                        static_cast<uint8_t>(64 + i * 32));
     image_ptrs.push_back(images.back().data());
   }
 
   std::vector<float> batch_data;
   ai_engine::TensorShape batch_shape;
 
-  EXPECT_TRUE(adapter->PreProcessBatch(image_ptrs, widths, heights,
-                                        batch_data, batch_shape));
+  EXPECT_TRUE(adapter->PreProcessBatch(image_ptrs, widths, heights, batch_data,
+                                       batch_shape));
 
   // Batch shape should be [4, 3, 640, 640]
   ASSERT_EQ(batch_shape.size(), 4u);

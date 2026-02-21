@@ -3,10 +3,10 @@
 #ifndef LOONG_SYSTEM_NOTIFICATION_SMTP_CHANNEL_H_
 #define LOONG_SYSTEM_NOTIFICATION_SMTP_CHANNEL_H_
 
+#include "system/notification/notification_channel.h"
+
 #include <string>
 #include <vector>
-
-#include "system/notification/notification_channel.h"
 
 namespace loong::system {
 

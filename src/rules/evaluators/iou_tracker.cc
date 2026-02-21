@@ -45,9 +45,7 @@ const std::vector<TrackedObject>& IouTracker::Update(
 
     // Greedy matching: sort by IOU descending, assign greedily
     std::sort(pairs.begin(), pairs.end(),
-              [](const IouPair& a, const IouPair& b) {
-                return a.iou > b.iou;
-              });
+              [](const IouPair& a, const IouPair& b) { return a.iou > b.iou; });
 
     for (const auto& pair : pairs) {
       if (track_matched[pair.track_idx] || det_matched[pair.det_idx]) continue;
@@ -95,13 +93,13 @@ const std::vector<TrackedObject>& IouTracker::Update(
   }
 
   // Remove long-dead tracks to prevent unbounded growth
-  tracks_.erase(
-      std::remove_if(tracks_.begin(), tracks_.end(),
-                     [this](const TrackedObject& t) {
-                       return !t.active &&
-                              t.frames_missing > config_.max_frames_missing * 2;
-                     }),
-      tracks_.end());
+  tracks_.erase(std::remove_if(tracks_.begin(), tracks_.end(),
+                               [this](const TrackedObject& t) {
+                                 return !t.active &&
+                                        t.frames_missing >
+                                            config_.max_frames_missing * 2;
+                               }),
+                tracks_.end());
 
   return tracks_;
 }
@@ -123,9 +121,9 @@ void IouTracker::Reset() {
 }
 
 size_t IouTracker::ActiveCount() const {
-  return static_cast<size_t>(std::count_if(
-      tracks_.begin(), tracks_.end(),
-      [](const TrackedObject& t) { return t.active; }));
+  return static_cast<size_t>(
+      std::count_if(tracks_.begin(), tracks_.end(),
+                    [](const TrackedObject& t) { return t.active; }));
 }
 
 float IouTracker::ComputeIou(const Detection& a, const Detection& b) {

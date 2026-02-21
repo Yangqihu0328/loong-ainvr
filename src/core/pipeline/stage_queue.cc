@@ -17,8 +17,7 @@ bool StageQueue::Push(std::shared_ptr<Frame> frame) {
     int target_channel = frame->channel_id;
     bool found = false;
     for (auto it = queue_.begin(); it != queue_.end(); ++it) {
-      if ((*it)->channel_id == target_channel &&
-          !(*it)->info.is_keyframe) {
+      if ((*it)->channel_id == target_channel && !(*it)->info.is_keyframe) {
         queue_.erase(it);
         ++dropped_count_;
         found = true;
@@ -51,9 +50,8 @@ bool StageQueue::Push(std::shared_ptr<Frame> frame) {
 std::optional<std::shared_ptr<Frame>> StageQueue::Pop(
     std::chrono::milliseconds timeout) {
   std::unique_lock<std::mutex> lock(mutex_);
-  if (!not_empty_.wait_for(lock, timeout, [this] {
-        return !queue_.empty() || shutdown_;
-      })) {
+  if (!not_empty_.wait_for(lock, timeout,
+                           [this] { return !queue_.empty() || shutdown_; })) {
     return std::nullopt;  // Timeout
   }
 
@@ -69,9 +67,8 @@ std::optional<std::shared_ptr<Frame>> StageQueue::Pop(
 std::vector<std::shared_ptr<Frame>> StageQueue::PopBatch(
     size_t max_batch, std::chrono::milliseconds timeout) {
   std::unique_lock<std::mutex> lock(mutex_);
-  not_empty_.wait_for(lock, timeout, [this] {
-    return !queue_.empty() || shutdown_;
-  });
+  not_empty_.wait_for(lock, timeout,
+                      [this] { return !queue_.empty() || shutdown_; });
 
   std::vector<std::shared_ptr<Frame>> batch;
   size_t count = std::min(max_batch, queue_.size());

@@ -3,10 +3,10 @@
 #ifndef LOONG_SYSTEM_AUTH_JWT_HELPER_H_
 #define LOONG_SYSTEM_AUTH_JWT_HELPER_H_
 
+#include "system/auth/user_store.h"
+
 #include <cstdint>
 #include <string>
-
-#include "system/auth/user_store.h"
 
 namespace loong::system {
 
@@ -28,8 +28,7 @@ class JwtHelper {
   /// Create a JWT helper with the given secret key.
   /// @param secret HMAC signing secret (should be >= 32 bytes for security).
   /// @param expiry_seconds Token validity duration in seconds (default 24h).
-  explicit JwtHelper(std::string  secret,
-                     int64_t expiry_seconds = 86400);
+  explicit JwtHelper(std::string secret, int64_t expiry_seconds = 86400);
 
   /// Generate a JWT token for the given user.
   std::string GenerateToken(const UserInfo& user);

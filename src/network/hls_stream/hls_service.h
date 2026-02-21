@@ -52,8 +52,8 @@ class HlsService : public std::enable_shared_from_this<HlsService> {
 
   /// Push an encoded H.264 frame (Annex B format) for a channel.
   /// Called from OutputStage when a new encoded frame is produced.
-  void PushFrame(int channel_id, const uint8_t* data, size_t size,
-                 int64_t pts, bool is_keyframe);
+  void PushFrame(int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                 bool is_keyframe);
 
   /// Generate an M3U8 playlist for the given channel.
   /// Returns empty string if the channel is not registered or has no segments.
@@ -62,7 +62,7 @@ class HlsService : public std::enable_shared_from_this<HlsService> {
   /// Get a specific TS segment by sequence number.
   /// Returns nullptr if not found.
   std::shared_ptr<std::vector<uint8_t>> GetSegment(int channel_id,
-                                                    uint64_t sequence) const;
+                                                   uint64_t sequence) const;
 
   /// Check if a channel is registered.
   bool HasChannel(int channel_id) const;

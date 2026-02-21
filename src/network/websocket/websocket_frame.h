@@ -42,7 +42,8 @@ class WebSocketFrame {
   static std::vector<uint8_t> BuildTextFrame(const std::string& text);
 
   /// Build a WebSocket pong frame (echo back the ping payload).
-  static std::vector<uint8_t> BuildPongFrame(const std::vector<uint8_t>& payload);
+  static std::vector<uint8_t> BuildPongFrame(
+      const std::vector<uint8_t>& payload);
 
   /// Build a WebSocket close frame.
   static std::vector<uint8_t> BuildCloseFrame(uint16_t code = 1000);

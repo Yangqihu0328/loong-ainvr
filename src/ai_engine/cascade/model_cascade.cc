@@ -2,11 +2,11 @@
 
 #include "ai_engine/cascade/model_cascade.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::ai_engine {
 
@@ -14,8 +14,8 @@ void ModelCascade::AddStep(const CascadeStep& step,
                            std::shared_ptr<InferenceEngine> engine) {
   steps_.push_back({step, std::move(engine)});
   step_configs_.push_back(step);
-  spdlog::debug("ModelCascade: added step '{}' mode={} model={}",
-                step.name, CascadeModeToString(step.mode), step.model_name);
+  spdlog::debug("ModelCascade: added step '{}' mode={} model={}", step.name,
+                CascadeModeToString(step.mode), step.model_name);
 }
 
 bool ModelCascade::Run(const uint8_t* image_data, int width, int height,
@@ -35,15 +35,14 @@ bool ModelCascade::Run(const uint8_t* image_data, int width, int height,
   // Phase 3: Run crop steps on primary detections
   for (auto& entry : steps_) {
     if (entry.config.mode == CascadeMode::kCrop) {
-      RunCrop(entry, image_data, width, height,
-              result.detections, result);
+      RunCrop(entry, image_data, width, height, result.detections, result);
     }
   }
 
   auto total_end = std::chrono::steady_clock::now();
   result.inference_time_us =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          total_end - total_start)
+      std::chrono::duration_cast<std::chrono::microseconds>(total_end -
+                                                            total_start)
           .count();
 
   result.has_result = true;
@@ -55,13 +54,11 @@ const std::vector<CascadeStep>& ModelCascade::Steps() const {
 }
 
 bool ModelCascade::RunPrimaryOrParallel(const StepEntry& entry,
-                                        const uint8_t* image_data,
-                                        int width, int height,
-                                        AnalysisResult& result) {
+                                        const uint8_t* image_data, int width,
+                                        int height, AnalysisResult& result) {
   std::vector<Detection> detections;
   bool ok = entry.engine->Infer(image_data, width, height,
-                                entry.config.confidence_threshold,
-                                detections);
+                                entry.config.confidence_threshold, detections);
   if (!ok) {
     spdlog::warn("ModelCascade: step '{}' inference failed", entry.config.name);
     return false;
@@ -76,8 +73,7 @@ bool ModelCascade::RunPrimaryOrParallel(const StepEntry& entry,
   return true;
 }
 
-bool ModelCascade::RunCrop(const StepEntry& entry,
-                           const uint8_t* image_data,
+bool ModelCascade::RunCrop(const StepEntry& entry, const uint8_t* image_data,
                            int width, int height,
                            const std::vector<Detection>& primary_detections,
                            AnalysisResult& result) {
@@ -97,24 +93,23 @@ bool ModelCascade::RunCrop(const StepEntry& entry,
     // Crop ROI from the original image
     int crop_w = 0, crop_h = 0;
     constexpr int kChannels = 3;  // BGR
-    auto cropped = CropRoi(image_data, width, height, kChannels,
-                           det.x1, det.y1, det.x2, det.y2,
-                           entry.config.roi_expand_ratio,
-                           crop_w, crop_h);
+    auto cropped =
+        CropRoi(image_data, width, height, kChannels, det.x1, det.y1, det.x2,
+                det.y2, entry.config.roi_expand_ratio, crop_w, crop_h);
     if (cropped.empty() || crop_w <= 0 || crop_h <= 0) continue;
 
     // Run secondary model on cropped ROI
     std::vector<Detection> sub_detections;
-    bool ok = entry.engine->Infer(cropped.data(), crop_w, crop_h,
-                                  entry.config.confidence_threshold,
-                                  sub_detections);
+    bool ok =
+        entry.engine->Infer(cropped.data(), crop_w, crop_h,
+                            entry.config.confidence_threshold, sub_detections);
     if (!ok) continue;
 
     // Map sub-detection coordinates back to the original frame
-    float roi_x1 = std::max(0.0F, det.x1 - (det.x2 - det.x1) *
-                                       entry.config.roi_expand_ratio);
-    float roi_y1 = std::max(0.0F, det.y1 - (det.y2 - det.y1) *
-                                       entry.config.roi_expand_ratio);
+    float roi_x1 = std::max(
+        0.0F, det.x1 - (det.x2 - det.x1) * entry.config.roi_expand_ratio);
+    float roi_y1 = std::max(
+        0.0F, det.y1 - (det.y2 - det.y1) * entry.config.roi_expand_ratio);
 
     for (auto& sub : sub_detections) {
       sub.x1 = roi_x1 + sub.x1;
@@ -136,12 +131,12 @@ bool ModelCascade::RunCrop(const StepEntry& entry,
   return true;
 }
 
-std::vector<uint8_t> ModelCascade::CropRoi(
-    const uint8_t* image_data,
-    int img_width, int img_height, int channels,
-    float x1, float y1, float x2, float y2,
-    float expand_ratio,
-    int& crop_width, int& crop_height) {
+std::vector<uint8_t> ModelCascade::CropRoi(const uint8_t* image_data,
+                                           int img_width, int img_height,
+                                           int channels, float x1, float y1,
+                                           float x2, float y2,
+                                           float expand_ratio, int& crop_width,
+                                           int& crop_height) {
   float box_w = x2 - x1;
   float box_h = y2 - y1;
 
@@ -171,11 +166,10 @@ std::vector<uint8_t> ModelCascade::CropRoi(
 
   size_t src_stride = static_cast<size_t>(img_width) * uchannels;
   for (size_t row = 0; row < ucrop_h; ++row) {
-    size_t src_offset =
-        (static_cast<size_t>(cy1) + row) * src_stride +
-        static_cast<size_t>(cx1) * uchannels;
-    std::memcpy(buf.data() + row * row_bytes,
-                image_data + src_offset, row_bytes);
+    size_t src_offset = (static_cast<size_t>(cy1) + row) * src_stride +
+                        static_cast<size_t>(cx1) * uchannels;
+    std::memcpy(buf.data() + row * row_bytes, image_data + src_offset,
+                row_bytes);
   }
 
   return buf;

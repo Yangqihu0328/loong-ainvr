@@ -15,7 +15,7 @@ namespace loong::storage {
 
 /// Cloud backup provider types.
 enum class CloudProvider {
-  kS3,        // AWS S3 compatible (MinIO, Aliyun OSS, etc.)
+  kS3,  // AWS S3 compatible (MinIO, Aliyun OSS, etc.)
   kNone,
 };
 
@@ -23,7 +23,7 @@ enum class CloudProvider {
 struct CloudConfig {
   bool enabled = false;
   CloudProvider provider = CloudProvider::kS3;
-  std::string endpoint;       // e.g. "s3.amazonaws.com" or "minio.local:9000"
+  std::string endpoint;  // e.g. "s3.amazonaws.com" or "minio.local:9000"
   std::string region = "us-east-1";
   std::string bucket;
   std::string access_key;
@@ -34,16 +34,16 @@ struct CloudConfig {
 
 /// Backup policy: what to back up and how long to keep.
 enum class BackupMode {
-  kEventOnly,   // Only event-triggered recordings/snapshots
-  kFull,        // All recordings
-  kCustom,      // Specific channels
+  kEventOnly,  // Only event-triggered recordings/snapshots
+  kFull,       // All recordings
+  kCustom,     // Specific channels
 };
 
 struct BackupPolicy {
   BackupMode mode = BackupMode::kEventOnly;
-  int retention_days = 30;          // Cloud retention (0 = forever)
-  int upload_interval_sec = 300;    // Check interval for new files
-  std::vector<int> channel_ids;     // For kCustom mode
+  int retention_days = 30;        // Cloud retention (0 = forever)
+  int upload_interval_sec = 300;  // Check interval for new files
+  std::vector<int> channel_ids;   // For kCustom mode
 };
 
 /// Status of a single backup operation.
@@ -135,8 +135,7 @@ class CloudBackupService {
   void BackupLoop();
   void ScanAndUpload();
   std::string MakeRemoteKey(const std::string& local_path) const;
-  bool UploadFile(const std::string& local_path,
-                  const std::string& remote_key);
+  bool UploadFile(const std::string& local_path, const std::string& remote_key);
 
   CloudConfig config_;
   BackupPolicy policy_;

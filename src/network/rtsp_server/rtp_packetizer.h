@@ -3,18 +3,17 @@
 #ifndef LOONG_NETWORK_RTSP_SERVER_RTP_PACKETIZER_H_
 #define LOONG_NETWORK_RTSP_SERVER_RTP_PACKETIZER_H_
 
+#include "core/common/types.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <vector>
 
-#include "core/common/types.h"
-
 namespace loong::network {
 
 /// Callback for each generated RTP packet.
-using RtpPacketCallback =
-    std::function<void(const uint8_t* data, size_t size)>;
+using RtpPacketCallback = std::function<void(const uint8_t* data, size_t size)>;
 
 /// Packetizes H.264/H.265 Annex B NAL units into RTP packets (RFC 6184/7798).
 ///
@@ -42,13 +41,11 @@ class RtpPacketizer {
   static constexpr int kMaxRtpPayload = 1400;
   static constexpr uint8_t kRtpVersion = 2;
 
-  void PacketizeH264Nal(const uint8_t* nal, size_t nal_size,
-                        uint32_t timestamp, bool marker,
-                        RtpPacketCallback& callback);
+  void PacketizeH264Nal(const uint8_t* nal, size_t nal_size, uint32_t timestamp,
+                        bool marker, RtpPacketCallback& callback);
 
   void EmitPacket(const uint8_t* payload, size_t payload_size,
-                  uint32_t timestamp, bool marker,
-                  RtpPacketCallback& callback);
+                  uint32_t timestamp, bool marker, RtpPacketCallback& callback);
 
   /// Parse Annex B start codes and extract NAL units.
   static std::vector<std::pair<const uint8_t*, size_t>> FindNalUnits(

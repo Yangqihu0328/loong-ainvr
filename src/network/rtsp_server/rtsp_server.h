@@ -3,6 +3,9 @@
 #ifndef LOONG_NETWORK_RTSP_SERVER_RTSP_SERVER_H_
 #define LOONG_NETWORK_RTSP_SERVER_RTSP_SERVER_H_
 
+#include "core/common/types.h"
+#include "network/rtsp_server/rtp_packetizer.h"
+
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -10,9 +13,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "core/common/types.h"
-#include "network/rtsp_server/rtp_packetizer.h"
 
 namespace loong::network {
 
@@ -25,7 +25,7 @@ namespace loong::network {
 ///   - Multiple concurrent clients per channel
 class RtspServer {
  public:
-  RtspServer(std::string  host, int port);
+  RtspServer(std::string host, int port);
   ~RtspServer();
 
   /// Start the RTSP server.
@@ -35,15 +35,15 @@ class RtspServer {
   void Stop();
 
   /// Register a video channel for streaming.
-  void RegisterChannel(int channel_id, CodecType codec,
-                       int width, int height, int fps);
+  void RegisterChannel(int channel_id, CodecType codec, int width, int height,
+                       int fps);
 
   /// Unregister a channel.
   void UnregisterChannel(int channel_id);
 
   /// Push an encoded frame to all clients watching this channel.
-  void PushFrame(int channel_id, const uint8_t* data, size_t size,
-                 int64_t pts, bool is_keyframe);
+  void PushFrame(int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                 bool is_keyframe);
 
   // Non-copyable
   RtspServer(const RtspServer&) = delete;
@@ -76,8 +76,7 @@ class RtspServer {
   void HandleClient(std::shared_ptr<RtspSession> session);
 
   void HandleOptions(int fd, const std::string& cseq);
-  void HandleDescribe(int fd, const std::string& cseq,
-                      const std::string& url);
+  void HandleDescribe(int fd, const std::string& cseq, const std::string& url);
   void HandleSetup(std::shared_ptr<RtspSession>& session,
                    const std::string& cseq, const std::string& url,
                    const std::string& transport);

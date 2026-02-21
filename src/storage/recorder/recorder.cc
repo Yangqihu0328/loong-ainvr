@@ -2,10 +2,10 @@
 
 #include "storage/recorder/recorder.h"
 
+#include "spdlog/spdlog.h"
+
 #include <chrono>
 #include <sstream>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::storage {
 
@@ -13,9 +13,7 @@ Recorder::Recorder(std::shared_ptr<RecordIndex> index,
                    std::shared_ptr<Indexer> indexer)
     : index_(std::move(index)), indexer_(std::move(indexer)) {}
 
-Recorder::~Recorder() {
-  StopAll();
-}
+Recorder::~Recorder() { StopAll(); }
 
 bool Recorder::StartRecording(int channel_id, const RecordConfig& config) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -51,8 +49,8 @@ bool Recorder::StopRecording(int channel_id) {
   it->second.writer->Close();
   it->second.state.is_recording = false;
 
-  spdlog::info("Recorder: stopped recording ch{} ({} frames)",
-               channel_id, it->second.state.total_frames);
+  spdlog::info("Recorder: stopped recording ch{} ({} frames)", channel_id,
+               it->second.state.total_frames);
 
   recorders_.erase(it);
   return true;
@@ -65,7 +63,7 @@ bool Recorder::IsRecording(int channel_id) const {
 }
 
 bool Recorder::WriteFrame(int channel_id, const uint8_t* data, size_t size,
-                           int64_t pts, int64_t dts, bool is_keyframe) {
+                          int64_t pts, int64_t dts, bool is_keyframe) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   auto it = recorders_.find(channel_id);
@@ -112,9 +110,10 @@ void Recorder::SetSchedule(int channel_id, const RecordSchedule& schedule) {
   auto it = recorders_.find(channel_id);
   if (it != recorders_.end()) {
     it->second.schedule = std::make_unique<RecordSchedule>(schedule);
-    spdlog::info("Recorder: schedule set for ch{} ({:02d}:{:02d}-{:02d}:{:02d})",
-                 channel_id, schedule.start_hour, schedule.start_minute,
-                 schedule.end_hour, schedule.end_minute);
+    spdlog::info(
+        "Recorder: schedule set for ch{} ({:02d}:{:02d}-{:02d}:{:02d})",
+        channel_id, schedule.start_hour, schedule.start_minute,
+        schedule.end_hour, schedule.end_minute);
   }
 }
 
@@ -128,7 +127,7 @@ void Recorder::RemoveSchedule(int channel_id) {
 }
 
 bool Recorder::TriggerEventRecording(int channel_id, int pre_sec,
-                                      int post_sec) {
+                                     int post_sec) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   auto it = recorders_.find(channel_id);

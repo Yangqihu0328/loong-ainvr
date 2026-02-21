@@ -3,11 +3,11 @@
 #ifndef LOONG_AI_ENGINE_YOLO_ADAPTER_YOLO_MODEL_ADAPTER_H_
 #define LOONG_AI_ENGINE_YOLO_ADAPTER_YOLO_MODEL_ADAPTER_H_
 
-#include <string>
-#include <vector>
-
 #include "ai_engine/inference/inference_backend.h"
 #include "core/common/types.h"
+
+#include <string>
+#include <vector>
 
 namespace loong::ai_engine {
 
@@ -22,26 +22,23 @@ class YoloModelAdapter {
   /// width, height: image dimensions
   /// input_data: output flattened float tensor
   /// input_shape: output tensor shape
-  virtual bool PreProcess(const uint8_t* image_data,
-                          int width, int height,
+  virtual bool PreProcess(const uint8_t* image_data, int width, int height,
                           std::vector<float>& input_data,
                           TensorShape& input_shape) = 0;
 
   /// Batch preprocess: concatenate multiple images into a single batched
   /// input tensor for native batch inference on GPU.
   /// Default implementation calls PreProcess() for each image and merges.
-  virtual bool PreProcessBatch(
-      const std::vector<const uint8_t*>& images,
-      const std::vector<int>& widths,
-      const std::vector<int>& heights,
-      std::vector<float>& batch_input_data,
-      TensorShape& batch_input_shape);
+  virtual bool PreProcessBatch(const std::vector<const uint8_t*>& images,
+                               const std::vector<int>& widths,
+                               const std::vector<int>& heights,
+                               std::vector<float>& batch_input_data,
+                               TensorShape& batch_input_shape);
 
   /// Postprocess model output into detection results.
   virtual bool PostProcess(const std::vector<float>& output_data,
-                           const TensorShape& output_shape,
-                           int original_width, int original_height,
-                           float confidence_threshold,
+                           const TensorShape& output_shape, int original_width,
+                           int original_height, float confidence_threshold,
                            float nms_threshold,
                            std::vector<Detection>& detections) = 0;
 
@@ -49,11 +46,9 @@ class YoloModelAdapter {
   /// Default implementation splits the output tensor along dim-0 and calls
   /// PostProcess() for each image.
   virtual bool PostProcessBatch(
-      const std::vector<float>& output_data,
-      const TensorShape& output_shape,
+      const std::vector<float>& output_data, const TensorShape& output_shape,
       const std::vector<int>& original_widths,
-      const std::vector<int>& original_heights,
-      float confidence_threshold,
+      const std::vector<int>& original_heights, float confidence_threshold,
       float nms_threshold,
       std::vector<std::vector<Detection>>& batch_detections);
 
@@ -67,8 +62,8 @@ class YoloModelAdapter {
 /// Factory for creating YOLO adapters by model family name.
 class YoloAdapterFactory {
  public:
-  static std::unique_ptr<YoloModelAdapter> Create(
-      const std::string& family, int input_size = 640);
+  static std::unique_ptr<YoloModelAdapter> Create(const std::string& family,
+                                                  int input_size = 640);
 };
 
 }  // namespace loong::ai_engine

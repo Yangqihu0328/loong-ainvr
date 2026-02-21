@@ -3,31 +3,33 @@
 #ifndef LOONG_AI_ENGINE_FACE_FACE_ATTRIBUTE_ADAPTER_H_
 #define LOONG_AI_ENGINE_FACE_FACE_ATTRIBUTE_ADAPTER_H_
 
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+
 #include <array>
 #include <string>
 #include <vector>
-
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 
 namespace loong::ai_engine {
 
 /// Result of face attribute analysis (age, gender, embedding).
 struct FaceAttributes {
-  int age = -1;                         // Estimated age
-  std::string gender;                   // "male" / "female" / "unknown"
+  int age = -1;        // Estimated age
+  std::string gender;  // "male" / "female" / "unknown"
   float gender_confidence = 0.0F;
-  std::vector<float> embedding;         // 512-d feature vector (L2-normalized)
+  std::vector<float> embedding;  // 512-d feature vector (L2-normalized)
 };
 
 /// ArcFace / InsightFace style attribute adapter.
 ///
 /// Input: 112×112 aligned face crop (RGB, NCHW, normalized)
-/// Output layout (combined model): [512-d embedding, 1 gender logit, 1 age value]
+/// Output layout (combined model): [512-d embedding, 1 gender logit, 1 age
+/// value]
 ///   Total: 514 floats
 ///
 /// For embedding-only models: output is 512 floats.
 ///
-/// Works in kCrop mode within ModelCascade, receiving face ROI from FaceDetectorAdapter.
+/// Works in kCrop mode within ModelCascade, receiving face ROI from
+/// FaceDetectorAdapter.
 class FaceAttributeAdapter : public YoloModelAdapter {
  public:
   explicit FaceAttributeAdapter(int input_size = 112);
@@ -37,9 +39,9 @@ class FaceAttributeAdapter : public YoloModelAdapter {
                   TensorShape& input_shape) override;
 
   bool PostProcess(const std::vector<float>& output_data,
-                   const TensorShape& output_shape,
-                   int original_width, int original_height,
-                   float confidence_threshold, float nms_threshold,
+                   const TensorShape& output_shape, int original_width,
+                   int original_height, float confidence_threshold,
+                   float nms_threshold,
                    std::vector<Detection>& detections) override;
 
   std::string ModelFamily() const override { return "face_attribute"; }

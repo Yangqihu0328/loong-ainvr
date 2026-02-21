@@ -2,19 +2,17 @@
 
 #include "storage/storage_cleaner/storage_cleaner.h"
 
+#include "spdlog/spdlog.h"
+
 #include <chrono>
 #include <filesystem>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::storage {
 
 StorageCleaner::StorageCleaner(std::shared_ptr<RecordIndex> index)
     : index_(std::move(index)) {}
 
-StorageCleaner::~StorageCleaner() {
-  Stop();
-}
+StorageCleaner::~StorageCleaner() { Stop(); }
 
 void StorageCleaner::Start() {
   if (running_) return;
@@ -58,15 +56,15 @@ void StorageCleaner::CleanupLoop() {
   }
 }
 
-void StorageCleaner::CleanChannel(int channel_id,
-                                   const StorageQuota& quota) {
+void StorageCleaner::CleanChannel(int channel_id, const StorageQuota& quota) {
   // Check current size
   int64_t total_bytes = index_->GetChannelTotalSize(channel_id);
-  double total_gb = static_cast<double>(total_bytes) / (1024.0 * 1024.0 * 1024.0);
+  double total_gb =
+      static_cast<double>(total_bytes) / (1024.0 * 1024.0 * 1024.0);
 
   if (total_gb > quota.max_size_gb * 0.9) {
     spdlog::info("StorageCleaner: ch{} at {:.1f}GB / {:.1f}GB, cleaning",
-                  channel_id, total_gb, quota.max_size_gb);
+                 channel_id, total_gb, quota.max_size_gb);
 
     // Delete oldest segments until under 80%
     double target_gb = quota.max_size_gb * 0.8;
@@ -80,8 +78,8 @@ void StorageCleaner::CleanChannel(int channel_id,
           std::error_code ec;
           std::filesystem::remove(path, ec);
           if (!ec) {
-            total_gb -= static_cast<double>(seg.file_size) /
-                        (1024.0 * 1024.0 * 1024.0);
+            total_gb -=
+                static_cast<double>(seg.file_size) / (1024.0 * 1024.0 * 1024.0);
           }
         }
       }

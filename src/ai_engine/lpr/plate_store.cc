@@ -8,9 +8,7 @@ namespace loong::ai_engine {
 
 PlateStore::PlateStore() = default;
 
-PlateStore::~PlateStore() {
-  Close();
-}
+PlateStore::~PlateStore() { Close(); }
 
 bool PlateStore::Open(const std::string& db_path) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -81,7 +79,8 @@ int64_t PlateStore::Insert(const PlateRecord& record) {
   sqlite3_bind_double(stmt, 3, static_cast<double>(record.confidence));
   sqlite3_bind_int(stmt, 4, record.channel_id);
   sqlite3_bind_int64(stmt, 5, record.timestamp);
-  sqlite3_bind_text(stmt, 6, record.snapshot_path.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_text(stmt, 6, record.snapshot_path.c_str(), -1,
+                    SQLITE_TRANSIENT);
 
   int rc = sqlite3_step(stmt);
   sqlite3_finalize(stmt);
@@ -89,7 +88,8 @@ int64_t PlateStore::Insert(const PlateRecord& record) {
   if (rc != SQLITE_DONE) return -1;
 
   int64_t id = sqlite3_last_insert_rowid(db_);
-  spdlog::debug("PlateStore: inserted plate '{}' id={}", record.plate_number, id);
+  spdlog::debug("PlateStore: inserted plate '{}' id={}", record.plate_number,
+                id);
   return id;
 }
 
@@ -98,8 +98,9 @@ std::vector<PlateRecord> PlateStore::Query(const PlateQuery& query) {
   std::vector<PlateRecord> results;
   if (!db_) return results;
 
-  std::string sql = "SELECT id, plate_number, plate_color, confidence, "
-                    "channel_id, timestamp, snapshot_path FROM plates WHERE 1=1";
+  std::string sql =
+      "SELECT id, plate_number, plate_color, confidence, "
+      "channel_id, timestamp, snapshot_path FROM plates WHERE 1=1";
 
   if (!query.plate_number.empty()) {
     sql += " AND plate_number LIKE ?";
@@ -141,16 +142,16 @@ std::vector<PlateRecord> PlateStore::Query(const PlateQuery& query) {
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     PlateRecord r;
     r.id = sqlite3_column_int64(stmt, 0);
-    r.plate_number = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 1));
-    const char* color = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 2));
+    r.plate_number =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    const char* color =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     r.plate_color = color ? color : "";
     r.confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
     r.channel_id = sqlite3_column_int(stmt, 4);
     r.timestamp = sqlite3_column_int64(stmt, 5);
-    const char* snap = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 6));
+    const char* snap =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     r.snapshot_path = snap ? snap : "";
     results.push_back(std::move(r));
   }
@@ -177,16 +178,16 @@ PlateRecord PlateStore::GetById(int64_t id) {
 
   if (sqlite3_step(stmt) == SQLITE_ROW) {
     r.id = sqlite3_column_int64(stmt, 0);
-    r.plate_number = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 1));
-    const char* color = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 2));
+    r.plate_number =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    const char* color =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     r.plate_color = color ? color : "";
     r.confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
     r.channel_id = sqlite3_column_int(stmt, 4);
     r.timestamp = sqlite3_column_int64(stmt, 5);
-    const char* snap = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 6));
+    const char* snap =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     r.snapshot_path = snap ? snap : "";
   }
 

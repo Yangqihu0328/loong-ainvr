@@ -1,13 +1,12 @@
 // Copyright 2026 Loong AI NVR Project
 // Unit tests for Cloud Backup Service (FEAT-6.3)
 
-#include <gtest/gtest.h>
+#include "storage/cloud_backup/cloud_backup_service.h"
+#include "storage/cloud_backup/s3_backend.h"
 
 #include <filesystem>
 #include <fstream>
-
-#include "storage/cloud_backup/cloud_backup_service.h"
-#include "storage/cloud_backup/s3_backend.h"
+#include <gtest/gtest.h>
 
 namespace loong::storage {
 namespace {
@@ -135,8 +134,8 @@ class CloudBackupServiceTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_dir_ = "/tmp/loong_backup_test_" +
-                std::to_string(std::hash<std::thread::id>{}(
-                    std::this_thread::get_id()));
+                std::to_string(
+                    std::hash<std::thread::id>{}(std::this_thread::get_id()));
     std::filesystem::create_directories(test_dir_ + "/recordings");
     std::filesystem::create_directories(test_dir_ + "/snapshots");
   }

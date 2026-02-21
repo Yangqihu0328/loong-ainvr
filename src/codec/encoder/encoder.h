@@ -3,10 +3,10 @@
 #ifndef LOONG_CODEC_ENCODER_ENCODER_H_
 #define LOONG_CODEC_ENCODER_ENCODER_H_
 
+#include "core/common/types.h"
+
 #include <functional>
 #include <memory>
-
-#include "core/common/types.h"
 
 namespace loong::codec {
 
@@ -17,8 +17,8 @@ struct EncoderConfig {
   int height = 1080;
   int framerate = 25;
   int bitrate_kbps = 4000;
-  int gop_size = 50;       // Keyframe interval
-  int max_b_frames = 0;    // B-frames (0 for low latency)
+  int gop_size = 50;              // Keyframe interval
+  int max_b_frames = 0;           // B-frames (0 for low latency)
   std::string preset = "medium";  // Encoding speed preset
 };
 
@@ -26,8 +26,8 @@ struct EncoderConfig {
 class Encoder {
  public:
   using PacketCallback =
-      std::function<void(const uint8_t* data, size_t size,
-                         int64_t pts, int64_t dts, bool is_keyframe)>;
+      std::function<void(const uint8_t* data, size_t size, int64_t pts,
+                         int64_t dts, bool is_keyframe)>;
 
   virtual ~Encoder() = default;
 

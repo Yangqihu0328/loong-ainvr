@@ -28,9 +28,8 @@ std::string HttpPost(const std::string& url, const std::string& body,
   size_t start = (scheme_end != std::string::npos) ? scheme_end + 3 : 0;
   auto path_start = url.find('/', start);
   std::string authority =
-      url.substr(start, (path_start != std::string::npos)
-                            ? path_start - start
-                            : std::string::npos);
+      url.substr(start, (path_start != std::string::npos) ? path_start - start
+                                                          : std::string::npos);
   path = (path_start != std::string::npos) ? url.substr(path_start) : "/";
 
   auto colon = authority.find(':');
@@ -61,8 +60,8 @@ std::string HttpPost(const std::string& url, const std::string& body,
   std::memcpy(&addr.sin_addr, he->h_addr_list[0],
               static_cast<size_t>(he->h_length));
 
-  if (connect(fd, reinterpret_cast<struct sockaddr*>(&addr),
-              sizeof(addr)) < 0) {
+  if (connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) <
+      0) {
     close(fd);
     return "";
   }
@@ -96,9 +95,9 @@ std::string HttpPost(const std::string& url, const std::string& body,
 
 }  // namespace
 
-OnvifPtz::OnvifPtz(std::string  ptz_service_url,
-                   std::string  profile_token)
-    : ptz_url_(std::move(ptz_service_url)), profile_token_(std::move(profile_token)) {}
+OnvifPtz::OnvifPtz(std::string ptz_service_url, std::string profile_token)
+    : ptz_url_(std::move(ptz_service_url)),
+      profile_token_(std::move(profile_token)) {}
 
 void OnvifPtz::SetCredentials(const std::string& username,
                               const std::string& password) {
@@ -133,8 +132,8 @@ bool OnvifPtz::Stop() {
        << "<tptz:Zoom>true</tptz:Zoom>"
        << "</tptz:Stop>";
 
-  std::string response = SendPtzCommand(
-      "http://www.onvif.org/ver20/ptz/wsdl/Stop", body.str());
+  std::string response =
+      SendPtzCommand("http://www.onvif.org/ver20/ptz/wsdl/Stop", body.str());
   return !response.empty();
 }
 

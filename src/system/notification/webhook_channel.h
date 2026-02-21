@@ -3,9 +3,9 @@
 #ifndef LOONG_SYSTEM_NOTIFICATION_WEBHOOK_CHANNEL_H_
 #define LOONG_SYSTEM_NOTIFICATION_WEBHOOK_CHANNEL_H_
 
-#include <string>
-
 #include "system/notification/notification_channel.h"
+
+#include <string>
 
 namespace loong::system {
 
@@ -13,7 +13,7 @@ namespace loong::system {
 struct WebhookConfig {
   bool enabled = false;
   std::string url;
-  std::string secret;             // Optional HMAC secret for payload signing
+  std::string secret;  // Optional HMAC secret for payload signing
   std::string content_type = "application/json";
   int timeout_sec = 10;
   int retry_count = 2;

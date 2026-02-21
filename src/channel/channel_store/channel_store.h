@@ -3,13 +3,12 @@
 #ifndef LOONG_CHANNEL_CHANNEL_STORE_CHANNEL_STORE_H_
 #define LOONG_CHANNEL_CHANNEL_STORE_CHANNEL_STORE_H_
 
+#include "core/common/types.h"
+
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
-
-#include "core/common/types.h"
 
 namespace loong::channel {
 

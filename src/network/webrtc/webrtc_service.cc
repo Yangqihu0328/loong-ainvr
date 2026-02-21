@@ -2,12 +2,11 @@
 
 #include "network/webrtc/webrtc_service.h"
 
+#include "network/webrtc/loongrtc_include.h"
+
 #include <chrono>
 #include <random>
-
 #include <spdlog/spdlog.h>
-
-#include "network/webrtc/loongrtc_include.h"
 
 namespace loong::network {
 
@@ -44,7 +43,7 @@ static VOID IceCandidateTrampoline(UINT64 custom_data, PCHAR candidate_str) {
 }
 
 static VOID ConnectionStateTrampoline(UINT64 custom_data,
-                                       RTC_PEER_CONNECTION_STATE new_state) {
+                                      RTC_PEER_CONNECTION_STATE new_state) {
   auto* cbd = reinterpret_cast<SessionCallbackData*>(custom_data);
   if (cbd && cbd->service) {
     cbd->service->OnConnectionStateChangeInternal(cbd->session_id, new_state);
@@ -100,8 +99,8 @@ void WebRtcService::Shutdown() {
 }
 
 std::string WebRtcService::HandleOffer(int channel_id,
-                                        const std::string& offer_sdp,
-                                        std::string& out_session_id) {
+                                       const std::string& offer_sdp,
+                                       std::string& out_session_id) {
   if (!initialized_) return "";
 
   {
@@ -139,9 +138,9 @@ std::string WebRtcService::HandleOffer(int channel_id,
 
   // Set callbacks
   peerConnectionOnIceCandidate(pc, reinterpret_cast<UINT64>(cbd),
-                                IceCandidateTrampoline);
-  peerConnectionOnConnectionStateChange(
-      pc, reinterpret_cast<UINT64>(cbd), ConnectionStateTrampoline);
+                               IceCandidateTrampoline);
+  peerConnectionOnConnectionStateChange(pc, reinterpret_cast<UINT64>(cbd),
+                                        ConnectionStateTrampoline);
 
   // Add H.264 video transceiver (sendonly)
   RtcMediaStreamTrack video_track;
@@ -158,8 +157,8 @@ std::string WebRtcService::HandleOffer(int channel_id,
   transceiver_init.direction = RTC_RTP_TRANSCEIVER_DIRECTION_SENDONLY;
 
   PRtcRtpTransceiver video_transceiver = nullptr;
-  status = addTransceiver(pc, &video_track, &transceiver_init,
-                          &video_transceiver);
+  status =
+      addTransceiver(pc, &video_track, &transceiver_init, &video_transceiver);
   if (STATUS_FAILED(status)) {
     spdlog::error("WebRtcService: addTransceiver failed (0x{:08x})", status);
     freePeerConnection(&pc);
@@ -225,13 +224,13 @@ std::string WebRtcService::HandleOffer(int channel_id,
   }
 
   out_session_id = session_id;
-  spdlog::info("WebRtcService: session {} created for channel {}",
-               session_id, channel_id);
+  spdlog::info("WebRtcService: session {} created for channel {}", session_id,
+               channel_id);
   return std::string(answer_desc.sdp);
 }
 
 bool WebRtcService::HandleIceCandidate(const std::string& session_id,
-                                        const std::string& candidate) {
+                                       const std::string& candidate) {
   std::lock_guard<std::mutex> lock(sessions_mutex_);
   auto it = sessions_.find(session_id);
   if (it == sessions_.end()) return false;
@@ -240,7 +239,7 @@ bool WebRtcService::HandleIceCandidate(const std::string& session_id,
   session->last_activity = NowMs();
 
   STATUS status = addIceCandidate(AsPc(session->peer_connection),
-                                   const_cast<char*>(candidate.c_str()));
+                                  const_cast<char*>(candidate.c_str()));
   if (STATUS_FAILED(status)) {
     spdlog::warn("WebRtcService: addIceCandidate failed for {} (0x{:08x})",
                  session_id, status);
@@ -274,8 +273,8 @@ bool WebRtcService::CloseSession(const std::string& session_id) {
 }
 
 void WebRtcService::WriteVideoFrame(int channel_id, const uint8_t* data,
-                                     size_t size, int64_t pts,
-                                     bool is_keyframe) {
+                                    size_t size, int64_t pts,
+                                    bool is_keyframe) {
   if (!initialized_) return;
 
   Frame frame;
@@ -295,8 +294,8 @@ void WebRtcService::WriteVideoFrame(int channel_id, const uint8_t* data,
         session->video_transceiver != nullptr) {
       STATUS status = writeFrame(AsVt(session->video_transceiver), &frame);
       if (STATUS_FAILED(status)) {
-        spdlog::trace("WebRtcService: writeFrame failed for {} (0x{:08x})",
-                      id, status);
+        spdlog::trace("WebRtcService: writeFrame failed for {} (0x{:08x})", id,
+                      status);
       }
     }
   }
@@ -336,8 +335,7 @@ void WebRtcService::StopCleanupTimer() {
 
 std::string WebRtcService::GenerateSessionId() {
   static std::mt19937 rng(std::random_device{}());
-  static const char chars[] =
-      "0123456789abcdefghijklmnopqrstuvwxyz";
+  static const char chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   std::string id;
   id.reserve(12);
   for (int i = 0; i < 12; ++i) {
@@ -348,8 +346,8 @@ std::string WebRtcService::GenerateSessionId() {
 
 int64_t WebRtcService::NowMs() { return NowMsStatic(); }
 
-void WebRtcService::HandleIceCandidateInternal(
-    const std::string& session_id, const std::string& candidate) {
+void WebRtcService::HandleIceCandidateInternal(const std::string& session_id,
+                                               const std::string& candidate) {
   if (candidate.empty()) {
     spdlog::debug("WebRtcService: ICE gathering complete for {}", session_id);
     return;

@@ -3,11 +3,11 @@
 #ifndef LOONG_RULES_EVALUATORS_CROSS_LINE_EVALUATOR_H_
 #define LOONG_RULES_EVALUATORS_CROSS_LINE_EVALUATOR_H_
 
-#include <unordered_map>
-#include <vector>
-
 #include "rules/evaluators/iou_tracker.h"
 #include "rules/evaluators/rule_evaluator.h"
+
+#include <unordered_map>
+#include <vector>
 
 namespace loong::rules {
 
@@ -26,9 +26,8 @@ class CrossLineEvaluator : public RuleEvaluator {
   CrossLineEvaluator() = default;
 
   bool Configure(const AnalysisRule& rule) override;
-  std::vector<RuleEvent> Evaluate(
-      const std::vector<Detection>& detections,
-      const FrameContext& context) override;
+  std::vector<RuleEvent> Evaluate(const std::vector<Detection>& detections,
+                                  const FrameContext& context) override;
   void Reset() override;
   RuleType GetType() const override { return RuleType::kCrossLine; }
 
@@ -37,8 +36,7 @@ class CrossLineEvaluator : public RuleEvaluator {
   /// Returns >0 for one side, <0 for the other, 0 = on the line.
   /// The sign corresponds to the cross product of (line_end - line_start)
   /// and (point - line_start).
-  static double CrossProduct(const Point2D& line_start,
-                             const Point2D& line_end,
+  static double CrossProduct(const Point2D& line_start, const Point2D& line_end,
                              const Point2D& point);
 
   /// Filter detections by target class and min confidence.

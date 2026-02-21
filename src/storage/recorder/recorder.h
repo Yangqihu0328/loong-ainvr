@@ -3,20 +3,20 @@
 #ifndef LOONG_STORAGE_RECORDER_RECORDER_H_
 #define LOONG_STORAGE_RECORDER_RECORDER_H_
 
+#include "storage/indexer/indexer.h"
+#include "storage/record_index/record_index.h"
+#include "storage/record_writer/record_writer.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
-#include "storage/indexer/indexer.h"
-#include "storage/record_index/record_index.h"
-#include "storage/record_writer/record_writer.h"
-
 namespace loong::storage {
 
 /// Schedule entry for time-based recording.
 struct RecordSchedule {
-  int start_hour = 0;   // 0-23
+  int start_hour = 0;  // 0-23
   int start_minute = 0;
   int end_hour = 23;
   int end_minute = 59;
@@ -51,8 +51,8 @@ class Recorder {
 
   /// Write an encoded frame to the channel's recorder.
   /// Automatically manages segment tracking in the index.
-  bool WriteFrame(int channel_id, const uint8_t* data, size_t size,
-                  int64_t pts, int64_t dts, bool is_keyframe);
+  bool WriteFrame(int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                  int64_t dts, bool is_keyframe);
 
   /// Set a recording schedule for a channel.
   void SetSchedule(int channel_id, const RecordSchedule& schedule);

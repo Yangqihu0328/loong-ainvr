@@ -2,19 +2,17 @@
 
 #include "network/flv_stream/http_flv_service.h"
 
-#include <algorithm>
-#include <chrono>
-
 #include "network/flv_stream/flv_muxer.h"
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
+#include <chrono>
 
 namespace loong::network {
 
 HttpFlvService::HttpFlvService() = default;
 
-HttpFlvService::~HttpFlvService() {
-  StopAll();
-}
+HttpFlvService::~HttpFlvService() { StopAll(); }
 
 void HttpFlvService::RegisterChannel(int channel_id) {
   std::lock_guard<std::mutex> lock(channels_mutex_);
@@ -44,9 +42,8 @@ void HttpFlvService::UnregisterChannel(int channel_id) {
   spdlog::info("HttpFlvService: unregistered channel {}", channel_id);
 }
 
-void HttpFlvService::PushFrame(int channel_id, const uint8_t* data,
-                                size_t size, int64_t pts,
-                                bool is_keyframe) {
+void HttpFlvService::PushFrame(int channel_id, const uint8_t* data, size_t size,
+                               int64_t pts, bool is_keyframe) {
   if (!running_) return;
 
   std::lock_guard<std::mutex> lock(channels_mutex_);
@@ -141,7 +138,7 @@ std::shared_ptr<FlvViewer> HttpFlvService::CreateViewer(int channel_id) {
 }
 
 void HttpFlvService::RemoveViewer(int channel_id,
-                                   std::shared_ptr<FlvViewer> viewer) {
+                                  std::shared_ptr<FlvViewer> viewer) {
   if (!viewer) return;
 
   {
@@ -158,18 +155,17 @@ void HttpFlvService::RemoveViewer(int channel_id,
   std::lock_guard<std::mutex> slock(stream->mtx);
 
   auto& viewers = stream->viewers;
-  viewers.erase(
-      std::remove_if(viewers.begin(), viewers.end(),
-                     [&viewer](const std::weak_ptr<FlvViewer>& wp) {
-                       auto sp = wp.lock();
-                       return !sp || sp == viewer;
-                     }),
-      viewers.end());
+  viewers.erase(std::remove_if(viewers.begin(), viewers.end(),
+                               [&viewer](const std::weak_ptr<FlvViewer>& wp) {
+                                 auto sp = wp.lock();
+                                 return !sp || sp == viewer;
+                               }),
+                viewers.end());
 }
 
 bool HttpFlvService::StreamToViewer(int channel_id,
-                                     std::shared_ptr<FlvViewer> viewer,
-                                     httplib::DataSink& sink) {
+                                    std::shared_ptr<FlvViewer> viewer,
+                                    httplib::DataSink& sink) {
   if (!viewer || !running_) return false;
 
   // Send FLV header on first call

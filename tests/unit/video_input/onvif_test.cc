@@ -1,7 +1,7 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include "video_input/onvif/onvif_discovery.h"
 #include "video_input/onvif/onvif_device.h"
+#include "video_input/onvif/onvif_discovery.h"
 #include "video_input/onvif/onvif_ptz.h"
 
 #include <gtest/gtest.h>

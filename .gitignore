@@ -63,8 +63,9 @@ Thumbs.db
 .__*
 *.tmp
 
-# Third-party libraries
-third_party/
+# Third-party libraries (track pugixml needed for ONVIF XML parsing)
+third_party/*
+!third_party/pugixml/
 
 # Memory bank (AI dev docs)
 memory-bank/

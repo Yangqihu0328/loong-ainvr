@@ -2,17 +2,14 @@
 
 #include "pipeline_stages/input_stage/input_stage.h"
 
-#include <cstring>
-
-#include <nlohmann/json.hpp>
-
 #include "spdlog/spdlog.h"
+
+#include <cstring>
+#include <nlohmann/json.hpp>
 
 namespace loong::pipeline_stages {
 
-InputStage::~InputStage() {
-  Shutdown();
-}
+InputStage::~InputStage() { Shutdown(); }
 
 bool InputStage::Initialize(const StageConfig& config) {
   // Parse RTSP URL and channel_id from config params
@@ -24,8 +21,8 @@ bool InputStage::Initialize(const StageConfig& config) {
     // Optional transport mode (default: TCP).
     std::string transport = params.value("rtsp_transport", "tcp");
     rtsp_config_.transport = (transport == "udp")
-        ? video_input::RtspTransport::kUdp
-        : video_input::RtspTransport::kTcp;
+                                 ? video_input::RtspTransport::kUdp
+                                 : video_input::RtspTransport::kTcp;
 
     // Optional reconnection settings.
     rtsp_config_.auto_reconnect = params.value("auto_reconnect", true);
@@ -43,8 +40,8 @@ bool InputStage::Initialize(const StageConfig& config) {
     return false;
   }
 
-  spdlog::info("InputStage ch{}: initialized with URL {}",
-               channel_id_, rtsp_config_.url);
+  spdlog::info("InputStage ch{}: initialized with URL {}", channel_id_,
+               rtsp_config_.url);
   return true;
 }
 
@@ -57,8 +54,7 @@ bool InputStage::ProcessFrame(std::shared_ptr<Frame> frame) {
 void InputStage::OnPipelineStart() {
   spdlog::info("InputStage ch{}: starting RTSP pull", channel_id_);
   if (!StartPulling(channel_id_)) {
-    spdlog::error("InputStage ch{}: failed to start RTSP pulling",
-                  channel_id_);
+    spdlog::error("InputStage ch{}: failed to start RTSP pulling", channel_id_);
   }
 }
 
@@ -67,9 +63,7 @@ void InputStage::OnPipelineStop() {
   StopPulling();
 }
 
-void InputStage::Shutdown() {
-  StopPulling();
-}
+void InputStage::Shutdown() { StopPulling(); }
 
 bool InputStage::StartPulling(int channel_id) {
   channel_id_ = channel_id;
@@ -78,16 +72,14 @@ bool InputStage::StartPulling(int channel_id) {
 
   // Wire the packet callback so received packets are turned into
   // Frame objects and forwarded downstream.
-  client_->SetPacketCallback(
-      [this](int ch, const uint8_t* data, size_t size,
-             int64_t pts, int64_t dts,
-             bool is_keyframe, CodecType codec) {
-        OnPacket(ch, data, size, pts, dts, is_keyframe, codec);
-      });
+  client_->SetPacketCallback([this](int ch, const uint8_t* data, size_t size,
+                                    int64_t pts, int64_t dts, bool is_keyframe,
+                                    CodecType codec) {
+    OnPacket(ch, data, size, pts, dts, is_keyframe, codec);
+  });
 
   if (!client_->Open(rtsp_config_, channel_id_)) {
-    spdlog::error("InputStage ch{}: failed to open RTSP stream",
-                  channel_id_);
+    spdlog::error("InputStage ch{}: failed to open RTSP stream", channel_id_);
     client_.reset();
     return false;
   }
@@ -102,10 +94,9 @@ void InputStage::StopPulling() {
   }
 }
 
-void InputStage::OnPacket(int channel_id,
-                           const uint8_t* data, size_t size,
-                           int64_t pts, int64_t dts,
-                           bool is_keyframe, CodecType codec) {
+void InputStage::OnPacket(int channel_id, const uint8_t* data, size_t size,
+                          int64_t pts, int64_t dts, bool is_keyframe,
+                          CodecType codec) {
   auto frame = std::make_shared<Frame>();
   frame->channel_id = channel_id;
   frame->pts = pts;

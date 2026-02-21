@@ -3,14 +3,14 @@
 #ifndef LOONG_CORE_PIPELINE_STAGE_QUEUE_H_
 #define LOONG_CORE_PIPELINE_STAGE_QUEUE_H_
 
+#include "core/common/types.h"
+
 #include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <optional>
 #include <vector>
-
-#include "core/common/types.h"
 
 namespace loong::core {
 

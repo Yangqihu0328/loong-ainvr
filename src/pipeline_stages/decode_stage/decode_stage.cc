@@ -2,10 +2,10 @@
 
 #include "pipeline_stages/decode_stage/decode_stage.h"
 
-#include <nlohmann/json.hpp>
-
 #include "codec/codec_factory/codec_factory.h"
 #include "spdlog/spdlog.h"
+
+#include <nlohmann/json.hpp>
 
 namespace loong::pipeline_stages {
 
@@ -20,9 +20,11 @@ bool DecodeStage::Initialize(const StageConfig& config) {
     }
     hint_width_ = params.value("width", 0);
     hint_height_ = params.value("height", 0);
-  } catch (...) {}
+  } catch (...) {
+  }
 
-  if (hint_codec_ != CodecType::kUnknown && hint_width_ > 0 && hint_height_ > 0) {
+  if (hint_codec_ != CodecType::kUnknown && hint_width_ > 0 &&
+      hint_height_ > 0) {
     if (!InitDecoder(hint_codec_, hint_width_, hint_height_)) {
       return false;
     }
@@ -39,10 +41,9 @@ bool DecodeStage::InitDecoder(CodecType codec, int width, int height) {
     return false;
   }
 
-  decoder_->SetFrameCallback(
-      [this](std::shared_ptr<Frame> decoded) {
-        PassToNext(std::move(decoded));
-      });
+  decoder_->SetFrameCallback([this](std::shared_ptr<Frame> decoded) {
+    PassToNext(std::move(decoded));
+  });
 
   decoder_ready_ = true;
   spdlog::info("DecodeStage: initialized {} {}x{}",
@@ -67,8 +68,7 @@ bool DecodeStage::ProcessFrame(std::shared_ptr<Frame> frame) {
   }
 
   return decoder_->Decode(frame->packet_data.get(), frame->packet_size,
-                          frame->pts, frame->dts,
-                          frame->info.is_keyframe);
+                          frame->pts, frame->dts, frame->info.is_keyframe);
 }
 
 void DecodeStage::Shutdown() {

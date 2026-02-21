@@ -2,20 +2,18 @@
 
 #include "network/hls_stream/hls_service.h"
 
+#include "network/hls_stream/ts_muxer.h"
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
-
-#include "network/hls_stream/ts_muxer.h"
-#include "spdlog/spdlog.h"
 
 namespace loong::network {
 
 HlsService::HlsService(const HlsConfig& config) : config_(config) {}
 
-HlsService::~HlsService() {
-  StopAll();
-}
+HlsService::~HlsService() { StopAll(); }
 
 void HlsService::RegisterChannel(int channel_id) {
   std::lock_guard<std::mutex> lock(channels_mutex_);
@@ -39,8 +37,8 @@ void HlsService::UnregisterChannel(int channel_id) {
   spdlog::info("HlsService: unregistered channel {}", channel_id);
 }
 
-void HlsService::PushFrame(int channel_id, const uint8_t* data,
-                            size_t size, int64_t pts, bool is_keyframe) {
+void HlsService::PushFrame(int channel_id, const uint8_t* data, size_t size,
+                           int64_t pts, bool is_keyframe) {
   if (!running_) return;
 
   std::lock_guard<std::mutex> lock(channels_mutex_);
@@ -59,8 +57,7 @@ void HlsService::PushFrame(int channel_id, const uint8_t* data,
   }
 
   // Check if we should start a new segment (keyframe + duration exceeded)
-  if (is_keyframe && stream.current_segment &&
-      stream.segment_start_pts >= 0) {
+  if (is_keyframe && stream.current_segment && stream.segment_start_pts >= 0) {
     int64_t elapsed_us = pts - stream.segment_start_pts;
     int64_t target_us =
         static_cast<int64_t>(config_.segment_duration_ms) * 1000;
@@ -79,8 +76,8 @@ void HlsService::PushFrame(int channel_id, const uint8_t* data,
     // Write PAT + PMT at segment start
     stream.muxer->Reset();
     auto psi = stream.muxer->WritePsiTables();
-    stream.current_segment->insert(stream.current_segment->end(),
-                                   psi.begin(), psi.end());
+    stream.current_segment->insert(stream.current_segment->end(), psi.begin(),
+                                   psi.end());
   }
 
   // Mux the access unit into TS packets
@@ -109,8 +106,7 @@ void HlsService::FinalizeSegment(ChannelHls& stream, int64_t end_pts) {
   stream.segments.push_back(std::move(segment));
 
   // Sliding window: remove old segments
-  while (stream.segments.size() >
-         static_cast<size_t>(config_.max_segments)) {
+  while (stream.segments.size() > static_cast<size_t>(config_.max_segments)) {
     stream.segments.erase(stream.segments.begin());
   }
 

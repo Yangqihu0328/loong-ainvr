@@ -3,11 +3,11 @@
 #ifndef LOONG_RULES_EVALUATORS_RULE_EVALUATOR_H_
 #define LOONG_RULES_EVALUATORS_RULE_EVALUATOR_H_
 
-#include <memory>
-#include <vector>
-
 #include "core/common/types.h"
 #include "rules/rule_types.h"
+
+#include <memory>
+#include <vector>
 
 namespace loong::rules {
 

@@ -3,7 +3,6 @@
 #include "system/notification/mqtt_channel.h"
 
 #include <chrono>
-
 #include <spdlog/spdlog.h>
 
 // When LOONG_HAS_PAHO_MQTT is defined, use the real paho-mqtt-c library.
@@ -57,9 +56,9 @@ bool MqttChannel::Connect() {
     opts.password = config_.password.c_str();
   }
 
-  int rc = MQTTClient_create(
-      reinterpret_cast<MQTTClient*>(&client_), uri.c_str(),
-      config_.client_id.c_str(), MQTTCLIENT_PERSISTENCE_NONE, nullptr);
+  int rc = MQTTClient_create(reinterpret_cast<MQTTClient*>(&client_),
+                             uri.c_str(), config_.client_id.c_str(),
+                             MQTTCLIENT_PERSISTENCE_NONE, nullptr);
   if (rc != MQTTCLIENT_SUCCESS) {
     spdlog::error("MqttChannel: create failed (rc={})", rc);
     return false;
@@ -77,8 +76,8 @@ bool MqttChannel::Connect() {
   spdlog::info("MqttChannel: connected to {}", uri);
   return true;
 #else
-  spdlog::info("MqttChannel: simulated connect to {}:{}",
-               config_.broker_host, config_.broker_port);
+  spdlog::info("MqttChannel: simulated connect to {}:{}", config_.broker_host,
+               config_.broker_port);
   connected_.store(true);
   return true;
 #endif
@@ -101,8 +100,8 @@ void MqttChannel::Disconnect() {
 
 bool MqttChannel::IsConnected() const { return connected_.load(); }
 
-bool MqttChannel::Publish(const std::string& topic,
-                           const std::string& payload, int qos) {
+bool MqttChannel::Publish(const std::string& topic, const std::string& payload,
+                          int qos) {
   if (!connected_.load()) {
     spdlog::warn("MqttChannel: not connected, cannot publish");
     return false;
@@ -118,8 +117,8 @@ bool MqttChannel::Publish(const std::string& topic,
   msg.retained = 0;
 
   MQTTClient_deliveryToken token;
-  int rc = MQTTClient_publishMessage(
-      static_cast<MQTTClient>(client_), topic.c_str(), &msg, &token);
+  int rc = MQTTClient_publishMessage(static_cast<MQTTClient>(client_),
+                                     topic.c_str(), &msg, &token);
   if (rc != MQTTCLIENT_SUCCESS) {
     spdlog::error("MqttChannel: publish to '{}' failed (rc={})", topic, rc);
     return false;
@@ -128,8 +127,8 @@ bool MqttChannel::Publish(const std::string& topic,
   return true;
 #else
   (void)actual_qos;
-  spdlog::debug("MqttChannel: [stub] publish to '{}' ({} bytes)",
-                topic, payload.size());
+  spdlog::debug("MqttChannel: [stub] publish to '{}' ({} bytes)", topic,
+                payload.size());
   return true;
 #endif
 }
@@ -141,9 +140,8 @@ bool MqttChannel::SubscribeCommands(MqttCommandCallback callback) {
   if (!connected_.load()) return false;
 
 #ifdef LOONG_HAS_PAHO_MQTT
-  int rc = MQTTClient_subscribe(
-      static_cast<MQTTClient>(client_),
-      config_.command_topic.c_str(), config_.qos);
+  int rc = MQTTClient_subscribe(static_cast<MQTTClient>(client_),
+                                config_.command_topic.c_str(), config_.qos);
   if (rc != MQTTCLIENT_SUCCESS) {
     spdlog::error("MqttChannel: subscribe to '{}' failed (rc={})",
                   config_.command_topic, rc);
@@ -152,8 +150,7 @@ bool MqttChannel::SubscribeCommands(MqttCommandCallback callback) {
   spdlog::info("MqttChannel: subscribed to '{}'", config_.command_topic);
   return true;
 #else
-  spdlog::info("MqttChannel: [stub] subscribe to '{}'",
-               config_.command_topic);
+  spdlog::info("MqttChannel: [stub] subscribe to '{}'", config_.command_topic);
   return true;
 #endif
 }
@@ -173,8 +170,8 @@ NotificationResult MqttChannel::Test() {
     }
   }
 
-  bool ok = Publish(config_.status_topic,
-                     R"({"type":"test","source":"loong-nvr"})");
+  bool ok =
+      Publish(config_.status_topic, R"({"type":"test","source":"loong-nvr"})");
   result.success = ok;
   if (!ok) result.error_message = "publish failed";
   return result;
@@ -209,13 +206,25 @@ std::string MqttChannel::FormatEventPayload(
                 now.time_since_epoch())
                 .count();
 
-  return "{\"title\":\"" + msg.title + "\","
-         "\"body\":\"" + msg.body + "\","
-         "\"severity\":\"" + msg.severity + "\","
-         "\"channel_id\":" + std::to_string(msg.channel_id) + ","
-         "\"event_type\":\"" + msg.event_type + "\","
-         "\"confidence\":" + std::to_string(msg.confidence) + ","
-         "\"timestamp\":" + std::to_string(ms) + "}";
+  return "{\"title\":\"" + msg.title +
+         "\","
+         "\"body\":\"" +
+         msg.body +
+         "\","
+         "\"severity\":\"" +
+         msg.severity +
+         "\","
+         "\"channel_id\":" +
+         std::to_string(msg.channel_id) +
+         ","
+         "\"event_type\":\"" +
+         msg.event_type +
+         "\","
+         "\"confidence\":" +
+         std::to_string(msg.confidence) +
+         ","
+         "\"timestamp\":" +
+         std::to_string(ms) + "}";
 }
 
 }  // namespace loong::system

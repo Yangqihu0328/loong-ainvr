@@ -57,8 +57,8 @@ class HttpFlvService : public std::enable_shared_from_this<HttpFlvService> {
 
   /// Push an encoded H.264 frame (Annex B format) for a channel.
   /// Called from OutputStage when a new encoded frame is produced.
-  void PushFrame(int channel_id, const uint8_t* data, size_t size,
-                 int64_t pts, bool is_keyframe);
+  void PushFrame(int channel_id, const uint8_t* data, size_t size, int64_t pts,
+                 bool is_keyframe);
 
   /// Create a new viewer for a channel.
   /// Returns nullptr if the channel is not registered.

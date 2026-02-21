@@ -3,11 +3,11 @@
 #ifndef LOONG_PIPELINE_STAGES_DECODE_STAGE_DECODE_STAGE_H_
 #define LOONG_PIPELINE_STAGES_DECODE_STAGE_DECODE_STAGE_H_
 
-#include <memory>
-
 #include "codec/decoder/decoder.h"
 #include "core/common/types.h"
 #include "core/pipeline/pipeline_stage.h"
+
+#include <memory>
 
 namespace loong::pipeline_stages {
 

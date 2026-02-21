@@ -3,10 +3,9 @@
 #include "system/notification/webhook_channel.h"
 
 #include <iomanip>
-#include <sstream>
-
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <sstream>
 
 // Suppress warnings from third-party header
 #pragma GCC diagnostic push
@@ -21,8 +20,7 @@
 
 namespace loong::system {
 
-WebhookChannel::WebhookChannel(const WebhookConfig& config)
-    : config_(config) {}
+WebhookChannel::WebhookChannel(const WebhookConfig& config) : config_(config) {}
 
 bool WebhookChannel::IsConfigured() const {
   return config_.enabled && !config_.url.empty();
@@ -60,9 +58,8 @@ NotificationResult WebhookChannel::PostJson(const std::string& json_body) {
   std::string host_port = (path_pos != std::string::npos)
                               ? scheme_stripped.substr(0, path_pos)
                               : scheme_stripped;
-  std::string path = (path_pos != std::string::npos)
-                         ? scheme_stripped.substr(path_pos)
-                         : "/";
+  std::string path =
+      (path_pos != std::string::npos) ? scheme_stripped.substr(path_pos) : "/";
 
   for (int attempt = 0; attempt <= config_.retry_count; ++attempt) {
     try {
@@ -84,17 +81,15 @@ NotificationResult WebhookChannel::PostJson(const std::string& json_body) {
         headers.emplace("X-Signature", "sha256=" + sig);
       }
 
-      auto res = client->Post(path, headers, json_body,
-                               config_.content_type);
+      auto res = client->Post(path, headers, json_body, config_.content_type);
 
       if (res && res->status >= 200 && res->status < 300) {
-        spdlog::info("WebhookChannel: POST {} → {}", config_.url,
-                     res->status);
+        spdlog::info("WebhookChannel: POST {} → {}", config_.url, res->status);
         return {true, ""};
       }
 
-      std::string err_msg = res ? ("HTTP " + std::to_string(res->status))
-                                : "connection failed";
+      std::string err_msg =
+          res ? ("HTTP " + std::to_string(res->status)) : "connection failed";
       if (attempt < config_.retry_count) {
         spdlog::warn("WebhookChannel: attempt {}/{} failed: {}, retrying...",
                      attempt + 1, config_.retry_count + 1, err_msg);
@@ -130,14 +125,13 @@ std::string WebhookChannel::BuildJsonPayload(const NotificationMessage& msg) {
 }
 
 std::string WebhookChannel::HmacSha256(const std::string& key,
-                                        const std::string& data) {
+                                       const std::string& data) {
   unsigned char hash[EVP_MAX_MD_SIZE];
   unsigned int hash_len = 0;
 
-  HMAC(EVP_sha256(),
-       key.c_str(), static_cast<int>(key.size()),
-       reinterpret_cast<const unsigned char*>(data.c_str()),
-       data.size(), hash, &hash_len);
+  HMAC(EVP_sha256(), key.c_str(), static_cast<int>(key.size()),
+       reinterpret_cast<const unsigned char*>(data.c_str()), data.size(), hash,
+       &hash_len);
 
   std::ostringstream hex;
   hex << std::hex << std::setfill('0');

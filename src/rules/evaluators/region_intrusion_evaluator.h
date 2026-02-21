@@ -3,11 +3,11 @@
 #ifndef LOONG_RULES_EVALUATORS_REGION_INTRUSION_EVALUATOR_H_
 #define LOONG_RULES_EVALUATORS_REGION_INTRUSION_EVALUATOR_H_
 
-#include <unordered_map>
-#include <vector>
-
 #include "rules/evaluators/iou_tracker.h"
 #include "rules/evaluators/rule_evaluator.h"
+
+#include <unordered_map>
+#include <vector>
 
 namespace loong::rules {
 
@@ -25,9 +25,8 @@ class RegionIntrusionEvaluator : public RuleEvaluator {
   RegionIntrusionEvaluator() = default;
 
   bool Configure(const AnalysisRule& rule) override;
-  std::vector<RuleEvent> Evaluate(
-      const std::vector<Detection>& detections,
-      const FrameContext& context) override;
+  std::vector<RuleEvent> Evaluate(const std::vector<Detection>& detections,
+                                  const FrameContext& context) override;
   void Reset() override;
   RuleType GetType() const override { return RuleType::kRegionIntrusion; }
 

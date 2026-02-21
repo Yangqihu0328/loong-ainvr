@@ -2,11 +2,11 @@
 
 #include "core/thread_pool/thread_pool.h"
 
+#include "gtest/gtest.h"
+
 #include <atomic>
 #include <chrono>
 #include <vector>
-
-#include "gtest/gtest.h"
 
 namespace loong {
 namespace core {
@@ -32,9 +32,7 @@ TEST(ThreadPool, ConcurrentTasks) {
   futures.reserve(kTaskCount);
 
   for (int i = 0; i < kTaskCount; ++i) {
-    futures.push_back(pool.Submit([&counter] {
-      ++counter;
-    }));
+    futures.push_back(pool.Submit([&counter] { ++counter; }));
   }
 
   for (auto& f : futures) {

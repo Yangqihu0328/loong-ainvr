@@ -3,11 +3,11 @@
 #ifndef LOONG_STORAGE_STORAGE_CLEANER_STORAGE_CLEANER_H_
 #define LOONG_STORAGE_STORAGE_CLEANER_STORAGE_CLEANER_H_
 
+#include "storage/record_index/record_index.h"
+
 #include <atomic>
 #include <memory>
 #include <thread>
-
-#include "storage/record_index/record_index.h"
 
 namespace loong::storage {
 

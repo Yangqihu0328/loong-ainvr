@@ -3,11 +3,11 @@
 #ifndef LOONG_NETWORK_MEDIA_STREAM_FMP4_MUXER_H_
 #define LOONG_NETWORK_MEDIA_STREAM_FMP4_MUXER_H_
 
+#include "core/common/types.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-
-#include "core/common/types.h"
 
 namespace loong::network {
 
@@ -50,14 +50,14 @@ class Fmp4Muxer {
   /// @param size  Frame data size.
   /// @param decode_time  Decode timestamp (in timescale units, 90kHz).
   /// @param duration  Frame duration (in timescale units, 90kHz).
-  /// @param sequence_number  Fragment sequence number (monotonically increasing).
+  /// @param sequence_number  Fragment sequence number (monotonically
+  /// increasing).
   /// @param is_keyframe  Whether this is a keyframe (IDR/CRA/BLA).
   /// @param codec  Codec type (H.264 or H.265).
   /// @return Media segment bytes, or empty on error.
   static std::vector<uint8_t> MakeMediaSegment(
-      const uint8_t* data, size_t size, uint64_t decode_time,
-      uint32_t duration, uint32_t sequence_number, bool is_keyframe,
-      CodecType codec);
+      const uint8_t* data, size_t size, uint64_t decode_time, uint32_t duration,
+      uint32_t sequence_number, bool is_keyframe, CodecType codec);
 
   /// Extract SPS and PPS from an H.264 Annex B bitstream.
   /// @return true if both SPS and PPS are found.
@@ -91,7 +91,7 @@ class Fmp4Muxer {
   // Convert Annex B to length-prefixed (MP4/AVCC/HVCC) format.
   // Skips parameter set NALUs (SPS/PPS/VPS).
   static std::vector<uint8_t> AnnexBToMp4(const uint8_t* data, size_t size,
-                                           CodecType codec);
+                                          CodecType codec);
 
   // MP4 box building helpers
   static std::vector<uint8_t> MakeBox(const char type[4],
@@ -135,10 +135,8 @@ class Fmp4Muxer {
 
   // Media segment box builders
   static std::vector<uint8_t> MakeMoof(uint32_t sequence_number,
-                                       uint64_t decode_time,
-                                       uint32_t duration,
-                                       uint32_t sample_size,
-                                       bool is_keyframe);
+                                       uint64_t decode_time, uint32_t duration,
+                                       uint32_t sample_size, bool is_keyframe);
 
   // Byte writing helpers
   static void WriteU8(std::vector<uint8_t>& buf, uint8_t val);

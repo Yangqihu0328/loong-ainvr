@@ -2,9 +2,9 @@
 
 #include "core/thread_pool/thread_pool.h"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
 
 namespace loong::core {
 
@@ -25,9 +25,8 @@ ThreadPool::ThreadPool(size_t num_threads) {
         std::function<void()> task;
         {
           std::unique_lock<std::mutex> lock(this->queue_mutex_);
-          this->condition_.wait(lock, [this] {
-            return this->stop_ || !this->tasks_.empty();
-          });
+          this->condition_.wait(
+              lock, [this] { return this->stop_ || !this->tasks_.empty(); });
           if (this->stop_ && this->tasks_.empty()) {
             return;
           }
@@ -50,19 +49,14 @@ ThreadPool::ThreadPool(size_t num_threads) {
   spdlog::info("ThreadPool created with {} workers", num_threads);
 }
 
-ThreadPool::~ThreadPool() {
-  Shutdown();
-}
+ThreadPool::~ThreadPool() { Shutdown(); }
 
-size_t ThreadPool::WorkerCount() const {
-  return workers_.size();
-}
+size_t ThreadPool::WorkerCount() const { return workers_.size(); }
 
 void ThreadPool::WaitForCompletion() {
   std::unique_lock<std::mutex> lock(queue_mutex_);
-  completion_condition_.wait(lock, [this] {
-    return tasks_.empty() && active_tasks_ == 0;
-  });
+  completion_condition_.wait(
+      lock, [this] { return tasks_.empty() && active_tasks_ == 0; });
 }
 
 void ThreadPool::Shutdown() {

@@ -2,10 +2,11 @@
 
 #include "rules/rule_stage/rule_stage.h"
 
+#include "spdlog/spdlog.h"
+
 #include <chrono>
 
 #include "nlohmann/json.hpp"
-#include "spdlog/spdlog.h"
 
 namespace loong::rules {
 
@@ -32,8 +33,7 @@ bool RuleStage::ProcessFrame(std::shared_ptr<Frame> frame) {
 
   if (engine_) {
     // Evaluate rules if the frame has AI results
-    if (frame->analysis.has_result &&
-        !frame->analysis.detections.empty()) {
+    if (frame->analysis.has_result && !frame->analysis.detections.empty()) {
       FrameContext ctx;
       ctx.channel_id = frame->channel_id;
       ctx.frame_width = frame->info.width;
@@ -47,8 +47,8 @@ bool RuleStage::ProcessFrame(std::shared_ptr<Frame> frame) {
                 .count();
       }
 
-      auto events = engine_->Evaluate(
-          frame->channel_id, frame->analysis.detections, ctx);
+      auto events =
+          engine_->Evaluate(frame->channel_id, frame->analysis.detections, ctx);
 
       // Add loitering/alarm target highlights from triggered events
       for (const auto& ev : events) {
@@ -61,8 +61,8 @@ bool RuleStage::ProcessFrame(std::shared_ptr<Frame> frame) {
           hl.y2 = ev.trigger_detection.y2;
           hl.alarm = (ev.severity == RuleEventSeverity::kAlarm);
           if (ev.rule_type == RuleType::kLoitering) {
-            hl.label = ev.rule_name + " " +
-                       std::to_string(ev.dwell_time_sec) + "s";
+            hl.label =
+                ev.rule_name + " " + std::to_string(ev.dwell_time_sec) + "s";
           } else {
             hl.label = ev.rule_name;
           }

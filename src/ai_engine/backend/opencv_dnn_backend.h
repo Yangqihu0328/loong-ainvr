@@ -3,9 +3,9 @@
 #ifndef LOONG_AI_ENGINE_BACKEND_OPENCV_DNN_BACKEND_H_
 #define LOONG_AI_ENGINE_BACKEND_OPENCV_DNN_BACKEND_H_
 
-#include <opencv2/dnn.hpp>
-
 #include "ai_engine/inference/inference_backend.h"
+
+#include <opencv2/dnn.hpp>
 
 namespace loong::ai_engine {
 

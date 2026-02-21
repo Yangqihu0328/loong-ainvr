@@ -2,10 +2,10 @@
 
 #include "system/notification/notification_manager.h"
 
-#include <chrono>
-
 #include "core/event_bus/event_bus.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
 
 namespace loong::system {
 
@@ -14,9 +14,7 @@ NotificationManager::NotificationManager()
       webhook_channel_(std::make_unique<WebhookChannel>(WebhookConfig{})),
       mqtt_channel_(std::make_unique<MqttChannel>()) {}
 
-NotificationManager::~NotificationManager() {
-  Stop();
-}
+NotificationManager::~NotificationManager() { Stop(); }
 
 void NotificationManager::Start() {
   if (running_) return;
@@ -35,8 +33,7 @@ void NotificationManager::Start() {
       });
 
   spdlog::info("NotificationManager: started (SMTP={}, Webhook={})",
-               smtp_channel_->IsConfigured(),
-               webhook_channel_->IsConfigured());
+               smtp_channel_->IsConfigured(), webhook_channel_->IsConfigured());
 }
 
 void NotificationManager::Stop() {
@@ -96,8 +93,9 @@ void NotificationManager::ConfigureMqtt(const MqttConfig& config) {
   } else {
     mqtt_channel_->Disconnect();
   }
-  spdlog::info("NotificationManager: MQTT configured (enabled={}, broker={}:{})",
-               config.enabled, config.broker_host, config.broker_port);
+  spdlog::info(
+      "NotificationManager: MQTT configured (enabled={}, broker={}:{})",
+      config.enabled, config.broker_host, config.broker_port);
 }
 
 MqttConfig NotificationManager::GetMqttConfig() const {
@@ -146,7 +144,8 @@ void NotificationManager::OnAlarmTriggered(const AlarmRecord& alarm) {
   NotificationMessage msg;
   msg.title = "Alarm: " + alarm.event_type + " on CH" +
               std::to_string(alarm.channel_id);
-  msg.body = "Detection event '" + alarm.event_type + "' triggered on "
+  msg.body = "Detection event '" + alarm.event_type +
+             "' triggered on "
              "channel " +
              std::to_string(alarm.channel_id) + " with confidence " +
              std::to_string(static_cast<int>(alarm.confidence * 100)) + "%.";

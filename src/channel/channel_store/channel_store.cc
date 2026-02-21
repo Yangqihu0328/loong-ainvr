@@ -2,8 +2,9 @@
 
 #include "channel/channel_store/channel_store.h"
 
-#include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
+
+#include "nlohmann/json.hpp"
 
 namespace loong::channel {
 
@@ -93,8 +94,7 @@ bool ChannelStore::Save(const ChannelConfig& config) {
 
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-    spdlog::error("ChannelStore: Save prepare failed: {}",
-                  sqlite3_errmsg(db_));
+    spdlog::error("ChannelStore: Save prepare failed: {}", sqlite3_errmsg(db_));
     return false;
   }
 
@@ -112,7 +112,8 @@ bool ChannelStore::Save(const ChannelConfig& config) {
   sqlite3_bind_text(stmt, 9, config.ai_model_name.c_str(), -1,
                     SQLITE_TRANSIENT);
   sqlite3_bind_text(stmt, 10, config.ai_backend.c_str(), -1, SQLITE_TRANSIENT);
-  sqlite3_bind_double(stmt, 11, static_cast<double>(config.confidence_threshold));
+  sqlite3_bind_double(stmt, 11,
+                      static_cast<double>(config.confidence_threshold));
   sqlite3_bind_int(stmt, 12, config.analysis_fps);
   sqlite3_bind_text(stmt, 13, overlay_json.c_str(), -1, SQLITE_TRANSIENT);
   sqlite3_bind_int(stmt, 14, config.record_enabled ? 1 : 0);
@@ -185,9 +186,8 @@ std::vector<ChannelConfig> ChannelStore::LoadAll() {
     cfg.rtsp_url = text(2);
 
     std::string codec_str = text(3);
-    cfg.codec = (codec_str == "h265" || codec_str == "hevc")
-                    ? CodecType::kH265
-                    : CodecType::kH264;
+    cfg.codec = (codec_str == "h265" || codec_str == "hevc") ? CodecType::kH265
+                                                             : CodecType::kH264;
 
     cfg.width = sqlite3_column_int(stmt, 4);
     cfg.height = sqlite3_column_int(stmt, 5);

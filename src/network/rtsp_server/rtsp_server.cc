@@ -18,12 +18,10 @@
 
 namespace loong::network {
 
-RtspServer::RtspServer(std::string  host, int port)
+RtspServer::RtspServer(std::string host, int port)
     : host_(std::move(host)), port_(port) {}
 
-RtspServer::~RtspServer() {
-  Stop();
-}
+RtspServer::~RtspServer() { Stop(); }
 
 bool RtspServer::Start() {
   if (running_) {
@@ -93,8 +91,8 @@ void RtspServer::Stop() {
   spdlog::info("RtspServer: stopped");
 }
 
-void RtspServer::RegisterChannel(int channel_id, CodecType codec,
-                                 int width, int height, int fps) {
+void RtspServer::RegisterChannel(int channel_id, CodecType codec, int width,
+                                 int height, int fps) {
   std::lock_guard<std::mutex> lock(channels_mutex_);
   ChannelInfo info;
   info.codec = codec;
@@ -102,8 +100,8 @@ void RtspServer::RegisterChannel(int channel_id, CodecType codec,
   info.height = height;
   info.fps = fps;
   channels_[channel_id] = info;
-  spdlog::info("RtspServer: registered channel {} ({}x{} @ {} fps)",
-               channel_id, width, height, fps);
+  spdlog::info("RtspServer: registered channel {} ({}x{} @ {} fps)", channel_id,
+               width, height, fps);
 }
 
 void RtspServer::UnregisterChannel(int channel_id) {
@@ -126,8 +124,7 @@ void RtspServer::PushFrame(int channel_id, const uint8_t* data, size_t size,
     }
 
     session->packetizer->Packetize(
-        data, size, pts,
-        [&session](const uint8_t* pkt, size_t pkt_size) {
+        data, size, pts, [&session](const uint8_t* pkt, size_t pkt_size) {
           std::lock_guard<std::mutex> wlock(session->write_mutex);
           if (session->fd >= 0 && session->active) {
             send(session->fd, pkt, pkt_size, MSG_NOSIGNAL);
@@ -151,9 +148,9 @@ void RtspServer::AcceptLoop() {
 
     struct sockaddr_in client_addr {};
     socklen_t addr_len = sizeof(client_addr);
-    int client_fd = accept(listen_fd_,
-                           reinterpret_cast<struct sockaddr*>(&client_addr),
-                           &addr_len);
+    int client_fd =
+        accept(listen_fd_, reinterpret_cast<struct sockaddr*>(&client_addr),
+               &addr_len);
     if (client_fd < 0) continue;
 
     int flag = 1;
@@ -283,8 +280,7 @@ void RtspServer::HandleDescribe(int fd, const std::string& cseq,
 }
 
 void RtspServer::HandleSetup(std::shared_ptr<RtspSession>& session,
-                             const std::string& cseq,
-                             const std::string& url,
+                             const std::string& cseq, const std::string& url,
                              const std::string& /*transport*/) {
   int channel_id = ParseChannelId(url);
 
@@ -302,8 +298,7 @@ void RtspServer::HandleSetup(std::shared_ptr<RtspSession>& session,
 
     session->channel_id = channel_id;
     session->session_id = GenerateSessionId();
-    session->packetizer =
-        std::make_unique<RtpPacketizer>(it->second.codec);
+    session->packetizer = std::make_unique<RtpPacketizer>(it->second.codec);
     session->packetizer->SetInterleavedChannel(0);
   }
 

@@ -1,13 +1,12 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include <cstdio>
-#include <string>
-
 #include "gtest/gtest.h"
-
 #include "system/auth/auth_middleware.h"
 #include "system/auth/jwt_helper.h"
 #include "system/auth/user_store.h"
+
+#include <cstdio>
+#include <string>
 
 namespace loong {
 namespace system {
@@ -59,7 +58,7 @@ TEST_F(UserStoreTest, AuthenticateNonExistentUser) {
 
 TEST_F(UserStoreTest, CreateAndAuthenticateUser) {
   int64_t id = store_->CreateUser("operator1", "pass123456", "Operator One",
-                                   UserRole::kOperator);
+                                  UserRole::kOperator);
   EXPECT_GT(id, 0);
 
   UserInfo info;
@@ -70,12 +69,12 @@ TEST_F(UserStoreTest, CreateAndAuthenticateUser) {
 }
 
 TEST_F(UserStoreTest, DuplicateUsernameFails) {
-  int64_t id1 = store_->CreateUser("user1", "pass123456", "User One",
-                                    UserRole::kViewer);
+  int64_t id1 =
+      store_->CreateUser("user1", "pass123456", "User One", UserRole::kViewer);
   EXPECT_GT(id1, 0);
 
-  int64_t id2 = store_->CreateUser("user1", "otherpass", "Duplicate",
-                                    UserRole::kViewer);
+  int64_t id2 =
+      store_->CreateUser("user1", "otherpass", "Duplicate", UserRole::kViewer);
   EXPECT_LT(id2, 0);
 }
 
@@ -90,8 +89,8 @@ TEST_F(UserStoreTest, ChangePassword) {
 }
 
 TEST_F(UserStoreTest, UpdateUser) {
-  int64_t id = store_->CreateUser("viewer1", "pass123456", "Viewer",
-                                   UserRole::kViewer);
+  int64_t id =
+      store_->CreateUser("viewer1", "pass123456", "Viewer", UserRole::kViewer);
   EXPECT_GT(id, 0);
 
   EXPECT_TRUE(store_->UpdateUser(id, "New Name", UserRole::kOperator, true));
@@ -104,7 +103,7 @@ TEST_F(UserStoreTest, UpdateUser) {
 
 TEST_F(UserStoreTest, DisableUser) {
   int64_t id = store_->CreateUser("disabled1", "pass123456", "Will Disable",
-                                   UserRole::kViewer);
+                                  UserRole::kViewer);
   ASSERT_GT(id, 0);
 
   EXPECT_TRUE(store_->UpdateUser(id, "Will Disable", UserRole::kViewer, false));
@@ -115,7 +114,7 @@ TEST_F(UserStoreTest, DisableUser) {
 
 TEST_F(UserStoreTest, DeleteUser) {
   int64_t id = store_->CreateUser("todelete", "pass123456", "Delete Me",
-                                   UserRole::kViewer);
+                                  UserRole::kViewer);
   ASSERT_GT(id, 0);
 
   EXPECT_TRUE(store_->DeleteUser(id));
@@ -220,7 +219,8 @@ TEST_F(JwtHelperTest, WrongSecret) {
 
   std::string token = jwt_->GenerateToken(user);
 
-  auto other_jwt = std::make_shared<JwtHelper>("different-secret-key!!!!!!!!!!!", 3600);
+  auto other_jwt =
+      std::make_shared<JwtHelper>("different-secret-key!!!!!!!!!!!", 3600);
   JwtClaims claims;
   EXPECT_FALSE(other_jwt->VerifyToken(token, claims));
 }
@@ -254,9 +254,12 @@ TEST_F(AuthMiddlewareTest, AuthenticateWithValidToken) {
   ASSERT_TRUE(store_->Authenticate("admin", "admin123", user));
 
   std::string token = jwt_->GenerateToken(user);
-  std::string raw = "GET /api/channels HTTP/1.1\r\n"
-                     "Authorization: Bearer " + token + "\r\n"
-                     "\r\n";
+  std::string raw =
+      "GET /api/channels HTTP/1.1\r\n"
+      "Authorization: Bearer " +
+      token +
+      "\r\n"
+      "\r\n";
 
   auto ctx = middleware_->Authenticate(raw);
   EXPECT_TRUE(ctx.authenticated);
@@ -277,34 +280,34 @@ TEST_F(AuthMiddlewareTest, RequiresAuth) {
 }
 
 TEST_F(AuthMiddlewareTest, AdminHasFullAccess) {
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kAdmin, "GET", "/api/users"));
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kAdmin, "DELETE", "/api/users/1"));
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kAdmin, "POST", "/api/channels"));
+  EXPECT_TRUE(
+      AuthMiddleware::HasPermission(UserRole::kAdmin, "GET", "/api/users"));
+  EXPECT_TRUE(AuthMiddleware::HasPermission(UserRole::kAdmin, "DELETE",
+                                            "/api/users/1"));
+  EXPECT_TRUE(
+      AuthMiddleware::HasPermission(UserRole::kAdmin, "POST", "/api/channels"));
 }
 
 TEST_F(AuthMiddlewareTest, ViewerReadOnly) {
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kViewer, "GET", "/api/channels"));
-  EXPECT_FALSE(AuthMiddleware::HasPermission(
-      UserRole::kViewer, "POST", "/api/channels"));
-  EXPECT_FALSE(AuthMiddleware::HasPermission(
-      UserRole::kViewer, "DELETE", "/api/channels/1"));
-  EXPECT_FALSE(AuthMiddleware::HasPermission(
-      UserRole::kViewer, "GET", "/api/users"));
+  EXPECT_TRUE(
+      AuthMiddleware::HasPermission(UserRole::kViewer, "GET", "/api/channels"));
+  EXPECT_FALSE(AuthMiddleware::HasPermission(UserRole::kViewer, "POST",
+                                             "/api/channels"));
+  EXPECT_FALSE(AuthMiddleware::HasPermission(UserRole::kViewer, "DELETE",
+                                             "/api/channels/1"));
+  EXPECT_FALSE(
+      AuthMiddleware::HasPermission(UserRole::kViewer, "GET", "/api/users"));
 }
 
 TEST_F(AuthMiddlewareTest, OperatorCanManageChannels) {
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kOperator, "GET", "/api/channels"));
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kOperator, "POST", "/api/channels"));
-  EXPECT_TRUE(AuthMiddleware::HasPermission(
-      UserRole::kOperator, "DELETE", "/api/channels/1"));
-  EXPECT_FALSE(AuthMiddleware::HasPermission(
-      UserRole::kOperator, "GET", "/api/users"));
+  EXPECT_TRUE(AuthMiddleware::HasPermission(UserRole::kOperator, "GET",
+                                            "/api/channels"));
+  EXPECT_TRUE(AuthMiddleware::HasPermission(UserRole::kOperator, "POST",
+                                            "/api/channels"));
+  EXPECT_TRUE(AuthMiddleware::HasPermission(UserRole::kOperator, "DELETE",
+                                            "/api/channels/1"));
+  EXPECT_FALSE(
+      AuthMiddleware::HasPermission(UserRole::kOperator, "GET", "/api/users"));
 }
 
 }  // namespace

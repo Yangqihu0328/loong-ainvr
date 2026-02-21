@@ -1,17 +1,16 @@
 // Copyright 2026 Loong AI NVR Project
 // Benchmark: AI inference latency (single / batch, mock backend)
 
-#include <benchmark/benchmark.h>
-
-#include <cmath>
-#include <memory>
-#include <random>
-#include <vector>
-
 #include "ai_engine/inference/inference_backend.h"
 #include "ai_engine/inference/inference_engine.h"
 #include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 #include "core/common/types.h"
+
+#include <benchmark/benchmark.h>
+#include <cmath>
+#include <memory>
+#include <random>
+#include <vector>
 
 namespace loong::benchmark {
 namespace {
@@ -86,9 +85,9 @@ class MockYoloAdapter : public ai_engine::YoloModelAdapter {
   }
 
   bool PostProcess(const std::vector<float>& raw_output,
-                   const ai_engine::TensorShape& /*shape*/,
-                   int /*orig_width*/, int /*orig_height*/,
-                   float conf_threshold, float /*nms_threshold*/,
+                   const ai_engine::TensorShape& /*shape*/, int /*orig_width*/,
+                   int /*orig_height*/, float conf_threshold,
+                   float /*nms_threshold*/,
                    std::vector<Detection>& detections) override {
     detections.clear();
     for (size_t i = 0; i + 5 < raw_output.size(); i += 6) {
@@ -107,11 +106,10 @@ class MockYoloAdapter : public ai_engine::YoloModelAdapter {
   }
 
   bool PostProcessBatch(
-      const std::vector<float>& raw_output,
-      const ai_engine::TensorShape& shape,
+      const std::vector<float>& raw_output, const ai_engine::TensorShape& shape,
       const std::vector<int>& /*orig_widths*/,
-      const std::vector<int>& /*orig_heights*/,
-      float conf_threshold, float /*nms_threshold*/,
+      const std::vector<int>& /*orig_heights*/, float conf_threshold,
+      float /*nms_threshold*/,
       std::vector<std::vector<Detection>>& batch_detections) override {
     int batch = static_cast<int>(shape[0]);
     int num_dets = static_cast<int>(shape[1]);
@@ -120,12 +118,11 @@ class MockYoloAdapter : public ai_engine::YoloModelAdapter {
 
     for (int b = 0; b < batch; ++b) {
       batch_detections[static_cast<size_t>(b)].clear();
-      size_t offset = static_cast<size_t>(b) *
-                      static_cast<size_t>(num_dets) *
+      size_t offset = static_cast<size_t>(b) * static_cast<size_t>(num_dets) *
                       static_cast<size_t>(det_size);
       for (int d = 0; d < num_dets; ++d) {
-        size_t idx = offset + static_cast<size_t>(d) *
-                              static_cast<size_t>(det_size);
+        size_t idx =
+            offset + static_cast<size_t>(d) * static_cast<size_t>(det_size);
         if (idx + 5 < raw_output.size() &&
             raw_output[idx + 4] >= conf_threshold) {
           Detection det;
@@ -155,8 +152,8 @@ std::unique_ptr<ai_engine::InferenceEngine> MakeEngine(int latency_us) {
   ai_engine::BackendConfig cfg;
   backend->LoadModel("mock_model.onnx", cfg);
 
-  return std::make_unique<ai_engine::InferenceEngine>(
-      std::move(backend), std::move(adapter));
+  return std::make_unique<ai_engine::InferenceEngine>(std::move(backend),
+                                                      std::move(adapter));
 }
 
 std::vector<uint8_t> MakeTestImage(int width, int height) {
@@ -210,8 +207,8 @@ void BM_InferenceBatch(::benchmark::State& state) {
     ::benchmark::DoNotOptimize(batch_dets);
   }
 
-  state.SetItemsProcessed(
-      static_cast<int64_t>(state.iterations()) * batch_size);
+  state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) *
+                          batch_size);
   state.counters["batch_size"] = batch_size;
 }
 BENCHMARK(BM_InferenceBatch)
@@ -237,8 +234,7 @@ void BM_PreProcess(::benchmark::State& state) {
   }
 
   state.SetItemsProcessed(static_cast<int64_t>(state.iterations()));
-  state.counters["resolution"] =
-      static_cast<double>(width) * height / 1e6;
+  state.counters["resolution"] = static_cast<double>(width) * height / 1e6;
 }
 BENCHMARK(BM_PreProcess)
     ->Arg(640)
@@ -263,8 +259,7 @@ void BM_PostProcess(::benchmark::State& state) {
   std::vector<Detection> detections;
 
   for (auto _ : state) {
-    adapter.PostProcess(raw_output, shape, 1920, 1080, 0.5F, 0.45F,
-                        detections);
+    adapter.PostProcess(raw_output, shape, 1920, 1080, 0.5F, 0.45F, detections);
     ::benchmark::DoNotOptimize(detections);
   }
 

@@ -3,16 +3,16 @@
 #ifndef LOONG_RULES_RULE_ENGINE_RULE_ENGINE_H_
 #define LOONG_RULES_RULE_ENGINE_RULE_ENGINE_H_
 
+#include "rules/evaluators/rule_evaluator.h"
+#include "rules/rule_store/rule_store.h"
+#include "rules/rule_types.h"
+
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "rules/evaluators/rule_evaluator.h"
-#include "rules/rule_store/rule_store.h"
-#include "rules/rule_types.h"
 
 namespace loong::rules {
 
@@ -76,7 +76,7 @@ class RuleEngine {
   /// Cached evaluator instance bound to a specific rule.
   struct EvaluatorEntry {
     int64_t rule_id = 0;
-    AnalysisRule rule;                       // Cached for overlay geometry
+    AnalysisRule rule;  // Cached for overlay geometry
     std::unique_ptr<RuleEvaluator> evaluator;
     int64_t last_event_time_ms = 0;  // Cooldown tracking
     int cooldown_ms = 60000;

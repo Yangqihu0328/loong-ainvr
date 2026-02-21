@@ -2,18 +2,16 @@
 
 #include "analytics/analytics_aggregator.h"
 
-#include <chrono>
-
 #include "rules/rule_store/rule_store.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
 
 namespace loong::analytics {
 
 AnalyticsAggregator::AnalyticsAggregator() = default;
 
-AnalyticsAggregator::~AnalyticsAggregator() {
-  Stop();
-}
+AnalyticsAggregator::~AnalyticsAggregator() { Stop(); }
 
 void AnalyticsAggregator::SetAnalyticsStore(
     std::shared_ptr<AnalyticsStore> store) {
@@ -31,10 +29,14 @@ void AnalyticsAggregator::SetConfig(const AggregatorConfig& config) {
 
 std::string AnalyticsAggregator::RuleTypeToKey(rules::RuleType type) {
   switch (type) {
-    case rules::RuleType::kCrossLine:         return "cross_line";
-    case rules::RuleType::kRegionIntrusion:   return "region_intrusion";
-    case rules::RuleType::kObjectCounting:    return "object_counting";
-    case rules::RuleType::kLoitering:         return "loitering";
+    case rules::RuleType::kCrossLine:
+      return "cross_line";
+    case rules::RuleType::kRegionIntrusion:
+      return "region_intrusion";
+    case rules::RuleType::kObjectCounting:
+      return "object_counting";
+    case rules::RuleType::kLoitering:
+      return "loitering";
   }
   return "unknown";
 }
@@ -79,8 +81,8 @@ int AnalyticsAggregator::RunAggregation(int64_t up_to_ms) {
 
   // Pull all events from last_aggregated_ms_ to up_to_ms.
   // Query across all channels (channel_id = -1).
-  auto events = rule_store_->QueryEvents(-1, last_aggregated_ms_, up_to_ms,
-                                         10000);
+  auto events =
+      rule_store_->QueryEvents(-1, last_aggregated_ms_, up_to_ms, 10000);
 
   int processed = 0;
   for (const auto& event : events) {
@@ -97,8 +99,8 @@ int AnalyticsAggregator::RunAggregation(int64_t up_to_ms) {
 
   // Purge old data
   if (config_.retention_days > 0) {
-    int64_t cutoff = up_to_ms -
-                     static_cast<int64_t>(config_.retention_days) * 86400LL * 1000;
+    int64_t cutoff = up_to_ms - static_cast<int64_t>(config_.retention_days) *
+                                    86400LL * 1000;
     store_->PurgeOlderThan(cutoff);
   }
 
@@ -114,9 +116,10 @@ bool AnalyticsAggregator::Start() {
 
   running_.store(true);
   bg_thread_ = std::thread(&AnalyticsAggregator::BackgroundLoop, this);
-  spdlog::info("AnalyticsAggregator: background thread started "
-               "(interval={}s, retention={}d)",
-               config_.aggregation_interval_sec, config_.retention_days);
+  spdlog::info(
+      "AnalyticsAggregator: background thread started "
+      "(interval={}s, retention={}d)",
+      config_.aggregation_interval_sec, config_.retention_days);
   return true;
 }
 

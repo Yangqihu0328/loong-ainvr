@@ -3,10 +3,10 @@
 #ifndef LOONG_AI_ENGINE_BACKEND_BACKEND_FACTORY_H_
 #define LOONG_AI_ENGINE_BACKEND_BACKEND_FACTORY_H_
 
+#include "ai_engine/inference/inference_backend.h"
+
 #include <memory>
 #include <string>
-
-#include "ai_engine/inference/inference_backend.h"
 
 namespace loong::ai_engine {
 
@@ -17,6 +17,6 @@ class BackendFactory {
   static std::unique_ptr<InferenceBackend> Create(const std::string& name);
 };
 
-}  // namespace loong
+}  // namespace loong::ai_engine
 
 #endif  // LOONG_AI_ENGINE_BACKEND_BACKEND_FACTORY_H_

@@ -14,12 +14,12 @@ using TensorShape = std::vector<int64_t>;
 
 /// Backend configuration.
 struct BackendConfig {
-  int device_id = 0;           // GPU device ID
-  int num_threads = 1;         // CPU threads for inference
-  bool enable_fp16 = false;    // Half-precision inference
-  bool enable_int8 = false;    // INT8 quantized inference (TensorRT)
+  int device_id = 0;                  // GPU device ID
+  int num_threads = 1;                // CPU threads for inference
+  bool enable_fp16 = false;           // Half-precision inference
+  bool enable_int8 = false;           // INT8 quantized inference (TensorRT)
   std::string calibration_data_path;  // INT8 calibration data
-  size_t workspace_mb = 256;   // TensorRT workspace size
+  size_t workspace_mb = 256;          // TensorRT workspace size
 };
 
 /// Abstract inference backend interface.

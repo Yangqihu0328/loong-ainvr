@@ -2,19 +2,17 @@
 
 #include "ai_engine/face/face_store.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::ai_engine {
 
 FaceStore::FaceStore() = default;
 
-FaceStore::~FaceStore() {
-  Close();
-}
+FaceStore::~FaceStore() { Close(); }
 
 bool FaceStore::Open(const std::string& db_path) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -181,8 +179,8 @@ std::vector<FaceRecord> FaceStore::Query(const FaceQuery& query) {
     int blob_bytes = sqlite3_column_bytes(stmt, 6);
     r.embedding = BlobToEmbedding(blob, blob_bytes);
 
-    const char* snap = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 7));
+    const char* snap =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     r.snapshot_path = snap ? snap : "";
     results.push_back(std::move(r));
   }
@@ -220,8 +218,8 @@ FaceRecord FaceStore::GetById(int64_t id) {
     int blob_bytes = sqlite3_column_bytes(stmt, 6);
     r.embedding = BlobToEmbedding(blob, blob_bytes);
 
-    const char* snap = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 7));
+    const char* snap =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     r.snapshot_path = snap ? snap : "";
   }
 
@@ -230,8 +228,7 @@ FaceRecord FaceStore::GetById(int64_t id) {
 }
 
 std::vector<std::pair<FaceRecord, float>> FaceStore::SearchByEmbedding(
-    const std::vector<float>& query_embedding,
-    float threshold, int limit) {
+    const std::vector<float>& query_embedding, float threshold, int limit) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::pair<FaceRecord, float>> matches;
   if (!db_ || query_embedding.empty()) return matches;
@@ -264,8 +261,8 @@ std::vector<std::pair<FaceRecord, float>> FaceStore::SearchByEmbedding(
     const char* g = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
     r.gender = g ? g : "unknown";
     r.embedding = std::move(emb);
-    const char* snap = reinterpret_cast<const char*>(
-        sqlite3_column_text(stmt, 7));
+    const char* snap =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     r.snapshot_path = snap ? snap : "";
 
     matches.emplace_back(std::move(r), sim);
@@ -273,9 +270,7 @@ std::vector<std::pair<FaceRecord, float>> FaceStore::SearchByEmbedding(
   sqlite3_finalize(stmt);
 
   std::sort(matches.begin(), matches.end(),
-            [](const auto& a, const auto& b) {
-              return a.second > b.second;
-            });
+            [](const auto& a, const auto& b) { return a.second > b.second; });
 
   if (static_cast<int>(matches.size()) > limit) {
     matches.resize(static_cast<size_t>(limit));

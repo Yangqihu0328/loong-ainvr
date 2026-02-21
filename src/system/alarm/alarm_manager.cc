@@ -2,12 +2,11 @@
 
 #include "system/alarm/alarm_manager.h"
 
-#include <chrono>
-
-#include <nlohmann/json.hpp>
-
 #include "core/event_bus/event_bus.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
+#include <nlohmann/json.hpp>
 
 namespace loong::system {
 
@@ -22,7 +21,7 @@ bool AlarmManager::Open(const std::string& db_path) {
   int rc = sqlite3_open(db_path.c_str(), &db_);
   if (rc != SQLITE_OK) {
     spdlog::error("AlarmManager: failed to open db '{}': {}", db_path,
-                   sqlite3_errmsg(db_));
+                  sqlite3_errmsg(db_));
     sqlite3_close(db_);
     db_ = nullptr;
     return false;
@@ -64,7 +63,7 @@ void AlarmManager::Start() {
       ProcessDetection(channel_id, event_type, confidence, metadata);
     } catch (const std::exception& e) {
       spdlog::debug("AlarmManager: failed to parse ai.detection event: {}",
-                     e.what());
+                    e.what());
     }
   });
 
@@ -190,14 +189,17 @@ AlarmRule AlarmManager::GetRule(int64_t rule_id) {
   if (sqlite3_step(stmt) == SQLITE_ROW) {
     rule.id = sqlite3_column_int64(stmt, 0);
     rule.channel_id = sqlite3_column_int(stmt, 1);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     rule.event_type = et ? et : "";
     rule.min_confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
     rule.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 4));
     rule.enabled = sqlite3_column_int(stmt, 5) != 0;
-    const auto* nm = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    const auto* nm =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     rule.name = nm ? nm : "";
-    const auto* ds = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+    const auto* ds =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     rule.description = ds ? ds : "";
     rule.cooldown_sec = sqlite3_column_int(stmt, 8);
   }
@@ -222,14 +224,17 @@ std::vector<AlarmRule> AlarmManager::ListRules() {
     AlarmRule rule;
     rule.id = sqlite3_column_int64(stmt, 0);
     rule.channel_id = sqlite3_column_int(stmt, 1);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     rule.event_type = et ? et : "";
     rule.min_confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
     rule.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 4));
     rule.enabled = sqlite3_column_int(stmt, 5) != 0;
-    const auto* nm = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    const auto* nm =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     rule.name = nm ? nm : "";
-    const auto* ds = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+    const auto* ds =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     rule.description = ds ? ds : "";
     rule.cooldown_sec = sqlite3_column_int(stmt, 8);
     results.push_back(rule);
@@ -259,14 +264,17 @@ std::vector<AlarmRule> AlarmManager::ListRulesForChannel(int channel_id) {
     AlarmRule rule;
     rule.id = sqlite3_column_int64(stmt, 0);
     rule.channel_id = sqlite3_column_int(stmt, 1);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     rule.event_type = et ? et : "";
     rule.min_confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
     rule.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 4));
     rule.enabled = sqlite3_column_int(stmt, 5) != 0;
-    const auto* nm = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+    const auto* nm =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
     rule.name = nm ? nm : "";
-    const auto* ds = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+    const auto* ds =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
     rule.description = ds ? ds : "";
     rule.cooldown_sec = sqlite3_column_int(stmt, 8);
     results.push_back(rule);
@@ -281,8 +289,8 @@ std::vector<AlarmRule> AlarmManager::ListRulesForChannel(int channel_id) {
 // ============================================================
 
 std::vector<AlarmRecord> AlarmManager::QueryAlarms(int64_t start_time,
-                                                    int64_t end_time,
-                                                    int limit) {
+                                                   int64_t end_time,
+                                                   int limit) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   const char* sql =
@@ -307,16 +315,19 @@ std::vector<AlarmRecord> AlarmManager::QueryAlarms(int64_t start_time,
     rec.id = sqlite3_column_int64(stmt, 0);
     rec.rule_id = sqlite3_column_int64(stmt, 1);
     rec.channel_id = sqlite3_column_int(stmt, 2);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
     rec.event_type = et ? et : "";
     rec.confidence = static_cast<float>(sqlite3_column_double(stmt, 4));
     rec.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 5));
     rec.status = static_cast<AlarmStatus>(sqlite3_column_int(stmt, 6));
     rec.triggered_at = sqlite3_column_int64(stmt, 7);
     rec.acknowledged_at = sqlite3_column_int64(stmt, 8);
-    const auto* ab = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
+    const auto* ab =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
     rec.acknowledged_by = ab ? ab : "";
-    const auto* md = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
+    const auto* md =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
     rec.metadata = md ? md : "";
     results.push_back(rec);
   }
@@ -325,8 +336,10 @@ std::vector<AlarmRecord> AlarmManager::QueryAlarms(int64_t start_time,
   return results;
 }
 
-std::vector<AlarmRecord> AlarmManager::QueryAlarmsByChannel(
-    int channel_id, int64_t start_time, int64_t end_time, int limit) {
+std::vector<AlarmRecord> AlarmManager::QueryAlarmsByChannel(int channel_id,
+                                                            int64_t start_time,
+                                                            int64_t end_time,
+                                                            int limit) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   const char* sql =
@@ -352,16 +365,19 @@ std::vector<AlarmRecord> AlarmManager::QueryAlarmsByChannel(
     rec.id = sqlite3_column_int64(stmt, 0);
     rec.rule_id = sqlite3_column_int64(stmt, 1);
     rec.channel_id = sqlite3_column_int(stmt, 2);
-    const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+    const auto* et =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
     rec.event_type = et ? et : "";
     rec.confidence = static_cast<float>(sqlite3_column_double(stmt, 4));
     rec.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 5));
     rec.status = static_cast<AlarmStatus>(sqlite3_column_int(stmt, 6));
     rec.triggered_at = sqlite3_column_int64(stmt, 7);
     rec.acknowledged_at = sqlite3_column_int64(stmt, 8);
-    const auto* ab = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
+    const auto* ab =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
     rec.acknowledged_by = ab ? ab : "";
-    const auto* md = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
+    const auto* md =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
     rec.metadata = md ? md : "";
     results.push_back(rec);
   }
@@ -373,8 +389,7 @@ std::vector<AlarmRecord> AlarmManager::QueryAlarmsByChannel(
 int AlarmManager::GetActiveAlarmCount() {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  const char* sql =
-      "SELECT COUNT(*) FROM alarm_history WHERE status=0;";
+  const char* sql = "SELECT COUNT(*) FROM alarm_history WHERE status=0;";
 
   sqlite3_stmt* stmt = nullptr;
   int count = 0;
@@ -387,8 +402,7 @@ int AlarmManager::GetActiveAlarmCount() {
   return count;
 }
 
-bool AlarmManager::AcknowledgeAlarm(int64_t alarm_id,
-                                     const std::string& user) {
+bool AlarmManager::AcknowledgeAlarm(int64_t alarm_id, const std::string& user) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   const char* sql =
@@ -417,8 +431,7 @@ bool AlarmManager::AcknowledgeAlarm(int64_t alarm_id,
 bool AlarmManager::DismissAlarm(int64_t alarm_id) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  const char* sql =
-      "UPDATE alarm_history SET status=2 WHERE id=?;";
+  const char* sql = "UPDATE alarm_history SET status=2 WHERE id=?;";
 
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -461,9 +474,9 @@ int AlarmManager::AcknowledgeAll(const std::string& user) {
 // ============================================================
 
 void AlarmManager::ProcessDetection(int channel_id,
-                                     const std::string& event_type,
-                                     float confidence,
-                                     const std::string& metadata) {
+                                    const std::string& event_type,
+                                    float confidence,
+                                    const std::string& metadata) {
   // Fetch matching rules (needs lock for DB access but release before publish)
   std::vector<AlarmRule> matching_rules;
   {
@@ -489,14 +502,17 @@ void AlarmManager::ProcessDetection(int channel_id,
       AlarmRule rule;
       rule.id = sqlite3_column_int64(stmt, 0);
       rule.channel_id = sqlite3_column_int(stmt, 1);
-      const auto* et = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+      const auto* et =
+          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
       rule.event_type = et ? et : "";
       rule.min_confidence = static_cast<float>(sqlite3_column_double(stmt, 3));
       rule.severity = static_cast<AlarmSeverity>(sqlite3_column_int(stmt, 4));
       rule.enabled = sqlite3_column_int(stmt, 5) != 0;
-      const auto* nm = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+      const auto* nm =
+          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
       rule.name = nm ? nm : "";
-      const auto* ds = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+      const auto* ds =
+          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
       rule.description = ds ? ds : "";
       rule.cooldown_sec = sqlite3_column_int(stmt, 8);
       matching_rules.push_back(rule);
@@ -539,8 +555,7 @@ void AlarmManager::ProcessDetection(int channel_id,
         AlarmSeverityToString(rule.severity));
 
     // Publish to EventBus
-    core::EventBus::Instance().Publish("alarm.triggered",
-                                        std::any(record));
+    core::EventBus::Instance().Publish("alarm.triggered", std::any(record));
 
     // Invoke callback if registered
     if (alarm_callback_) {
@@ -597,7 +612,7 @@ bool AlarmManager::CreateTables() {
   int rc = sqlite3_exec(db_, schema, nullptr, nullptr, &err_msg);
   if (rc != SQLITE_OK) {
     spdlog::error("AlarmManager: create tables failed: {}",
-                   err_msg ? err_msg : "unknown");
+                  err_msg ? err_msg : "unknown");
     sqlite3_free(err_msg);
     return false;
   }

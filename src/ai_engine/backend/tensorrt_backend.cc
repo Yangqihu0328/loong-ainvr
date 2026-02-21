@@ -4,14 +4,13 @@
 
 #include "ai_engine/backend/tensorrt_backend.h"
 
-#include <NvOnnxParser.h>
+#include "spdlog/spdlog.h"
 
+#include <NvOnnxParser.h>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <numeric>
-
-#include "spdlog/spdlog.h"
 
 namespace loong {
 namespace ai_engine {
@@ -43,9 +42,7 @@ void TrtLogger::log(Severity severity, const char* msg) noexcept {
 
 TensorRTBackend::TensorRTBackend() = default;
 
-TensorRTBackend::~TensorRTBackend() {
-  Unload();
-}
+TensorRTBackend::~TensorRTBackend() { Unload(); }
 
 bool TensorRTBackend::LoadModel(const std::string& model_path,
                                 const BackendConfig& config) {
@@ -99,9 +96,8 @@ bool TensorRTBackend::LoadModel(const std::string& model_path,
 
   if (!AllocateBuffers()) return false;
 
-  spdlog::info(
-      "TensorRT: ready (input='{}' output='{}' max_batch={})",
-      input_name_, output_name_, max_batch_size_);
+  spdlog::info("TensorRT: ready (input='{}' output='{}' max_batch={})",
+               input_name_, output_name_, max_batch_size_);
   return true;
 }
 
@@ -187,12 +183,12 @@ void TensorRTBackend::Unload() {
 
 bool TensorRTBackend::BuildEngineFromOnnx(const std::string& onnx_path,
                                           const BackendConfig& config) {
-  auto builder =
-      std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger_));
+  auto builder = std::unique_ptr<nvinfer1::IBuilder>(
+      nvinfer1::createInferBuilder(logger_));
   if (!builder) return false;
 
-  auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(
-      builder->createNetworkV2(
+  auto network =
+      std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(
           1U << static_cast<uint32_t>(
               nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
   if (!network) return false;
@@ -201,14 +197,15 @@ bool TensorRTBackend::BuildEngineFromOnnx(const std::string& onnx_path,
       nvonnxparser::createParser(*network, logger_));
   if (!parser) return false;
 
-  if (!parser->parseFromFile(onnx_path.c_str(),
-                             static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
+  if (!parser->parseFromFile(
+          onnx_path.c_str(),
+          static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
     spdlog::error("TensorRT: failed to parse ONNX file");
     return false;
   }
 
-  auto build_config = std::unique_ptr<nvinfer1::IBuilderConfig>(
-      builder->createBuilderConfig());
+  auto build_config =
+      std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
   if (!build_config) return false;
 
   build_config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE,
@@ -283,8 +280,7 @@ bool TensorRTBackend::LoadCachedEngine(const std::string& engine_path) {
 bool TensorRTBackend::SaveEngine(const std::string& engine_path) {
   if (!engine_) return false;
 
-  auto plan = std::unique_ptr<nvinfer1::IHostMemory>(
-      engine_->serialize());
+  auto plan = std::unique_ptr<nvinfer1::IHostMemory>(engine_->serialize());
   if (!plan) return false;
 
   std::ofstream file(engine_path, std::ios::binary);

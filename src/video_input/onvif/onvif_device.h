@@ -15,7 +15,7 @@ struct OnvifProfile {
   int width = 0;
   int height = 0;
   int framerate = 0;
-  std::string encoding;   // "H264", "H265", "JPEG"
+  std::string encoding;  // "H264", "H265", "JPEG"
   std::string stream_uri;
 };
 
@@ -28,16 +28,15 @@ struct OnvifProfile {
 class OnvifDevice {
  public:
   /// Create a device client targeting a specific service endpoint.
-  /// @param xaddr  The device service URL (e.g., "http://192.168.1.10/onvif/device_service")
-  explicit OnvifDevice(std::string  xaddr);
+  /// @param xaddr  The device service URL (e.g.,
+  /// "http://192.168.1.10/onvif/device_service")
+  explicit OnvifDevice(std::string xaddr);
 
   /// Set authentication credentials (ONVIF UsernameToken / WS-Security).
-  void SetCredentials(const std::string& username,
-                      const std::string& password);
+  void SetCredentials(const std::string& username, const std::string& password);
 
   /// Get basic device information.
-  bool GetDeviceInformation(std::string& manufacturer,
-                            std::string& model,
+  bool GetDeviceInformation(std::string& manufacturer, std::string& model,
                             std::string& firmware_version,
                             std::string& serial_number,
                             std::string& hardware_id);
@@ -52,8 +51,7 @@ class OnvifDevice {
   std::string GetStreamUri(const std::string& profile_token);
 
  private:
-  std::string SendSoapRequest(const std::string& url,
-                              const std::string& action,
+  std::string SendSoapRequest(const std::string& url, const std::string& action,
                               const std::string& body);
   std::string BuildSoapEnvelope(const std::string& body) const;
   std::string BuildSecurityHeader() const;

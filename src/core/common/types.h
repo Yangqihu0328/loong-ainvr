@@ -13,9 +13,9 @@ namespace loong {
 
 /// Frame priority for scheduling decisions.
 enum class FramePriority {
-  kRealtime = 0,   // Live preview — highest priority
-  kRecord = 1,     // Recording — high priority
-  kAnalysis = 2,   // AI analysis — can be degraded
+  kRealtime = 0,  // Live preview — highest priority
+  kRecord = 1,    // Recording — high priority
+  kAnalysis = 2,  // AI analysis — can be degraded
 };
 
 /// Video codec type.
@@ -27,8 +27,8 @@ enum class CodecType {
 
 /// Frame type.
 enum class FrameType {
-  kRaw,       // Decoded raw frame (YUV/RGB)
-  kEncoded,   // Encoded frame (H.264/H.265 NAL units)
+  kRaw,      // Decoded raw frame (YUV/RGB)
+  kEncoded,  // Encoded frame (H.264/H.265 NAL units)
 };
 
 /// Detection result from AI analysis.
@@ -39,11 +39,12 @@ struct Detection {
   std::string class_name;
 };
 
-/// Result from a secondary (cascade) model applied to a primary detection's ROI.
+/// Result from a secondary (cascade) model applied to a primary detection's
+/// ROI.
 struct SecondaryResult {
-  int parent_index = -1;                      // Index in primary detections[]
-  std::string model_name;                     // Model that produced this result
-  std::vector<Detection> detections;          // Sub-detections within the ROI
+  int parent_index = -1;              // Index in primary detections[]
+  std::string model_name;             // Model that produced this result
+  std::vector<Detection> detections;  // Sub-detections within the ROI
   std::map<std::string, std::string> attributes;  // Classification attributes
 };
 
@@ -91,8 +92,8 @@ struct RuleOverlayData {
 struct FrameInfo {
   int width = 0;
   int height = 0;
-  int stride = 0;       // Row stride in bytes
-  int pixel_format = 0; // AVPixelFormat or custom enum
+  int stride = 0;        // Row stride in bytes
+  int pixel_format = 0;  // AVPixelFormat or custom enum
   bool is_keyframe = false;
   CodecType codec = CodecType::kUnknown;
 };
@@ -100,8 +101,8 @@ struct FrameInfo {
 /// A video frame flowing through the pipeline.
 struct Frame {
   int channel_id = -1;
-  int64_t pts = 0;                   // Presentation timestamp (microseconds)
-  int64_t dts = 0;                   // Decode timestamp
+  int64_t pts = 0;  // Presentation timestamp (microseconds)
+  int64_t dts = 0;  // Decode timestamp
   FrameType type = FrameType::kRaw;
   FrameInfo info;
   FramePriority priority = FramePriority::kAnalysis;
@@ -135,13 +136,20 @@ enum class ChannelState {
 /// Convert ChannelState to string.
 inline const char* ChannelStateToString(ChannelState state) {
   switch (state) {
-    case ChannelState::kCreated:    return "Created";
-    case ChannelState::kConfigured: return "Configured";
-    case ChannelState::kRunning:    return "Running";
-    case ChannelState::kStopping:   return "Stopping";
-    case ChannelState::kStopped:    return "Stopped";
-    case ChannelState::kError:      return "Error";
-    case ChannelState::kDestroyed:  return "Destroyed";
+    case ChannelState::kCreated:
+      return "Created";
+    case ChannelState::kConfigured:
+      return "Configured";
+    case ChannelState::kRunning:
+      return "Running";
+    case ChannelState::kStopping:
+      return "Stopping";
+    case ChannelState::kStopped:
+      return "Stopped";
+    case ChannelState::kError:
+      return "Error";
+    case ChannelState::kDestroyed:
+      return "Destroyed";
   }
   return "Unknown";
 }
@@ -166,9 +174,12 @@ struct OverlayConfig {
   bool show_channel_name = true;   // Show channel name/ID on frame
   bool show_trajectory = false;    // Show object tracking trajectory lines
   int trajectory_max_points = 30;  // Max history points per tracked object
-  int timestamp_position = 0;      // 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
-  double fill_opacity = 0.08;      // Semi-transparent fill opacity for bounding boxes
-  std::string timestamp_format;    // Custom format, empty = default "%Y-%m-%d %H:%M:%S"
+  int timestamp_position =
+      0;  // 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+  double fill_opacity =
+      0.08;  // Semi-transparent fill opacity for bounding boxes
+  std::string
+      timestamp_format;  // Custom format, empty = default "%Y-%m-%d %H:%M:%S"
 };
 
 /// Configuration for a channel.
@@ -177,14 +188,14 @@ struct ChannelConfig {
   std::string name;
   std::string rtsp_url;
   CodecType codec = CodecType::kUnknown;  // Auto-detect from stream
-  int width = 0;                           // Auto-detect from stream
-  int height = 0;                          // Auto-detect from stream
-  int framerate = 0;                       // Auto-detect from stream
+  int width = 0;                          // Auto-detect from stream
+  int height = 0;                         // Auto-detect from stream
+  int framerate = 0;                      // Auto-detect from stream
   int bitrate_kbps = 4000;
 
   // AI settings
-  std::string ai_model_name;     // e.g., "yolov8n"
-  std::string ai_backend;        // e.g., "onnxruntime"
+  std::string ai_model_name;  // e.g., "yolov8n"
+  std::string ai_backend;     // e.g., "onnxruntime"
   float confidence_threshold = 0.5F;
   int analysis_fps = 0;
 
@@ -206,8 +217,8 @@ struct ChannelStatus {
   std::string name;
   ChannelState state = ChannelState::kCreated;
   int fps_in = 0;      // Input FPS
-  int fps_decode = 0;   // Decode FPS
-  int fps_ai = 0;       // AI analysis FPS
+  int fps_decode = 0;  // Decode FPS
+  int fps_ai = 0;      // AI analysis FPS
   int64_t frames_processed = 0;
   int64_t frames_dropped = 0;
   std::string error_message;

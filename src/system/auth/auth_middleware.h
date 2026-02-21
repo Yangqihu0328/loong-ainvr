@@ -3,11 +3,11 @@
 #ifndef LOONG_SYSTEM_AUTH_AUTH_MIDDLEWARE_H_
 #define LOONG_SYSTEM_AUTH_AUTH_MIDDLEWARE_H_
 
-#include <memory>
-#include <string>
-
 #include "system/auth/jwt_helper.h"
 #include "system/auth/user_store.h"
+
+#include <memory>
+#include <string>
 
 namespace loong::system {
 

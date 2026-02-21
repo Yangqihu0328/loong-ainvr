@@ -3,18 +3,17 @@
 #ifndef LOONG_SYSTEM_ALARM_ALARM_MANAGER_H_
 #define LOONG_SYSTEM_ALARM_ALARM_MANAGER_H_
 
+#include "core/common/types.h"
+
 #include <atomic>
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <sqlite3.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include <sqlite3.h>
-
-#include "core/common/types.h"
 
 namespace loong::system {
 
@@ -28,9 +27,12 @@ enum class AlarmSeverity {
 /// Convert AlarmSeverity to string.
 inline const char* AlarmSeverityToString(AlarmSeverity s) {
   switch (s) {
-    case AlarmSeverity::kInfo:     return "info";
-    case AlarmSeverity::kWarning:  return "warning";
-    case AlarmSeverity::kCritical: return "critical";
+    case AlarmSeverity::kInfo:
+      return "info";
+    case AlarmSeverity::kWarning:
+      return "warning";
+    case AlarmSeverity::kCritical:
+      return "critical";
   }
   return "unknown";
 }
@@ -45,14 +47,15 @@ enum class AlarmStatus {
 /// A rule that triggers an alarm based on AI detection events.
 struct AlarmRule {
   int64_t id = 0;
-  int channel_id = -1;           // -1 means all channels
-  std::string event_type;        // e.g. "person_detected", "vehicle_detected", "" = any
+  int channel_id = -1;  // -1 means all channels
+  std::string
+      event_type;  // e.g. "person_detected", "vehicle_detected", "" = any
   float min_confidence = 0.5F;
   AlarmSeverity severity = AlarmSeverity::kWarning;
   bool enabled = true;
-  std::string name;              // Human-readable rule name
+  std::string name;  // Human-readable rule name
   std::string description;
-  int cooldown_sec = 30;         // Minimum seconds between repeated alarms
+  int cooldown_sec = 30;  // Minimum seconds between repeated alarms
 };
 
 /// A recorded alarm instance.
@@ -64,10 +67,10 @@ struct AlarmRecord {
   float confidence = 0.0F;
   AlarmSeverity severity = AlarmSeverity::kWarning;
   AlarmStatus status = AlarmStatus::kActive;
-  int64_t triggered_at = 0;      // Unix timestamp (ms)
+  int64_t triggered_at = 0;  // Unix timestamp (ms)
   int64_t acknowledged_at = 0;
   std::string acknowledged_by;
-  std::string metadata;          // JSON
+  std::string metadata;  // JSON
 };
 
 /// Callback invoked when an alarm is triggered.
@@ -119,13 +122,13 @@ class AlarmManager {
 
   /// Query alarm records by time range.
   std::vector<AlarmRecord> QueryAlarms(int64_t start_time, int64_t end_time,
-                                        int limit = 100);
+                                       int limit = 100);
 
   /// Query alarm records by channel and time range.
   std::vector<AlarmRecord> QueryAlarmsByChannel(int channel_id,
-                                                 int64_t start_time,
-                                                 int64_t end_time,
-                                                 int limit = 100);
+                                                int64_t start_time,
+                                                int64_t end_time,
+                                                int limit = 100);
 
   /// Get count of active (unacknowledged) alarms.
   int GetActiveAlarmCount();

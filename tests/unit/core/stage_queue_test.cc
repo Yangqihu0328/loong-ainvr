@@ -2,16 +2,16 @@
 
 #include "core/pipeline/stage_queue.h"
 
-#include <thread>
-
 #include "gtest/gtest.h"
+
+#include <thread>
 
 namespace loong {
 namespace core {
 namespace {
 
 std::shared_ptr<Frame> MakeFrame(int channel_id, int64_t pts,
-                                  bool keyframe = false) {
+                                 bool keyframe = false) {
   auto f = std::make_shared<Frame>();
   f->channel_id = channel_id;
   f->pts = pts;

@@ -3,11 +3,11 @@
 #ifndef LOONG_CORE_PIPELINE_PIPELINE_STAGE_H_
 #define LOONG_CORE_PIPELINE_PIPELINE_STAGE_H_
 
-#include <memory>
-#include <string>
-
 #include "core/common/types.h"
 #include "core/pipeline/stage_queue.h"
+
+#include <memory>
+#include <string>
 
 namespace loong::core {
 
@@ -64,9 +64,7 @@ class PipelineStage {
   }
 
   /// Get the output queue.
-  std::shared_ptr<StageQueue> GetOutputQueue() const {
-    return output_queue_;
-  }
+  std::shared_ptr<StageQueue> GetOutputQueue() const { return output_queue_; }
 
  protected:
   /// Pass a processed frame to the next stage via the output queue.

@@ -2,23 +2,22 @@
 
 #include "ai_engine/backend/onnxruntime_backend.h"
 
+#include "spdlog/spdlog.h"
+
 #include <numeric>
 #include <stdexcept>
-
-#include "spdlog/spdlog.h"
 
 namespace loong {
 namespace ai_engine {
 
 OnnxRuntimeBackend::OnnxRuntimeBackend() {
-  env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING,
-                                     "LoongAINVR");
+  env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "LoongAINVR");
 }
 
 OnnxRuntimeBackend::~OnnxRuntimeBackend() { Unload(); }
 
 bool OnnxRuntimeBackend::TryAddCudaProvider(Ort::SessionOptions& options,
-                                             int device_id) {
+                                            int device_id) {
 #ifdef LOONG_ORT_CUDA
   try {
     OrtCUDAProviderOptions cuda_opts;
@@ -42,12 +41,11 @@ bool OnnxRuntimeBackend::TryAddCudaProvider(Ort::SessionOptions& options,
 }
 
 bool OnnxRuntimeBackend::LoadModel(const std::string& model_path,
-                                    const BackendConfig& config) {
+                                   const BackendConfig& config) {
   try {
     Ort::SessionOptions session_opts;
-    session_opts.SetIntraOpNumThreads(config.num_threads > 0
-                                          ? config.num_threads
-                                          : 4);
+    session_opts.SetIntraOpNumThreads(
+        config.num_threads > 0 ? config.num_threads : 4);
     session_opts.SetGraphOptimizationLevel(
         GraphOptimizationLevel::ORT_ENABLE_ALL);
 
@@ -57,8 +55,8 @@ bool OnnxRuntimeBackend::LoadModel(const std::string& model_path,
 
     using_gpu_ = TryAddCudaProvider(session_opts, config.device_id);
 
-    session_ = std::make_unique<Ort::Session>(*env_, model_path.c_str(),
-                                               session_opts);
+    session_ =
+        std::make_unique<Ort::Session>(*env_, model_path.c_str(), session_opts);
 
     // Retrieve input tensor names.
     input_names_.clear();
@@ -92,23 +90,21 @@ bool OnnxRuntimeBackend::LoadModel(const std::string& model_path,
     loaded_ = true;
     spdlog::info(
         "OnnxRuntimeBackend: loaded '{}' ({} inputs, {} outputs, {}, batch={})",
-        model_path, num_inputs, num_outputs,
-        using_gpu_ ? "GPU" : "CPU",
+        model_path, num_inputs, num_outputs, using_gpu_ ? "GPU" : "CPU",
         supports_batch_ ? "dynamic" : "1");
     return true;
 
   } catch (const Ort::Exception& e) {
-    spdlog::error("OnnxRuntimeBackend: failed to load '{}': {}",
-                   model_path, e.what());
+    spdlog::error("OnnxRuntimeBackend: failed to load '{}': {}", model_path,
+                  e.what());
     return false;
   }
 }
 
-bool OnnxRuntimeBackend::RunInference(
-    const std::vector<float>& input_data,
-    const TensorShape& input_shape,
-    std::vector<float>& output_data,
-    TensorShape& output_shape) {
+bool OnnxRuntimeBackend::RunInference(const std::vector<float>& input_data,
+                                      const TensorShape& input_shape,
+                                      std::vector<float>& output_data,
+                                      TensorShape& output_shape) {
   if (!loaded_ || !session_) {
     spdlog::warn("OnnxRuntimeBackend: model not loaded");
     return false;
@@ -120,11 +116,8 @@ bool OnnxRuntimeBackend::RunInference(
 
     // Create input tensor from caller-provided flat data.
     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        memory_info,
-        const_cast<float*>(input_data.data()),
-        input_data.size(),
-        input_shape.data(),
-        input_shape.size());
+        memory_info, const_cast<float*>(input_data.data()), input_data.size(),
+        input_shape.data(), input_shape.size());
 
     // Build C-string name arrays for Run().
     std::vector<const char*> input_name_ptrs;
@@ -140,8 +133,7 @@ bool OnnxRuntimeBackend::RunInference(
     }
 
     auto results = session_->Run(
-        Ort::RunOptions{nullptr},
-        input_name_ptrs.data(), &input_tensor, 1,
+        Ort::RunOptions{nullptr}, input_name_ptrs.data(), &input_tensor, 1,
         output_name_ptrs.data(), output_name_ptrs.size());
 
     if (results.empty()) {
@@ -158,8 +150,8 @@ bool OnnxRuntimeBackend::RunInference(
     output_shape.assign(shape.begin(), shape.end());
 
     size_t total_elements = static_cast<size_t>(
-        std::accumulate(shape.begin(), shape.end(),
-                        static_cast<int64_t>(1), std::multiplies<>()));
+        std::accumulate(shape.begin(), shape.end(), static_cast<int64_t>(1),
+                        std::multiplies<>()));
 
     const float* out_ptr = out_tensor.GetTensorData<float>();
     output_data.assign(out_ptr, out_ptr + total_elements);

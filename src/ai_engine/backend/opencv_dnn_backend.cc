@@ -7,12 +7,12 @@
 namespace loong::ai_engine {
 
 bool OpenCVDnnBackend::LoadModel(const std::string& model_path,
-                                  const BackendConfig& config) {
+                                 const BackendConfig& config) {
   try {
     net_ = cv::dnn::readNetFromONNX(model_path);
   } catch (const cv::Exception& e) {
-    spdlog::error("OpenCVDnnBackend: failed to load model '{}': {}",
-                   model_path, e.what());
+    spdlog::error("OpenCVDnnBackend: failed to load model '{}': {}", model_path,
+                  e.what());
     return false;
   }
 
@@ -29,11 +29,10 @@ bool OpenCVDnnBackend::LoadModel(const std::string& model_path,
   return true;
 }
 
-bool OpenCVDnnBackend::RunInference(
-    const std::vector<float>& input_data,
-    const TensorShape& input_shape,
-    std::vector<float>& output_data,
-    TensorShape& output_shape) {
+bool OpenCVDnnBackend::RunInference(const std::vector<float>& input_data,
+                                    const TensorShape& input_shape,
+                                    std::vector<float>& output_data,
+                                    TensorShape& output_shape) {
   if (!loaded_) return false;
 
   // Convert shape to OpenCV dimensions

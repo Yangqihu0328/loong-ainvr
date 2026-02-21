@@ -21,8 +21,8 @@ class FFmpegDecoder : public Decoder {
   ~FFmpegDecoder() override;
 
   bool Initialize(CodecType codec, int width, int height) override;
-  bool Decode(const uint8_t* data, size_t size,
-              int64_t pts, int64_t dts, bool is_keyframe) override;
+  bool Decode(const uint8_t* data, size_t size, int64_t pts, int64_t dts,
+              bool is_keyframe) override;
   void Flush() override;
   void Shutdown() override;
   std::string Name() const override;

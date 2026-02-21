@@ -2,9 +2,9 @@
 
 #include "system/auth/auth_middleware.h"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
 
 namespace loong::system {
 
@@ -22,7 +22,8 @@ AuthContext AuthMiddleware::Authenticate(const std::string& raw_request) {
 
   JwtClaims claims;
   if (!jwt_->VerifyToken(token, claims)) {
-    spdlog::debug("AuthMiddleware: invalid token for user_id={}", claims.user_id);
+    spdlog::debug("AuthMiddleware: invalid token for user_id={}",
+                  claims.user_id);
     return ctx;
   }
 
@@ -101,8 +102,7 @@ bool AuthMiddleware::RequiresAuth(const std::string& path) {
   return path.find("/api/") == 0;
 }
 
-std::string AuthMiddleware::ExtractBearerToken(
-    const std::string& raw_request) {
+std::string AuthMiddleware::ExtractBearerToken(const std::string& raw_request) {
   // Look for "Authorization: Bearer <token>" in headers
   const std::string kAuthHeader = "Authorization:";
   auto pos = raw_request.find(kAuthHeader);

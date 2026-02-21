@@ -1,23 +1,20 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "analytics/analytics_aggregator.h"
+#include "analytics/analytics_store.h"
+#include "gtest/gtest.h"
+#include "rules/rule_types.h"
+
 #include <chrono>
 #include <cstdio>
 #include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
-
-#include "analytics/analytics_aggregator.h"
-#include "analytics/analytics_store.h"
-#include "rules/rule_types.h"
-
 namespace loong::analytics {
 namespace {
 
 // Helper: create a timestamp at a specific hour offset from epoch
-int64_t HourMs(int hour) {
-  return static_cast<int64_t>(hour) * 3600LL * 1000;
-}
+int64_t HourMs(int hour) { return static_cast<int64_t>(hour) * 3600LL * 1000; }
 
 // ============================================================
 // AnalyticsStore tests
@@ -124,7 +121,7 @@ TEST_F(AnalyticsStoreTest, GetSummary) {
   store_.UpsertHourly(a);
 
   auto s = store_.GetSummary(HourMs(99), HourMs(101));
-  EXPECT_EQ(s.total_events, 20);   // 10+5+3+2
+  EXPECT_EQ(s.total_events, 20);  // 10+5+3+2
   EXPECT_EQ(s.cross_line_events, 10);
   EXPECT_EQ(s.region_intrusion_events, 5);
   EXPECT_EQ(s.object_counting_events, 3);
@@ -180,8 +177,7 @@ TEST_F(AnalyticsStoreTest, GetTrendsDaily) {
     store_.UpsertHourly(a);
   }
 
-  auto trends = store_.GetTrends(0, HourMs(48),
-                                 TimeGranularity::kDaily);
+  auto trends = store_.GetTrends(0, HourMs(48), TimeGranularity::kDaily);
   EXPECT_EQ(trends.size(), 2U);
   EXPECT_EQ(trends[0].event_count, 24);
   EXPECT_EQ(trends[1].event_count, 24);
@@ -323,10 +319,12 @@ class AggregatorTest : public ::testing::Test {
 TEST_F(AggregatorTest, RuleTypeToKey) {
   EXPECT_EQ(AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kCrossLine),
             "cross_line");
-  EXPECT_EQ(AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kRegionIntrusion),
-            "region_intrusion");
-  EXPECT_EQ(AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kObjectCounting),
-            "object_counting");
+  EXPECT_EQ(
+      AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kRegionIntrusion),
+      "region_intrusion");
+  EXPECT_EQ(
+      AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kObjectCounting),
+      "object_counting");
   EXPECT_EQ(AnalyticsAggregator::RuleTypeToKey(rules::RuleType::kLoitering),
             "loitering");
 }

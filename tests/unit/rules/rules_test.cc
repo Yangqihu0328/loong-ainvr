@@ -1,14 +1,9 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include <cstdio>
-#include <memory>
-#include <string>
-
 #include "gtest/gtest.h"
-
+#include "rules/evaluators/counting_evaluator.h"
 #include "rules/evaluators/cross_line_evaluator.h"
 #include "rules/evaluators/iou_tracker.h"
-#include "rules/evaluators/counting_evaluator.h"
 #include "rules/evaluators/loitering_evaluator.h"
 #include "rules/evaluators/region_intrusion_evaluator.h"
 #include "rules/evaluators/rule_evaluator.h"
@@ -16,6 +11,10 @@
 #include "rules/rule_stage/rule_stage.h"
 #include "rules/rule_store/rule_store.h"
 #include "rules/rule_types.h"
+
+#include <cstdio>
+#include <memory>
+#include <string>
 
 namespace loong::rules {
 namespace {
@@ -28,8 +27,7 @@ TEST(RuleTypes, TypeToStringRoundTrip) {
   EXPECT_STREQ(RuleTypeToString(RuleType::kCrossLine), "cross_line");
   EXPECT_STREQ(RuleTypeToString(RuleType::kRegionIntrusion),
                "region_intrusion");
-  EXPECT_STREQ(RuleTypeToString(RuleType::kObjectCounting),
-               "object_counting");
+  EXPECT_STREQ(RuleTypeToString(RuleType::kObjectCounting), "object_counting");
   EXPECT_STREQ(RuleTypeToString(RuleType::kLoitering), "loitering");
 
   EXPECT_EQ(ParseRuleType("cross_line"), RuleType::kCrossLine);
@@ -476,8 +474,7 @@ TEST(RuleStage, ProcessFrameWithDetections) {
   frame->info.width = 1920;
   frame->info.height = 1080;
   frame->analysis.has_result = true;
-  frame->analysis.detections.push_back(
-      {100, 200, 150, 250, 0.9F, 0, "person"});
+  frame->analysis.detections.push_back({100, 200, 150, 250, 0.9F, 0, "person"});
 
   EXPECT_TRUE(stage.ProcessFrame(std::move(frame)));
 
@@ -538,10 +535,9 @@ TEST(IouTracker, SingleObjectTracking) {
   // The track should have 2 trajectory points
   auto& tracks = tracker.GetTracks();
   ASSERT_FALSE(tracks.empty());
-  auto active_it = std::find_if(tracks.begin(), tracks.end(),
-                                [](const TrackedObject& t) {
-                                  return t.active;
-                                });
+  auto active_it =
+      std::find_if(tracks.begin(), tracks.end(),
+                   [](const TrackedObject& t) { return t.active; });
   ASSERT_NE(active_it, tracks.end());
   EXPECT_EQ(active_it->trajectory.size(), 2U);
   EXPECT_EQ(active_it->age, 2);
@@ -923,9 +919,8 @@ TEST(RegionIntrusion, PointInTriangle) {
 
 TEST(RegionIntrusion, PointInLShapedPolygon) {
   // L-shape polygon
-  std::vector<Point2D> lshape = {
-      {0.1, 0.1}, {0.5, 0.1}, {0.5, 0.5},
-      {0.3, 0.5}, {0.3, 0.9}, {0.1, 0.9}};
+  std::vector<Point2D> lshape = {{0.1, 0.1}, {0.5, 0.1}, {0.5, 0.5},
+                                 {0.3, 0.5}, {0.3, 0.9}, {0.1, 0.9}};
   EXPECT_TRUE(RegionIntrusionEvaluator::PointInPolygon({0.2, 0.2}, lshape));
   EXPECT_TRUE(RegionIntrusionEvaluator::PointInPolygon({0.2, 0.7}, lshape));
   EXPECT_FALSE(RegionIntrusionEvaluator::PointInPolygon({0.4, 0.7}, lshape));
@@ -998,7 +993,8 @@ TEST(RegionIntrusion, IntrusionDetected) {
   auto ev1 = eval.Evaluate(f1, ctx);
   EXPECT_TRUE(ev1.empty());
 
-  // Frame 2: object moves closer (overlapping IOU). center=(200,200) → norm(0.104,0.185)
+  // Frame 2: object moves closer (overlapping IOU). center=(200,200) →
+  // norm(0.104,0.185)
   ctx.timestamp_ms = 2000;
   std::vector<Detection> f2 = {{100, 100, 300, 300, 0.9F, 0, "person"}};
   auto ev2 = eval.Evaluate(f2, ctx);
@@ -1009,9 +1005,9 @@ TEST(RegionIntrusion, IntrusionDetected) {
   std::vector<Detection> f3 = {{400, 250, 800, 650, 0.9F, 0, "person"}};
   auto ev3 = eval.Evaluate(f3, ctx);
 
-  // IOU between f2 and f3: intersection exists? f2=(100,100,300,300), f3=(400,250,800,650)
-  // x: max(100,400)=400 > min(300,800)=300 → no overlap → new track!
-  // The new track is first seen inside → event generated
+  // IOU between f2 and f3: intersection exists? f2=(100,100,300,300),
+  // f3=(400,250,800,650) x: max(100,400)=400 > min(300,800)=300 → no overlap →
+  // new track! The new track is first seen inside → event generated
   EXPECT_EQ(ev3.size(), 1U);
   if (!ev3.empty()) {
     EXPECT_EQ(ev3[0].rule_type, RuleType::kRegionIntrusion);
@@ -1137,7 +1133,8 @@ TEST(RegionIntrusion, ResetClearsState) {
 
   eval.Reset();
 
-  // After reset, same object inside → treated as new, event if first seen inside
+  // After reset, same object inside → treated as new, event if first seen
+  // inside
   ctx.timestamp_ms = 2000;
   std::vector<Detection> f2 = {{860, 440, 1060, 640, 0.9F, 0, "person"}};
   auto ev2 = eval.Evaluate(f2, ctx);
@@ -1233,7 +1230,8 @@ TEST(CountingEvaluator, SingleCrossingAtoB) {
   eval.Evaluate(f8, ctx);
 
   EXPECT_GE(eval.GetCountAtoB() + eval.GetCountBtoA(), 1);
-  EXPECT_EQ(eval.GetTotalCrossings(), eval.GetCountAtoB() + eval.GetCountBtoA());
+  EXPECT_EQ(eval.GetTotalCrossings(),
+            eval.GetCountAtoB() + eval.GetCountBtoA());
 }
 
 TEST(CountingEvaluator, BidirectionalCounting) {
@@ -1477,7 +1475,8 @@ TEST(CountingEvaluator, MultipleCrossingsAccumulate) {
 
   int first_crossing = eval.GetTotalCrossings();
 
-  // Move object 2 from left to right (different y region), after object 1 leaves
+  // Move object 2 from left to right (different y region), after object 1
+  // leaves
   ctx.timestamp_ms = 3000;
   std::vector<Detection> g1 = {{100, 600, 300, 800, 0.9F, 0, "car"}};
   eval.Evaluate(g1, ctx);
@@ -1604,7 +1603,7 @@ TEST(CountingEvaluator, EventSeverityIsInfo) {
 // ============================================================
 
 static AnalysisRule MakeLoiteringRule(int loiter_sec = 5,
-                                     int cooldown_sec = 10) {
+                                      int cooldown_sec = 10) {
   AnalysisRule rule;
   rule.id = 200;
   rule.name = "loiter_zone";
@@ -1727,7 +1726,8 @@ TEST(LoiteringEvaluator, LeavingRegionResetsTimer) {
   std::vector<Detection> outside = {{50, 50, 150, 150, 0.9F, 0, "person"}};
   eval.Evaluate(outside, ctx);
 
-  // Object re-enters. Timer should have been reset — no alert for 4 more seconds
+  // Object re-enters. Timer should have been reset — no alert for 4 more
+  // seconds
   for (int i = 0; i < 5; i++) {
     ctx.timestamp_ms = 6000 + i * 1000;
     std::vector<Detection> dets = {{860, 440, 1060, 640, 0.9F, 0, "person"}};
@@ -1743,7 +1743,8 @@ TEST(LoiteringEvaluator, CooldownPreventsRepeatAlert) {
   FrameContext ctx{1, 0, 1920, 1080};
 
   int alert_count = 0;
-  // Object inside for 8 seconds — should get 1 alert at ~2s, no repeat until 12s
+  // Object inside for 8 seconds — should get 1 alert at ~2s, no repeat until
+  // 12s
   for (int i = 0; i < 9; i++) {
     ctx.timestamp_ms = i * 1000;
     std::vector<Detection> dets = {{860, 440, 1060, 640, 0.9F, 0, "person"}};
@@ -1760,7 +1761,8 @@ TEST(LoiteringEvaluator, CooldownAllowsReAlert) {
   FrameContext ctx{1, 0, 1920, 1080};
 
   int alert_count = 0;
-  // Object inside for 15 seconds: alert at ~2s, re-alert at ~7s, re-alert at ~12s
+  // Object inside for 15 seconds: alert at ~2s, re-alert at ~7s, re-alert at
+  // ~12s
   for (int i = 0; i < 16; i++) {
     ctx.timestamp_ms = i * 1000;
     std::vector<Detection> dets = {{860, 440, 1060, 640, 0.9F, 0, "person"}};

@@ -1,18 +1,17 @@
 // Copyright 2026 Loong AI NVR Project
 
+#include "ai_engine/face/face_attribute_adapter.h"
+#include "ai_engine/face/face_detector_adapter.h"
+#include "ai_engine/face/face_store.h"
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
+#include "gtest/gtest.h"
+
 #include <cmath>
 #include <cstdio>
 #include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
-
-#include "gtest/gtest.h"
-
-#include "ai_engine/face/face_detector_adapter.h"
-#include "ai_engine/face/face_attribute_adapter.h"
-#include "ai_engine/face/face_store.h"
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 
 namespace loong::ai_engine {
 namespace {
@@ -86,7 +85,8 @@ TEST(FaceDetector, PostProcessBboxOnly) {
   TensorShape out_shape = {2, 5};
 
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 640, 480, 0.5F, 0.45F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 640, 480, 0.5F, 0.45F, dets));
   EXPECT_EQ(dets.size(), 1U);
   EXPECT_EQ(dets[0].class_name, "face");
   EXPECT_FLOAT_EQ(dets[0].confidence, 0.95F);
@@ -102,17 +102,17 @@ TEST(FaceDetector, PostProcessWithLandmarks) {
 
   // Output: 1 detection, 15 cols (4 bbox + 1 score + 10 landmarks)
   std::vector<float> output = {
-      50.0F, 50.0F, 150.0F, 150.0F, 0.9F,
-      70.0F, 80.0F,   // left eye
-      120.0F, 80.0F,  // right eye
-      95.0F, 105.0F,  // nose
-      75.0F, 125.0F,  // mouth left
-      115.0F, 125.0F, // mouth right
+      50.0F,  50.0F,  150.0F, 150.0F, 0.9F, 70.0F, 80.0F,  // left eye
+      120.0F, 80.0F,                                       // right eye
+      95.0F,  105.0F,                                      // nose
+      75.0F,  125.0F,                                      // mouth left
+      115.0F, 125.0F,                                      // mouth right
   };
   TensorShape out_shape = {1, 15};
 
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 640, 640, 0.5F, 0.45F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 640, 640, 0.5F, 0.45F, dets));
   ASSERT_EQ(dets.size(), 1U);
   EXPECT_EQ(dets[0].class_name, "face");
 
@@ -138,7 +138,8 @@ TEST(FaceDetector, NMSSuppressesDuplicates) {
   TensorShape out_shape = {2, 5};
 
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 640, 640, 0.5F, 0.3F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 640, 640, 0.5F, 0.3F, dets));
   EXPECT_EQ(dets.size(), 1U);
   EXPECT_FLOAT_EQ(dets[0].confidence, 0.95F);
 }
@@ -206,7 +207,8 @@ TEST(FaceAttribute, PostProcessFullModel) {
 
   TensorShape out_shape = {1, 514};
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
   EXPECT_EQ(dets.size(), 1U);
   EXPECT_EQ(dets[0].class_name, "face_attr");
 
@@ -227,7 +229,8 @@ TEST(FaceAttribute, PostProcessEmbeddingOnly) {
   std::vector<float> output(512, 1.0F);
   TensorShape out_shape = {1, 512};
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
 
   auto& attrs = adapter.GetLastAttributes();
   EXPECT_EQ(attrs.gender, "unknown");
@@ -247,7 +250,8 @@ TEST(FaceAttribute, PostProcessFemale) {
 
   TensorShape out_shape = {1, 514};
   std::vector<Detection> dets;
-  EXPECT_TRUE(adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
+  EXPECT_TRUE(
+      adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
 
   auto& attrs = adapter.GetLastAttributes();
   EXPECT_EQ(attrs.gender, "female");
@@ -260,7 +264,8 @@ TEST(FaceAttribute, PostProcessTooSmallOutput) {
   std::vector<float> output(100, 0.0F);
   TensorShape out_shape = {1, 100};
   std::vector<Detection> dets;
-  EXPECT_FALSE(adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
+  EXPECT_FALSE(
+      adapter.PostProcess(output, out_shape, 112, 112, 0.5F, 0.45F, dets));
 }
 
 TEST(FaceAttribute, L2Normalize) {
@@ -304,7 +309,7 @@ class FaceStoreTest : public ::testing::Test {
   }
 
   FaceRecord MakeRecord(int channel, int64_t ts, const std::string& gender,
-                         int age, float conf = 0.9F) {
+                        int age, float conf = 0.9F) {
     FaceRecord r;
     r.channel_id = channel;
     r.timestamp = ts;
@@ -316,8 +321,7 @@ class FaceStoreTest : public ::testing::Test {
     // Generate deterministic embedding
     r.embedding.resize(512);
     for (int i = 0; i < 512; ++i) {
-      r.embedding[static_cast<size_t>(i)] =
-          static_cast<float>(i + ts) * 0.001F;
+      r.embedding[static_cast<size_t>(i)] = static_cast<float>(i + ts) * 0.001F;
     }
     return r;
   }
@@ -390,7 +394,8 @@ TEST_F(FaceStoreTest, QueryByTimeRange) {
 
 TEST_F(FaceStoreTest, QueryLimitOffset) {
   for (int i = 0; i < 5; ++i) {
-    store_.Insert(MakeRecord(0, static_cast<int64_t>(i * 1000), "male", 20 + i));
+    store_.Insert(
+        MakeRecord(0, static_cast<int64_t>(i * 1000), "male", 20 + i));
   }
 
   FaceQuery q;

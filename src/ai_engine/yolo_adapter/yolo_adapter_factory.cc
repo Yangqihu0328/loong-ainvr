@@ -1,16 +1,15 @@
 // Copyright 2026 Loong AI NVR Project
 
-#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
-
-#include <numeric>
-
+#include "ai_engine/face/face_attribute_adapter.h"
+#include "ai_engine/face/face_detector_adapter.h"
 #include "ai_engine/lpr/lpr_detector_adapter.h"
 #include "ai_engine/lpr/lpr_ocr_adapter.h"
-#include "ai_engine/face/face_detector_adapter.h"
-#include "ai_engine/face/face_attribute_adapter.h"
+#include "ai_engine/yolo_adapter/yolo_model_adapter.h"
 #include "ai_engine/yolo_adapter/yolov5_adapter.h"
 #include "ai_engine/yolo_adapter/yolov8_adapter.h"
 #include "spdlog/spdlog.h"
+
+#include <numeric>
 
 namespace loong::ai_engine {
 
@@ -19,10 +18,8 @@ namespace loong::ai_engine {
 // ---------------------------------------------------------------------------
 
 bool YoloModelAdapter::PreProcessBatch(
-    const std::vector<const uint8_t*>& images,
-    const std::vector<int>& widths,
-    const std::vector<int>& heights,
-    std::vector<float>& batch_input_data,
+    const std::vector<const uint8_t*>& images, const std::vector<int>& widths,
+    const std::vector<int>& heights, std::vector<float>& batch_input_data,
     TensorShape& batch_input_shape) {
   if (images.empty()) return false;
 
@@ -62,11 +59,9 @@ bool YoloModelAdapter::PreProcessBatch(
 }
 
 bool YoloModelAdapter::PostProcessBatch(
-    const std::vector<float>& output_data,
-    const TensorShape& output_shape,
+    const std::vector<float>& output_data, const TensorShape& output_shape,
     const std::vector<int>& original_widths,
-    const std::vector<int>& original_heights,
-    float confidence_threshold,
+    const std::vector<int>& original_heights, float confidence_threshold,
     float nms_threshold,
     std::vector<std::vector<Detection>>& batch_detections) {
   if (output_shape.empty() || original_widths.empty()) return false;
@@ -89,9 +84,8 @@ bool YoloModelAdapter::PostProcessBatch(
         output_data.begin() +
             static_cast<ptrdiff_t>(offset + per_image_elements));
 
-    if (!PostProcess(single_output, single_shape,
-                     original_widths[i], original_heights[i],
-                     confidence_threshold, nms_threshold,
+    if (!PostProcess(single_output, single_shape, original_widths[i],
+                     original_heights[i], confidence_threshold, nms_threshold,
                      batch_detections[i])) {
       spdlog::warn("PostProcessBatch: image {} failed", i);
     }
@@ -124,10 +118,12 @@ std::unique_ptr<YoloModelAdapter> YoloAdapterFactory::Create(
     return std::make_unique<LprOcrAdapter>();
   }
 
-  if (family == "face_detector" || family == "scrfd" || family == "retinaface") {
+  if (family == "face_detector" || family == "scrfd" ||
+      family == "retinaface") {
     return std::make_unique<FaceDetectorAdapter>();
   }
-  if (family == "face_attribute" || family == "arcface" || family == "insightface") {
+  if (family == "face_attribute" || family == "arcface" ||
+      family == "insightface") {
     return std::make_unique<FaceAttributeAdapter>();
   }
 

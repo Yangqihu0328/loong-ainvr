@@ -2,9 +2,6 @@
 
 #include "channel/channel_pipeline/channel_orchestrator.h"
 
-#include <algorithm>
-#include <sstream>
-
 #include "ai_engine/backend/backend_factory.h"
 #include "ai_engine/cascade/model_cascade.h"
 #include "ai_engine/inference/inference_engine.h"
@@ -22,6 +19,9 @@
 #include "pipeline_stages/overlay_stage/overlay_stage.h"
 #include "rules/rule_stage/rule_stage.h"
 #include "spdlog/spdlog.h"
+
+#include <algorithm>
+#include <sstream>
 
 namespace loong::channel {
 
@@ -62,20 +62,15 @@ ChannelResources ChannelOrchestrator::AllocateResources(
 
   // Queue capacities shrink as more channels compete for memory.
   res.input_queue_capacity =
-      std::max(static_cast<size_t>(16),
-               static_cast<size_t>(128 * scale));
+      std::max(static_cast<size_t>(16), static_cast<size_t>(128 * scale));
   res.decode_queue_capacity =
-      std::max(static_cast<size_t>(8),
-               static_cast<size_t>(64 * scale));
+      std::max(static_cast<size_t>(8), static_cast<size_t>(64 * scale));
   res.ai_queue_capacity =
-      std::max(static_cast<size_t>(4),
-               static_cast<size_t>(32 * scale));
+      std::max(static_cast<size_t>(4), static_cast<size_t>(32 * scale));
   res.overlay_queue_capacity =
-      std::max(static_cast<size_t>(4),
-               static_cast<size_t>(32 * scale));
+      std::max(static_cast<size_t>(4), static_cast<size_t>(32 * scale));
   res.output_queue_capacity =
-      std::max(static_cast<size_t>(8),
-               static_cast<size_t>(64 * scale));
+      std::max(static_cast<size_t>(8), static_cast<size_t>(64 * scale));
 
   // Thread counts: 1 per stage is typical; high-res channels may get more.
   res.decode_threads = 1;
@@ -83,8 +78,8 @@ ChannelResources ChannelOrchestrator::AllocateResources(
   res.output_threads = 1;
 
   // AI batch size: larger when fewer channels compete for GPU.
-  res.ai_batch_size = ComputeBatchSize(config.ai_model_name,
-                                       active_channel_count);
+  res.ai_batch_size =
+      ComputeBatchSize(config.ai_model_name, active_channel_count);
 
   return res;
 }
@@ -94,11 +89,11 @@ double ChannelOrchestrator::QueueScaleFactor(int active_channels) const {
   if (active_channels <= 8) return 1.0;
   if (active_channels >= kMaxChannels) return 0.25;
   return 1.0 - 0.75 * (static_cast<double>(active_channels - 8) /
-                        static_cast<double>(kMaxChannels - 8));
+                       static_cast<double>(kMaxChannels - 8));
 }
 
-int ChannelOrchestrator::ComputeBatchSize(
-    const std::string& /*ai_model_name*/, int active_channels) const {
+int ChannelOrchestrator::ComputeBatchSize(const std::string& /*ai_model_name*/,
+                                          int active_channels) const {
   // Fewer channels → larger batches for better GPU utilization.
   // More channels → smaller batches to share GPU time fairly.
   if (active_channels <= 4) return 8;
@@ -110,59 +105,55 @@ int ChannelOrchestrator::ComputeBatchSize(
 // ========== Stage Config Builders ==========
 
 StageConfig ChannelOrchestrator::MakeInputStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "InputStage";
   sc.thread_count = 1;
   sc.queue_capacity = res.input_queue_capacity;
   // Pass RTSP URL via params JSON.
   std::ostringstream oss;
-  oss << R"({"rtsp_url":")" << config.rtsp_url
-      << R"(","channel_id":)" << config.id << "}";
+  oss << R"({"rtsp_url":")" << config.rtsp_url << R"(","channel_id":)"
+      << config.id << "}";
   sc.params = oss.str();
   return sc;
 }
 
 StageConfig ChannelOrchestrator::MakeDecodeStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "DecodeStage";
   sc.thread_count = res.decode_threads;
   sc.queue_capacity = res.decode_queue_capacity;
   std::ostringstream oss;
   std::string codec_str;
-  if (config.codec == CodecType::kH265) codec_str = "h265";
-  else if (config.codec == CodecType::kH264) codec_str = "h264";
-  oss << R"({"codec":")" << codec_str
-      << R"(","width":)" << config.width
+  if (config.codec == CodecType::kH265)
+    codec_str = "h265";
+  else if (config.codec == CodecType::kH264)
+    codec_str = "h264";
+  oss << R"({"codec":")" << codec_str << R"(","width":)" << config.width
       << ",\"height\":" << config.height << "}";
   sc.params = oss.str();
   return sc;
 }
 
 StageConfig ChannelOrchestrator::MakeAiStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "AiStage";
   sc.thread_count = res.ai_threads;
   sc.queue_capacity = res.ai_queue_capacity;
 
   std::ostringstream oss;
-  oss << R"({"model_name":")" << config.ai_model_name
-      << R"(","backend":")" << config.ai_backend
-      << R"(","confidence_threshold":)" << config.confidence_threshold
-      << ",\"batch_size\":" << res.ai_batch_size
+  oss << R"({"model_name":")" << config.ai_model_name << R"(","backend":")"
+      << config.ai_backend << R"(","confidence_threshold":)"
+      << config.confidence_threshold << ",\"batch_size\":" << res.ai_batch_size
       << ",\"skip_frames\":0}";
   sc.params = oss.str();
   return sc;
 }
 
 StageConfig ChannelOrchestrator::MakeRuleStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "RuleStage";
   sc.thread_count = 1;
@@ -174,8 +165,7 @@ StageConfig ChannelOrchestrator::MakeRuleStageConfig(
 }
 
 StageConfig ChannelOrchestrator::MakeOverlayStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "OverlayStage";
   sc.thread_count = 1;
@@ -195,8 +185,8 @@ StageConfig ChannelOrchestrator::MakeOverlayStageConfig(
       << ",\"trajectory_max_points\":" << ov.trajectory_max_points
       << ",\"timestamp_position\":" << ov.timestamp_position
       << ",\"fill_opacity\":" << ov.fill_opacity
-      << ",\"channel_id\":" << config.id
-      << R"(,"channel_name":")" << config.name << "\"";
+      << ",\"channel_id\":" << config.id << R"(,"channel_name":")"
+      << config.name << "\"";
   if (!ov.timestamp_format.empty()) {
     oss << R"(,"timestamp_format":")" << ov.timestamp_format << "\"";
   }
@@ -206,18 +196,18 @@ StageConfig ChannelOrchestrator::MakeOverlayStageConfig(
 }
 
 StageConfig ChannelOrchestrator::MakeOutputStageConfig(
-    const ChannelConfig& config,
-    const ChannelResources& res) const {
+    const ChannelConfig& config, const ChannelResources& res) const {
   StageConfig sc;
   sc.name = "OutputStage";
   sc.thread_count = res.output_threads;
   sc.queue_capacity = res.output_queue_capacity;
   std::ostringstream oss;
   std::string out_codec;
-  if (config.codec == CodecType::kH265) out_codec = "h265";
-  else if (config.codec == CodecType::kH264) out_codec = "h264";
-  oss << R"({"codec":")" << out_codec
-      << R"(","width":)" << config.width
+  if (config.codec == CodecType::kH265)
+    out_codec = "h265";
+  else if (config.codec == CodecType::kH264)
+    out_codec = "h264";
+  oss << R"({"codec":")" << out_codec << R"(","width":)" << config.width
       << ",\"height\":" << config.height
       << ",\"bitrate_kbps\":" << config.bitrate_kbps
       << ",\"framerate\":" << (config.framerate > 0 ? config.framerate : 30)
@@ -255,8 +245,7 @@ std::unique_ptr<core::ChannelPipeline> ChannelOrchestrator::BuildPipeline(
 
   // Stage 1: Input (RTSP pull)
   auto input_stage = std::make_unique<pipeline_stages::InputStage>();
-  pipeline->AddStage(std::move(input_stage),
-                     MakeInputStageConfig(config, res));
+  pipeline->AddStage(std::move(input_stage), MakeInputStageConfig(config, res));
 
   // Stage 2: Decode (H.264/H.265 → raw frames)
   auto decode_stage = std::make_unique<pipeline_stages::DecodeStage>();
@@ -271,8 +260,8 @@ std::unique_ptr<core::ChannelPipeline> ChannelOrchestrator::BuildPipeline(
     std::string backend_name = config.ai_backend.empty()
                                    ? ""  // Let ModelManager decide
                                    : config.ai_backend;
-    auto engine = model_manager_->CreateEngine(config.ai_model_name,
-                                               backend_name);
+    auto engine =
+        model_manager_->CreateEngine(config.ai_model_name, backend_name);
     if (engine) {
       ai_stage->SetInferenceEngine(engine);
 
@@ -287,14 +276,15 @@ std::unique_ptr<core::ChannelPipeline> ChannelOrchestrator::BuildPipeline(
         cascade->AddStep(primary_step, engine);
 
         for (const auto& [step_model, step_mode] : cascade_steps_) {
-          auto step_engine = model_manager_->CreateEngine(step_model,
-                                                          backend_name);
+          auto step_engine =
+              model_manager_->CreateEngine(step_model, backend_name);
           if (step_engine) {
             ai_engine::CascadeStep cs;
             cs.name = step_model;
             cs.model_name = step_model;
-            cs.mode = (step_mode == "parallel") ? ai_engine::CascadeMode::kParallel
-                                                : ai_engine::CascadeMode::kCrop;
+            cs.mode = (step_mode == "parallel")
+                          ? ai_engine::CascadeMode::kParallel
+                          : ai_engine::CascadeMode::kCrop;
             cs.confidence_threshold = config.confidence_threshold;
             cascade->AddStep(cs, step_engine);
           }
@@ -307,28 +297,29 @@ std::unique_ptr<core::ChannelPipeline> ChannelOrchestrator::BuildPipeline(
         }
       }
     } else {
-      spdlog::warn("ChannelOrchestrator: ch {} — model '{}' not available, "
-                   "AI stage disabled", config.id, config.ai_model_name);
+      spdlog::warn(
+          "ChannelOrchestrator: ch {} — model '{}' not available, "
+          "AI stage disabled",
+          config.id, config.ai_model_name);
     }
   } else if (!config.ai_model_name.empty() && !model_manager_) {
-    spdlog::warn("ChannelOrchestrator: ch {} — no ModelManager set, "
-                 "AI stage disabled", config.id);
+    spdlog::warn(
+        "ChannelOrchestrator: ch {} — no ModelManager set, "
+        "AI stage disabled",
+        config.id);
   }
 
-  pipeline->AddStage(std::move(ai_stage),
-                     MakeAiStageConfig(config, res));
+  pipeline->AddStage(std::move(ai_stage), MakeAiStageConfig(config, res));
 
   // Stage 4: Rule Evaluation (evaluate analysis rules against detections)
   if (rule_engine_) {
     auto rule_stage = std::make_unique<rules::RuleStage>();
     rule_stage->SetRuleEngine(rule_engine_);
-    pipeline->AddStage(std::move(rule_stage),
-                       MakeRuleStageConfig(config, res));
+    pipeline->AddStage(std::move(rule_stage), MakeRuleStageConfig(config, res));
   }
 
   // Stage 5: Overlay (draw detections + rule visualization)
-  auto overlay_stage =
-      std::make_unique<pipeline_stages::OverlayStage>();
+  auto overlay_stage = std::make_unique<pipeline_stages::OverlayStage>();
   pipeline->AddStage(std::move(overlay_stage),
                      MakeOverlayStageConfig(config, res));
 
@@ -347,35 +338,36 @@ std::unique_ptr<core::ChannelPipeline> ChannelOrchestrator::BuildPipeline(
     if (flv || hls || rtsp || ws || webrtc) {
       output_stage->SetOutputCallback(
           [flv, hls, rtsp, ws, webrtc](int channel_id, const uint8_t* data,
-                               size_t size, int64_t pts, bool is_keyframe) {
+                                       size_t size, int64_t pts,
+                                       bool is_keyframe) {
             if (flv) flv->PushFrame(channel_id, data, size, pts, is_keyframe);
             if (hls) hls->PushFrame(channel_id, data, size, pts, is_keyframe);
-            if (rtsp)
-              rtsp->PushFrame(channel_id, data, size, pts, is_keyframe);
+            if (rtsp) rtsp->PushFrame(channel_id, data, size, pts, is_keyframe);
             if (ws) ws->PushFrame(channel_id, data, size, pts, is_keyframe);
             if (webrtc)
               webrtc->WriteVideoFrame(channel_id, data, size, pts, is_keyframe);
           });
-      spdlog::debug("ChannelOrchestrator: ch {} output wired to streaming "
-                    "services (webrtc={})", config.id, webrtc != nullptr);
+      spdlog::debug(
+          "ChannelOrchestrator: ch {} output wired to streaming "
+          "services (webrtc={})",
+          config.id, webrtc != nullptr);
     } else {
-      spdlog::warn("ChannelOrchestrator: ch {} — no streaming services "
-                   "configured, output will be discarded", config.id);
+      spdlog::warn(
+          "ChannelOrchestrator: ch {} — no streaming services "
+          "configured, output will be discarded",
+          config.id);
     }
   }
 
   pipeline->AddStage(std::move(output_stage),
                      MakeOutputStageConfig(config, res));
 
-  spdlog::info("ChannelOrchestrator: built pipeline for ch {} "
-               "(queues: {}/{}/{}/{}/{}, batch_size={})",
-               config.id,
-               res.input_queue_capacity,
-               res.decode_queue_capacity,
-               res.ai_queue_capacity,
-               res.overlay_queue_capacity,
-               res.output_queue_capacity,
-               res.ai_batch_size);
+  spdlog::info(
+      "ChannelOrchestrator: built pipeline for ch {} "
+      "(queues: {}/{}/{}/{}/{}, batch_size={})",
+      config.id, res.input_queue_capacity, res.decode_queue_capacity,
+      res.ai_queue_capacity, res.overlay_queue_capacity,
+      res.output_queue_capacity, res.ai_batch_size);
 
   return pipeline;
 }

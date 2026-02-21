@@ -4,10 +4,9 @@
 #define LOONG_STORAGE_RECORD_INDEX_RECORD_INDEX_H_
 
 #include <cstdint>
+#include <sqlite3.h>
 #include <string>
 #include <vector>
-
-#include <sqlite3.h>
 
 namespace loong::storage {
 
@@ -19,7 +18,7 @@ struct SegmentInfo {
   int64_t end_time = 0;
   std::string file_path;
   int64_t file_size = 0;
-  std::string codec;      // "h264" | "h265"
+  std::string codec;  // "h264" | "h265"
   std::string resolution;
   bool has_ai_overlay = false;
 };
@@ -68,14 +67,12 @@ class RecordIndex {
   int64_t InsertEvent(const EventInfo& event);
 
   /// Query segments by channel and time range.
-  std::vector<SegmentInfo> QuerySegments(int channel_id,
-                                          int64_t start_time,
-                                          int64_t end_time);
+  std::vector<SegmentInfo> QuerySegments(int channel_id, int64_t start_time,
+                                         int64_t end_time);
 
   /// Query events by channel and time range.
-  std::vector<EventInfo> QueryEvents(int channel_id,
-                                      int64_t start_time,
-                                      int64_t end_time);
+  std::vector<EventInfo> QueryEvents(int channel_id, int64_t start_time,
+                                     int64_t end_time);
 
   /// Get total size of recordings for a channel (bytes).
   int64_t GetChannelTotalSize(int channel_id);

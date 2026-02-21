@@ -2,10 +2,10 @@
 
 #include "rules/evaluators/cross_line_evaluator.h"
 
+#include "spdlog/spdlog.h"
+
 #include <algorithm>
 #include <cmath>
-
-#include "spdlog/spdlog.h"
 
 namespace loong::rules {
 
@@ -20,18 +20,16 @@ bool CrossLineEvaluator::Configure(const AnalysisRule& rule) {
 
   last_side_.clear();
 
-  spdlog::debug("CrossLineEvaluator: configured rule '{}' line ({:.2f},{:.2f})"
-                "→({:.2f},{:.2f}) bidir={}",
-                rule_.name,
-                rule_.line.start.x, rule_.line.start.y,
-                rule_.line.end.x, rule_.line.end.y,
-                rule_.line.bidirectional);
+  spdlog::debug(
+      "CrossLineEvaluator: configured rule '{}' line ({:.2f},{:.2f})"
+      "→({:.2f},{:.2f}) bidir={}",
+      rule_.name, rule_.line.start.x, rule_.line.start.y, rule_.line.end.x,
+      rule_.line.end.y, rule_.line.bidirectional);
   return true;
 }
 
 std::vector<RuleEvent> CrossLineEvaluator::Evaluate(
-    const std::vector<Detection>& detections,
-    const FrameContext& context) {
+    const std::vector<Detection>& detections, const FrameContext& context) {
   std::vector<RuleEvent> events;
 
   auto filtered = FilterDetections(detections);
@@ -144,8 +142,7 @@ std::vector<Detection> CrossLineEvaluator::FilterDetections(
 
     if (!rule_.target_classes.empty()) {
       auto it = std::find(rule_.target_classes.begin(),
-                          rule_.target_classes.end(),
-                          det.class_name);
+                          rule_.target_classes.end(), det.class_name);
       if (it == rule_.target_classes.end()) continue;
     }
 

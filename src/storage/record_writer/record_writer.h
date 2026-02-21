@@ -3,12 +3,12 @@
 #ifndef LOONG_STORAGE_RECORD_WRITER_RECORD_WRITER_H_
 #define LOONG_STORAGE_RECORD_WRITER_RECORD_WRITER_H_
 
+#include "core/common/types.h"
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-
-#include "core/common/types.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -32,12 +32,12 @@ struct RecordConfig {
 /// Writes encoded frames to segmented MP4 files via FFmpeg muxer.
 class RecordWriter {
  public:
-  RecordWriter(int channel_id, RecordConfig  config);
+  RecordWriter(int channel_id, RecordConfig config);
   ~RecordWriter();
 
   /// Write an encoded frame to the current segment.
-  bool WriteFrame(const uint8_t* data, size_t size,
-                  int64_t pts, int64_t dts, bool is_keyframe);
+  bool WriteFrame(const uint8_t* data, size_t size, int64_t pts, int64_t dts,
+                  bool is_keyframe);
 
   /// Force start a new segment file.
   void StartNewSegment();

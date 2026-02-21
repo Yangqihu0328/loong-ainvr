@@ -5,14 +5,13 @@
 
 #ifdef LOONG_HAS_TENSORRT
 
-#include <memory>
-#include <string>
-#include <vector>
+#include "ai_engine/inference/inference_backend.h"
 
 #include <NvInfer.h>
 #include <cuda_runtime_api.h>
-
-#include "ai_engine/inference/inference_backend.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace loong::ai_engine {
 
