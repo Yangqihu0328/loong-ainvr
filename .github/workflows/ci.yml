@@ -1,0 +1,468 @@
+# =============================================================================
+# Loong AI NVR — CI/CD Pipeline (v0.3.0)
+# =============================================================================
+# Triggers: push to main/develop, pull requests to main/develop
+# Jobs:
+#   1. format-check     — clang-format style verification
+#   2. frontend         — Vue.js build verification
+#   3. static-analysis  — clang-tidy static analysis
+#   4. build-test       — C++ build matrix (GCC/Clang × Debug/Release) + ctest
+#   5. coverage         — Code coverage (gcov + lcov → Codecov)
+#   6. benchmarks       — Performance benchmarks (main push only)
+#   7. docker           — Docker image build verification
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_VERSION: "3.27"
+  NODE_VERSION: "20"
+
+jobs:
+  # ===========================================================================
+  # Job 1: C++ Code Format Check (clang-format)
+  # ===========================================================================
+  format-check:
+    name: "Format Check (clang-format)"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format-14
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100
+
+      - name: Check C++ code format
+        run: |
+          echo "=== Checking clang-format compliance ==="
+          find src tests -type f \( -name '*.cc' -o -name '*.h' \) | sort > /tmp/cpp_files.txt
+          echo "Files to check: $(wc -l < /tmp/cpp_files.txt)"
+          FAILED=0
+          while IFS= read -r file; do
+            if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+              echo "❌ Format violation: $file"
+              clang-format --dry-run "$file" 2>&1 | head -20
+              FAILED=1
+            fi
+          done < /tmp/cpp_files.txt
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "=== Fix: run 'find src tests -name \"*.cc\" -o -name \"*.h\" | xargs clang-format -i' ==="
+            exit 1
+          fi
+          echo "✅ All files pass clang-format check"
+
+  # ===========================================================================
+  # Job 2: Frontend Build Verification
+  # ===========================================================================
+  frontend:
+    name: "Frontend (Vue.js Build)"
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build
+
+  # ===========================================================================
+  # Job 3: Static Analysis (clang-tidy)
+  # ===========================================================================
+  static-analysis:
+    name: "Static Analysis (clang-tidy)"
+    runs-on: ubuntu-22.04
+    needs: [format-check]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential ninja-build pkg-config \
+            clang-14 clang-tidy-14 \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libswresample-dev \
+            libopencv-dev \
+            libspdlog-dev nlohmann-json3-dev libsqlite3-dev \
+            libssl-dev \
+            libsrtp2-dev libwebsockets-dev libpaho-mqtt-dev \
+            libgtest-dev libgmock-dev
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-14 100
+
+      - name: Configure CMake (generate compile_commands.json)
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang-14 \
+            -DCMAKE_CXX_COMPILER=clang++-14 \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DLOONG_BUILD_TESTS=OFF \
+            -DLOONG_BUILD_BENCHMARKS=OFF
+
+      - name: Run clang-tidy
+        run: |
+          echo "=== Running clang-tidy static analysis ==="
+          # Collect all source files (exclude third_party and tests)
+          find src -type f \( -name '*.cc' -o -name '*.h' \) | sort > /tmp/source_files.txt
+          echo "Files to analyze: $(wc -l < /tmp/source_files.txt)"
+          echo ""
+
+          WARNINGS=0
+          ERRORS=0
+          FAILED_FILES=""
+
+          while IFS= read -r file; do
+            OUTPUT=$(clang-tidy -p build "$file" 2>&1) || true
+            WARN_COUNT=$(echo "$OUTPUT" | grep -c "warning:" || true)
+            ERR_COUNT=$(echo "$OUTPUT" | grep -c "error:" || true)
+
+            if [ "$ERR_COUNT" -gt 0 ]; then
+              echo "❌ $file ($ERR_COUNT errors, $WARN_COUNT warnings)"
+              echo "$OUTPUT" | grep -E "(error:|warning:)" | head -10
+              echo ""
+              ERRORS=$((ERRORS + ERR_COUNT))
+              FAILED_FILES="$FAILED_FILES $file"
+            elif [ "$WARN_COUNT" -gt 0 ]; then
+              echo "⚠️  $file ($WARN_COUNT warnings)"
+              echo "$OUTPUT" | grep "warning:" | head -5
+              echo ""
+            fi
+            WARNINGS=$((WARNINGS + WARN_COUNT))
+          done < /tmp/source_files.txt
+
+          echo ""
+          echo "=== clang-tidy Summary ==="
+          echo "Total warnings: $WARNINGS"
+          echo "Total errors:   $ERRORS"
+          echo "Files analyzed: $(wc -l < /tmp/source_files.txt)"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "❌ clang-tidy found errors in:$FAILED_FILES"
+            echo "Fix: run 'cmake -B build -DLOONG_ENABLE_CLANG_TIDY=ON && cmake --build build' locally"
+            exit 1
+          fi
+
+          echo "✅ clang-tidy passed (warnings are informational)"
+
+  # ===========================================================================
+  # Job 4: C++ Build & Test Matrix
+  # ===========================================================================
+  build-test:
+    name: "${{ matrix.compiler }} / ${{ matrix.build_type }}"
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # GCC 11 — Debug (with sanitizers for deeper checking)
+          - compiler: gcc-11
+            cc: gcc-11
+            cxx: g++-11
+            build_type: Debug
+            sanitizers: ON
+
+          # GCC 11 — Release
+          - compiler: gcc-11
+            cc: gcc-11
+            cxx: g++-11
+            build_type: Release
+            sanitizers: OFF
+
+          # GCC 12 — Release
+          - compiler: gcc-12
+            cc: gcc-12
+            cxx: g++-12
+            build_type: Release
+            sanitizers: OFF
+
+          # Clang 14 — Debug
+          - compiler: clang-14
+            cc: clang-14
+            cxx: clang++-14
+            build_type: Debug
+            sanitizers: OFF
+
+          # Clang 14 — Release
+          - compiler: clang-14
+            cc: clang-14
+            cxx: clang++-14
+            build_type: Release
+            sanitizers: OFF
+
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential ninja-build pkg-config \
+            gcc-11 g++-11 gcc-12 g++-12 clang-14 \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libswresample-dev \
+            libopencv-dev \
+            libspdlog-dev nlohmann-json3-dev libsqlite3-dev \
+            libssl-dev \
+            libsrtp2-dev libwebsockets-dev libpaho-mqtt-dev \
+            libgtest-dev libgmock-dev
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'src/**/CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DLOONG_BUILD_TESTS=ON \
+            -DLOONG_BUILD_BENCHMARKS=OFF \
+            -DLOONG_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run unit tests
+        working-directory: build
+        run: |
+          echo "=== Running ctest ==="
+          ctest --output-on-failure --timeout 120 --parallel $(nproc)
+
+      - name: Test summary
+        if: always()
+        working-directory: build
+        run: |
+          echo "=== Test Results ==="
+          ctest --test-dir . --show-only=json-v1 2>/dev/null | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              tests = data.get('tests', [])
+              print(f'Total test executables discovered: {len(tests)}')
+          except:
+              print('Could not parse test list')
+          " || true
+          echo ""
+          echo "Compiler: ${{ matrix.compiler }}"
+          echo "Build type: ${{ matrix.build_type }}"
+          echo "Sanitizers: ${{ matrix.sanitizers }}"
+
+  # ===========================================================================
+  # Job 5: Code Coverage (gcov + lcov → Codecov)
+  # ===========================================================================
+  coverage:
+    name: "Code Coverage"
+    runs-on: ubuntu-22.04
+    needs: [build-test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential ninja-build pkg-config \
+            gcc-11 g++-11 lcov \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libswresample-dev \
+            libopencv-dev \
+            libspdlog-dev nlohmann-json3-dev libsqlite3-dev \
+            libssl-dev \
+            libsrtp2-dev libwebsockets-dev libpaho-mqtt-dev \
+            libgtest-dev libgmock-dev
+
+      - name: Configure CMake (Coverage)
+        env:
+          CC: gcc-11
+          CXX: g++-11
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc-11 \
+            -DCMAKE_CXX_COMPILER=g++-11 \
+            -DLOONG_BUILD_TESTS=ON \
+            -DLOONG_ENABLE_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run tests (generate .gcda)
+        working-directory: build
+        run: ctest --output-on-failure --timeout 120 --parallel $(nproc)
+
+      - name: Capture coverage with lcov
+        run: |
+          # Capture raw coverage
+          lcov --capture \
+            --directory build \
+            --output-file build/coverage-raw.info \
+            --rc lcov_branch_coverage=1
+
+          # Remove system/test/third-party from report
+          lcov --remove build/coverage-raw.info \
+            '/usr/*' \
+            '*/third_party/*' \
+            '*/tests/*' \
+            '*/build/*' \
+            '*/googletest/*' \
+            --output-file build/coverage.info \
+            --rc lcov_branch_coverage=1
+
+          echo "=== Coverage Summary ==="
+          lcov --summary build/coverage.info --rc lcov_branch_coverage=1
+
+      - name: Generate HTML report
+        run: |
+          genhtml build/coverage.info \
+            --output-directory build/coverage-html \
+            --rc lcov_branch_coverage=1 \
+            --title "Loong AI NVR Coverage" \
+            --legend
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/coverage.info
+          flags: unittests
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage HTML artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage-html/
+          retention-days: 14
+
+  # ===========================================================================
+  # Job 6: Performance Benchmarks (optional, on main push only)
+  # ===========================================================================
+  benchmarks:
+    name: "Performance Benchmarks"
+    runs-on: ubuntu-22.04
+    needs: [build-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential ninja-build pkg-config \
+            gcc-12 g++-12 \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libswresample-dev \
+            libopencv-dev \
+            libspdlog-dev nlohmann-json3-dev libsqlite3-dev \
+            libssl-dev \
+            libsrtp2-dev libwebsockets-dev libpaho-mqtt-dev \
+            libbenchmark-dev
+
+      - name: Configure CMake (Release + Benchmarks)
+        env:
+          CC: gcc-12
+          CXX: g++-12
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-12 \
+            -DCMAKE_CXX_COMPILER=g++-12 \
+            -DLOONG_BUILD_TESTS=OFF \
+            -DLOONG_BUILD_BENCHMARKS=ON
+
+      - name: Build benchmarks
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run benchmarks
+        run: |
+          echo "=== Pipeline Throughput Benchmark ==="
+          ./build/pipeline_bench --benchmark_format=console --benchmark_out=build/pipeline_bench.json --benchmark_out_format=json || true
+          echo ""
+          echo "=== Memory Pool Benchmark ==="
+          ./build/memory_bench --benchmark_format=console --benchmark_out=build/memory_bench.json --benchmark_out_format=json || true
+          echo ""
+          echo "=== AI Inference Benchmark ==="
+          ./build/inference_bench --benchmark_format=console --benchmark_out=build/inference_bench.json --benchmark_out_format=json || true
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            build/pipeline_bench.json
+            build/memory_bench.json
+            build/inference_bench.json
+          retention-days: 30
+
+  # ===========================================================================
+  # Job 7: Docker Image Build Verification
+  # ===========================================================================
+  docker:
+    name: "Docker Build"
+    runs-on: ubuntu-22.04
+    needs: [format-check, frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: loong-ainvr:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image
+        run: |
+          echo "=== Docker Image Built Successfully ==="
+          docker images loong-ainvr:ci-${{ github.sha }}
+          echo ""
+          echo "=== Image Size ==="
+          docker images loong-ainvr:ci-${{ github.sha }} --format "{{.Size}}"

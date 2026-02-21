@@ -1,0 +1,100 @@
+{
+  "system": {
+    "name": "Loong AI NVR",
+    "version": "0.3.0",
+    "log_level": "info"
+  },
+  "network": {
+    "http_host": "0.0.0.0",
+    "http_port": 8080,
+    "flv_port": 8081
+  },
+  "channel": {
+    "max_channels": 64,
+    "auto_recovery": true,
+    "recovery_interval_sec": 5,
+    "db_path": "/recordings/channels.db"
+  },
+  "ai": {
+    "default_backend": "opencv_dnn",
+    "default_model": "yolov8n",
+    "confidence_threshold": 0.5,
+    "nms_threshold": 0.45,
+    "analysis_fps": 5,
+    "batch_size": 8,
+    "batch_timeout_ms": 10,
+    "cascade": {
+      "enabled": false,
+      "steps": [
+        {
+          "name": "primary_detector",
+          "model": "yolov8n",
+          "mode": "primary",
+          "confidence_threshold": 0.5
+        }
+      ]
+    }
+  },
+  "storage": {
+    "base_path": "/recordings",
+    "index_db": "/recordings/index.db",
+    "segment_duration_sec": 1800,
+    "max_days": 30,
+    "max_size_gb": 100,
+    "cleanup_policy": "circular"
+  },
+  "notifications": {
+    "smtp": {
+      "enabled": false,
+      "host": "smtp.example.com",
+      "port": 587,
+      "use_tls": true,
+      "username": "",
+      "password": "",
+      "from_address": "",
+      "to_addresses": []
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "secret": "",
+      "timeout_sec": 10,
+      "retry_count": 2
+    }
+  },
+  "hls": {
+    "segment_duration_ms": 2000,
+    "max_segments": 5,
+    "max_segment_size_kb": 4096
+  },
+  "pipeline": {
+    "input_threads": 4,
+    "decode_threads": 8,
+    "ai_threads": 4,
+    "overlay_threads": 4,
+    "output_threads": 4,
+    "queue_capacity": 128
+  },
+  "alarm": {
+    "db_path": "/recordings/alarms.db"
+  },
+  "lpr": {
+    "db_path": "/recordings/plates.db"
+  },
+  "face": {
+    "db_path": "/recordings/faces.db"
+  },
+  "analytics": {
+    "db_path": "/recordings/analytics.db"
+  },
+  "rules": {
+    "enabled": true,
+    "db_path": "/recordings/rules.db",
+    "default_cooldown_sec": 60,
+    "default_min_confidence": 0.5
+  },
+  "hot_reload": {
+    "enabled": true,
+    "reloadable_sections": ["ai", "hls", "notifications", "storage", "pipeline", "rules"]
+  }
+}

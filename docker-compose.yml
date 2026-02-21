@@ -1,0 +1,39 @@
+# =============================================================================
+# Loong AI NVR — Docker Compose (CPU)
+# =============================================================================
+# Usage:
+#   docker compose up -d            # Start in background
+#   docker compose logs -f          # Follow logs
+#   docker compose down             # Stop and remove
+#   docker compose build --no-cache # Rebuild from scratch
+# =============================================================================
+
+services:
+  loong-ainvr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: loong-ainvr:0.3.0
+    container_name: loong-ainvr
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # HTTP API + Web UI
+      - "8081:8081"   # HTTP-FLV / WebSocket Live Stream
+      - "554:554"     # RTSP Server
+    volumes:
+      - recordings:/recordings
+      - ./models:/models:ro
+      - ./plugins:/plugins:ro
+      - ./config/default.json:/opt/loong-ainvr/config/default.json:ro
+    environment:
+      - TZ=Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  recordings:
+    driver: local

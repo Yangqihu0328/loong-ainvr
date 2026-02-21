@@ -1,0 +1,73 @@
+# Build directories
+build/
+cmake-build-*/
+
+# Frontend build output
+dist/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Compiled objects
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+
+# Executables
+loong-ainvr
+core_tests
+
+# Logs
+*.log
+
+# Models (large binary files)
+models/*.onnx
+models/*.onnx.data
+models/*.pt
+models/*.engine
+models/*.trt
+
+# Resources (large binary files)
+resources/fonts/*.ttf
+resources/fonts/*.otf
+
+# Recordings
+recordings/
+
+# Runtime data (SQLite databases)
+data/
+*.db
+
+# Local config (keep default.json as template)
+config/local.json
+
+# Plugins (binary)
+plugins/*.so
+
+# Node modules (Web UI)
+web/node_modules/
+web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+.__*
+*.tmp
+
+# Third-party libraries
+third_party/
+
+# Memory bank (AI dev docs)
+memory-bank/
+
+# Certs (generated)
+certs/

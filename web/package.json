@@ -1,0 +1,28 @@
+{
+  "name": "loong-ainvr-web",
+  "version": "0.1.0",
+  "description": "Loong AI NVR Web Management UI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.0",
+    "axios": "^1.6.0",
+    "echarts": "^6.0.0",
+    "element-plus": "^2.5.0",
+    "flv.js": "^1.6.2",
+    "hls.js": "^1.5.0",
+    "leaflet": "^1.9.4",
+    "pinia": "^2.1.0",
+    "vue": "^3.4.0",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "sass": "^1.69.0",
+    "vite": "^5.0.0"
+  }
+}

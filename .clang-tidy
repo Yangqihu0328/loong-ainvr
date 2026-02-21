@@ -1,0 +1,149 @@
+# =============================================================================
+# Loong AI NVR — clang-tidy Configuration
+# =============================================================================
+# Style: Google C++ Style Guide
+# Standard: C++17
+# =============================================================================
+
+# ── Enabled check groups ──────────────────────────────────────────────────────
+#   bugprone-*       : Common bug-prone patterns
+#   modernize-*      : C++11/14/17 modernization
+#   performance-*    : Performance pitfalls
+#   readability-*    : Code readability improvements
+#   misc-*           : Miscellaneous useful checks
+#   concurrency-*    : Concurrency / threading issues
+#   google-*         : Google style-specific checks
+#
+# ── Excluded checks rationale ─────────────────────────────────────────────────
+#   modernize-use-trailing-return-type    : Stylistic; not required by Google
+#   modernize-avoid-c-arrays              : Needed for FFmpeg/POSIX C API interop
+#   modernize-use-nodiscard               : Too noisy for large existing codebase
+#   readability-magic-numbers             : HTTP status codes, port numbers, buffer sizes
+#   readability-identifier-length         : Short names (i, j, n, id) are idiomatic
+#   readability-function-cognitive-complexity : Complex functions exist for C API wrappers
+#   readability-implicit-bool-conversion  : Pointer/int → bool is idiomatic C++ (if (ptr))
+#   readability-convert-member-functions-to-static : May break future design intent
+#   bugprone-easily-swappable-parameters  : Too noisy for multi-param constructors
+#   misc-non-private-member-variables-in-classes : Used in POD-style config structs
+#   misc-include-cleaner                  : Requires full compilation context
+# =============================================================================
+
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  concurrency-*,
+  google-*,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-include-cleaner,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard,
+  performance-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -readability-implicit-bool-conversion,
+  -readability-convert-member-functions-to-static
+
+WarningsAsErrors: ""
+
+HeaderFilterRegex: "src/.*\\.h$"
+
+CheckOptions:
+  # ── readability-identifier-naming (Google C++ Style) ──
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: k
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.MethodCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: _
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: _
+  - key: readability-identifier-naming.ConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: k
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: k
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: k
+  - key: readability-identifier-naming.StaticConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: k
+  # MacroDefinitionCase omitted: project macros are header guards
+  # (LOONG_*_H_) which follow Google style trailing-underscore convention
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+
+  # ── modernize settings ──
+  - key: modernize-use-override.AllowOverrideAndFinal
+    value: false
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: modernize-pass-by-value.IncludeStyle
+    value: google
+  - key: modernize-use-nullptr.NullMacros
+    value: "NULL"
+  - key: modernize-use-emplace.ContainersWithPushBack
+    value: "::std::vector;::std::deque;::std::list"
+  - key: modernize-use-auto.MinTypeNameLength
+    value: 5
+
+  # ── performance settings ──
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: true
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: ""
+
+  # ── readability settings ──
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 1
+  - key: readability-redundant-member-init.IgnoreBaseInCopyConstructors
+    value: true
+  - key: readability-simplify-boolean-expr.ChainedConditionalReturn
+    value: true
+  - key: readability-simplify-boolean-expr.ChainedConditionalAssignment
+    value: true
+
+  # ── bugprone settings ──
+  - key: bugprone-argument-comment.StrictMode
+    value: false
+  - key: bugprone-assert-side-effect.AssertMacros
+    value: "assert;DCHECK"
+  - key: bugprone-sizeof-expression.WarnOnSizeOfIntegerExpression
+    value: true
+  - key: bugprone-string-constructor.WarnOnLargeLength
+    value: true
+  - key: bugprone-string-constructor.LargeLengthThreshold
+    value: 8388608

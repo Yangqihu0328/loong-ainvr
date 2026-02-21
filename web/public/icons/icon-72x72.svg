@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+  <rect width="72" height="72" rx="12.959999999999999" fill="#1d1e1f"/>
+  <circle cx="36" cy="36" r="28.8" fill="#409eff" opacity="0.15"/>
+  <rect x="28.08" y="14.4" width="15.84" height="11.52" rx="1.44" fill="#409eff"/>
+  <polygon points="43.92,16.128 49.68,14.4 49.68,25.92 43.92,24.192" fill="#409eff"/>
+  <text x="36" y="51.839999999999996" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="25.2" fill="#409eff">L</text>
+</svg>

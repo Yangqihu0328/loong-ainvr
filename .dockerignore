@@ -1,0 +1,53 @@
+# Build artifacts
+build/
+cmake-build-*/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Memory bank (dev docs)
+memory-bank/
+
+# Models (mount at runtime)
+models/*.onnx
+models/*.engine
+models/*.trt
+
+# Recordings (mount at runtime)
+recordings/
+
+# Runtime data
+data/
+
+# Plugins (mount at runtime)
+plugins/
+
+# Node modules (rebuilt in Docker)
+web/node_modules/
+web/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary
+.__*
+*.tmp
+*.log
+
+# CI/CD
+.github/
+
+# Documentation (not needed in image)
+docs/
+*.md
+!README.md
